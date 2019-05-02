@@ -5,7 +5,7 @@
 # 
 # A. Load libraries
 #
-# B. 
+# B. Fit log-log model by species
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -62,61 +62,88 @@ c_albula <- dat %>%
 
 sort(unique(c_albula$temp_c))
 
-min(subset(dat, Species == "Rainbow trout")$M)
-max(subset(dat, Species == "Rainbow trout")$M)
+# 4C
+d4 <- c_albula %>% filter(temp_c == 4)
+d4
+plot(log(d4$metabolic_rate) ~ log(d4$mass_g))
+summary(lm(log(d4$metabolic_rate) ~ log(d4$mass_g)))
 
-# 5C
-d5 <- dat %>% filter(Species == "Rainbow trout" & Temp == 5)
-head(d5)
-plot(log(d5$Consumption) ~ log(d5$M))
-summary(lm(log(d5$Consumption) ~ log(d5$M)))
-summary(lm(log(d5$Consumption) ~ log(d5$M)))$coefficients[2] 
-summary(lm(log(d5$Consumption) ~ log(d5$M)))$coefficients[1]
-
-# 10C
-d10 <- dat %>% filter(Species == "Rainbow trout" & Temp > 9 & Temp < 10.3)
-head(d10)
-plot(log(d10$Consumption) ~ log(d10$M))
-summary(lm(log(d10$Consumption) ~ log(d10$M)))
-summary(lm(log(d10$Consumption) ~ log(d10$M)))$coefficients[2] 
-summary(lm(log(d10$Consumption) ~ log(d10$M)))$coefficients[1]
+# 8C
+d8 <- c_albula %>% filter(temp_c == 8)
+d8
+plot(log(d8$metabolic_rate) ~ log(d8$mass_g))
+summary(lm(log(d8$metabolic_rate) ~ log(d8$mass_g)))
 
 # 15C
-d15 <- dat %>% filter(Species == "Rainbow trout" & Temp == 15)
-head(d15)
-plot(log(d15$Consumption) ~ log(d15$M))
-summary(lm(log(d15$Consumption) ~ log(d15$M)))
-summary(lm(log(d15$Consumption) ~ log(d15$M)))$coefficients[2] 
-summary(lm(log(d15$Consumption) ~ log(d15$M)))$coefficients[1]
+d15 <- c_albula %>% filter(temp_c == 15)
+d15
+plot(log(d15$metabolic_rate) ~ log(d15$mass_g))
+summary(lm(log(d15$metabolic_rate) ~ log(d15$mass_g)))
 
-# 21C
-d21 <- dat %>% filter(Species == "Rainbow trout" & Temp > 19 & Temp < 23)
-head(d21, 20)
-plot(log(d21$Consumption) ~ log(d21$M))
-summary(lm(log(d21$Consumption) ~ log(d21$M)))
-summary(lm(log(d21$Consumption) ~ log(d21$M)))$coefficients[2] 
-summary(lm(log(d21$Consumption) ~ log(d21$M)))$coefficients[1]
+#====**** Coregonus fontanae ========
+c_fontanae <- dat %>% 
+  filter(species == "Coregonus fontanae")
 
-# 24C
-d24 <- dat %>% filter(Species == "Rainbow trout" & Temp == 24.3)
-head(d24, 20)
-plot(log(d24$Consumption) ~ log(d24$M))
-summary(lm(log(d24$Consumption) ~ log(d24$M)))
-summary(lm(log(d24$Consumption) ~ log(d24$M)))$coefficients[2] 
-summary(lm(log(d24$Consumption) ~ log(d24$M)))$coefficients[1]
+sort(unique(c_fontanae$temp_c))
 
-d2 <- data.frame(b = c(0.6524, 0.5772, 0.74361, 0.74619, 0.70172), 
-                 temp = c(24, 21, 15, 10, 5))
+# 4C
+d4 <- c_fontanae %>% filter(temp_c == 4)
+d4
+plot(log(d4$metabolic_rate) ~ log(d4$mass_g))
+summary(lm(log(d4$metabolic_rate) ~ log(d4$mass_g)))
 
-ggplot(d2, aes(temp, b)) + 
-  geom_point(size = 5) +
-  theme_bw(base_size = 18) + 
-  stat_smooth(method = "lm") +
-  NULL
+# 8C
+d8 <- c_fontanae %>% filter(temp_c == 8)
+d8
+plot(log(d8$metabolic_rate) ~ log(d8$mass_g))
+summary(lm(log(d8$metabolic_rate) ~ log(d8$mass_g)))
 
+# 15C
+d15 <- c_fontanae %>% filter(temp_c == 15)
+d15
+plot(log(d15$metabolic_rate) ~ log(d15$mass_g))
+summary(lm(log(d15$metabolic_rate) ~ log(d15$mass_g)))
 
+#====**** Abramis brama ========
+a_brama <- dat %>% 
+  filter(species == "Abramis brama")
 
+sort(unique(a_brama$temp_c))
 
+# 5C
+d5 <- a_brama %>% filter(temp_c == 5)
+d5
+plot(log(d5$metabolic_rate) ~ log(d5$mass_g))
+summary(lm(log(d5$metabolic_rate) ~ log(d5$mass_g)))
+
+# 10C
+d10 <- a_brama %>% filter(temp_c == 10)
+d10
+plot(log(d10$metabolic_rate) ~ log(d10$mass_g))
+summary(lm(log(d10$metabolic_rate) ~ log(d10$mass_g)))
+
+# 15C
+d15 <- a_brama %>% filter(temp_c == 15)
+d15
+plot(log(d15$metabolic_rate) ~ log(d15$mass_g))
+summary(lm(log(d15$metabolic_rate) ~ log(d15$mass_g)))
+
+# 20C
+d20 <- a_brama %>% filter(temp_c == 20)
+d20
+plot(log(d20$metabolic_rate) ~ log(d20$mass_g))
+summary(lm(log(d20$metabolic_rate) ~ log(d20$mass_g)))
+
+# 23C
+d23 <- a_brama %>% filter(temp_c == 23)
+d23
+plot(log(d23$metabolic_rate) ~ log(d23$mass_g))
+summary(lm(log(d23$metabolic_rate) ~ log(d23$mass_g)))
+
+#====**** Rutilus rutilus ========
+# Not sure yet if I should use this paper or stick to the same as for Cmax...
+
+#====**** Salvelinus confluentus ========
 
 
 
