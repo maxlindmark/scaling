@@ -42,16 +42,26 @@ lapply(pkgs, library, character.only = TRUE)
 # 5   tidyr     0.8.3
 
 #====**** Read data ========
-dat <- read_excel("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/metabolism_data.xlsx")
+# Will crate a csv that one can read once data collection is finished.
+# dat <- read_excel(text=GET("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/metabolism_data.xlsx"))
+
+dat <- read_excel("data/metabolism_data.xlsx", col_types = "guess")
+
+cols = c(1, 2, 3, 14, 15, 16, 17)
+dat[,cols] %<>% lapply(function(x) as.numeric(as.character(x)))
+
+glimpse(dat)
+
+unique(dat$species)
+
 
 #======== B. FIT LOG-LOG MODEL BY SPECIES ========
-dat %>% 
-  filter(Species == "Rainbow trout") %>% 
-  ggplot(., aes(log(M), log(Consumption), color = factor(Temp))) +
-  geom_point(size = 3) + 
-  stat_smooth(method = "lm")
+#====**** Coregonus albula ========
+c_albula <- dat %>% 
+  filter(species == "Coregonus albula")
 
-sort(unique(subset(dat, Species == "Rainbow trout"))$Temp)
+sort(unique(c_albula$temp_c))
+
 min(subset(dat, Species == "Rainbow trout")$M)
 max(subset(dat, Species == "Rainbow trout")$M)
 
