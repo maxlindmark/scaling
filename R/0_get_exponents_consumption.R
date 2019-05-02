@@ -47,6 +47,8 @@ lapply(pkgs, library, character.only = TRUE)
 
 dat <- read_excel("data/consumption_data.xlsx")
 
+glimpse(dat)
+
 cols = c(1, 2, 3, 14, 15, 16, 17)
 dat[,cols] %<>% lapply(function(x) as.numeric(as.character(x)))
 
@@ -56,4 +58,17 @@ unique(dat$species)
 
 
 #======== B. FIT LOG-LOG MODEL BY SPECIES ========
-#====**** Species ========
+
+# check which species have "data" as source and redo them here
+
+#====**** Coregonus albula ========
+c_albula <- dat %>% 
+  filter(species == "Coregonus albula")
+
+sort(unique(c_albula$temp_c))
+
+# 4C
+d4 <- c_albula %>% filter(temp_c == 4)
+d4
+plot(log(d4$metabolic_rate) ~ log(d4$mass_g))
+summary(lm(log(d4$metabolic_rate) ~ log(d4$mass_g)))

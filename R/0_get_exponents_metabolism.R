@@ -47,6 +47,8 @@ lapply(pkgs, library, character.only = TRUE)
 
 dat <- read_excel("data/metabolism_data.xlsx")
 
+glimpse(dat)
+
 cols = c(1, 2, 3, 14, 15, 16, 17)
 dat[,cols] %<>% lapply(function(x) as.numeric(as.character(x)))
 
