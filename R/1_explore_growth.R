@@ -3,7 +3,7 @@
 #
 # - Explore body growth rate data
 # 
-# A. Load libraries
+# A. Load libraries & read data
 #
 # B. Explore growth data
 #
@@ -13,7 +13,7 @@
 rm(list = ls())
 
 #==** Load packages ====
-## Provide package names
+# Provide package names
 pkgs <- c("dplyr",
           "tidyr",
           "tidylog",
@@ -24,13 +24,13 @@ pkgs <- c("dplyr",
           "plyr",
           "RColorBrewer")
 
-## Install packages
+# Install packages
 #install.packages(pkgs)
 
-## Load all packages
+# Load all packages
 lapply(pkgs, library, character.only = TRUE)
 
-## Print package version
+# Print package version
 # x <- devtools::session_info(pkgs = pkgs)
 # x <- as.data.frame(x$packages)
 # x <- dplyr::filter(x, package %in% pkgs) %>% 
@@ -50,7 +50,7 @@ lapply(pkgs, library, character.only = TRUE)
 # 9      viridis     0.5.1
 
 #==** Read data ====
-# Will crate a csv that one can read once data collection is finished.
+# Will crate a csv that one can read directly once data collection is finished.
 # dat <- read_excel(text=GET("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/growth_data.xlsx"))
 
 dat <- read_excel("data/growth_data.xlsx")
@@ -233,7 +233,7 @@ ggplot(s_dat, aes(log10(mass_norm), opt_temp_c_ct,
 summary(lm(s_dat$opt_temp_c_ct ~ log10(s_dat$mass_norm)))
 
 
-## TO THINK ABOUT:
+# TO THINK ABOUT:
 # what is the rationale for not mixing species from different studies here? For Cmax we don't, but that's because they are so tricky to measure.. growth should be easier to measure. And by grouping species and sharing information, we do say the response variables are comparable. Note I also have much fewer species with dublicates in Cmax. 
 
 #====**** Conclusion ========
