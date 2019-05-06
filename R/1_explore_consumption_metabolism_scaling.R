@@ -22,10 +22,13 @@ pkgs <- c("dplyr",
           "ggplot2",
           "viridis",
           "plyr",
-          "RColorBrewer")
+          "RColorBrewer",
+          "magrittr")
 
 # Install packages
-#install.packages(pkgs)
+if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
+  install.packages(setdiff(packages, rownames(installed.packages())))
+}
 
 # Load all packages
 lapply(pkgs, library, character.only = TRUE)
@@ -34,20 +37,21 @@ lapply(pkgs, library, character.only = TRUE)
 # x <- devtools::session_info(pkgs = pkgs)
 # x <- as.data.frame(x$packages)
 # x <- dplyr::filter(x, package %in% pkgs) %>% 
-# dplyr::select(-`*`, -date, -source) %>% 
-# dplyr::arrange(package)
+#  dplyr::select("package", "loadedversion") %>% 
+#  dplyr::arrange(package)
 # x
 
-# package   version
-# 1        dplyr   0.8.0.1
-# 2      ggplot2     3.0.0
-# 3         plyr     1.8.4
-# 4 RColorBrewer     1.1-2
-# 5        RCurl 1.95-4.10
-# 6       readxl     1.3.1
-# 7      tidylog     0.1.0
-# 8        tidyr     0.8.3
-# 9      viridis     0.5.1
+# package loadedversion
+# 1         dplyr       0.8.0.1
+# 2       ggplot2         3.1.1
+# 3      magrittr           1.5
+# 4          plyr         1.8.4
+# 5  RColorBrewer         1.1-2
+# 6         RCurl     1.95-4.12
+# 7        readxl         1.3.1
+# 8       tidylog         0.1.0
+# 9         tidyr         0.8.3
+# 10      viridis         0.5.1
 
 #==** Read data ====
 # Will crate a csv that one can read directly once data collection is finished.
@@ -80,6 +84,8 @@ ggplot(dat, aes(env_temp_mid)) +
 # Relative to temp in environment
 dat$env_temp_mid_norm <- dat$temp_c - dat$env_temp_mid
 
+# Relative to "preferred" temp (not all species have this info)
+dat$pref_temp_mid_norm <- dat$temp_c - dat$pref_temp_mid
 
 #==** Plot general data ==== 
 ##-- Trophic level
@@ -195,6 +201,7 @@ dat %>%
 
 
 #==** Plot response variable ==== 
+#==**** Interspecific ==== 
 ##-- All exponents
 ggplot(dat, aes(temp_c, b)) + 
   geom_point(size = 5, alpha = 0.7) +
@@ -224,136 +231,113 @@ ggplot(filter(dat, significant_size == "Y"), aes(temp_c, b, color = common_name)
   facet_wrap(~ rate) +
   NULL
 
-#### CONTINIUE FROM HERE ####
-
-
-
-
-
 ##-- Temperature centered to env. midpoint from fishbase
-ggplot(filter(dat, significant_size == "Y"), aes(env_temp_mid_ct, b)) + 
-  ylim(0, 1.2) +
-  geom_point(size = 5, alpha = 0.7) +
-  stat_smooth(method = "lm") +
-  theme_classic(base_size = 15) +
-  NULL
-
-# temperature centered to env. midpoint from fishbase, species grouping
 ggplot(filter(dat, significant_size == "Y"), 
-       aes(env_temp_mid_ct, b, color = species)) + 
-  geom_point(size = 5, alpha = 0.7) +
+       aes(env_temp_mid_norm, b)) + 
+  geom_point(size = 6, fill = "black", 
+             color = "white", shape = 21, alpha = 0.5) +
   theme_classic(base_size = 15) +
-  ylim(0, 1.2) +
-  stat_smooth(method = "lm", se = F, alpha = 0.2) +
-  stat_smooth(aes(group = lm_all), method = "lm", 
-              colour = "black", size = 3, alpha = 0.2) +
-  scale_color_manual(values = colorRampPalette(brewer.pal(8, "Dark2"))(colourCount)) +
+  stat_smooth(method = "lm", se = F, size = 2) +
+  guides(color = FALSE) +
+  scale_color_manual(values = mycolors) + 
+  facet_wrap(~ rate) +
   NULL
 
-# filter species with pref temp and plot b~pref_temp
+##-- Temperature centered to env. midpoint from fishbase, species lines
+ggplot(filter(dat, significant_size == "Y"), 
+       aes(env_temp_mid_norm, b, color = common_name)) + 
+  geom_point(size = 5) +
+  theme_classic(base_size = 15) +
+  stat_smooth(method = "lm", se = F, size = 2) +
+  guides(color = FALSE) +
+  scale_color_manual(values = mycolors) + 
+  facet_wrap(~ rate) +
+  NULL
+
+##-- Filter species with pref temp and plot b~pref_temp (Appendix analysis)
 ggplot(filter(dat, significant_size == "Y" & pref_temp_mid > 0), 
        aes(pref_temp_mid, b)) + 
   geom_point(size = 5, alpha = 0.7) +
   stat_smooth(method = "lm") +
   theme_classic(base_size = 15) +
+  facet_wrap(~rate) +
   NULL
 
-# filter species with pref temp and plot b~pref_temp_centered
+##-- Filter species with pref temp and plot b~pref_temp_centered
 ggplot(filter(dat, significant_size == "Y" & pref_temp_mid > 0), 
-       aes(pref_temp_mid_ct, b)) + 
+       aes(pref_temp_mid_norm, b)) + 
   geom_point(size = 5, alpha = 0.7) +
   stat_smooth(method = "lm") +
   theme_classic(base_size = 15) +
+  facet_wrap(~rate) +
   NULL
 
-
-##-- Intraspecific data:
+#==**** Intraspecific ==== 
 s_dat <- dat %>% 
   filter(significant_size == "Y") %>% 
   group_by(common_name) %>% 
   filter(n()>1)
 
-# plot all intra-specific data
+##-- Plot all intra-specific data
 ggplot(s_dat, aes(temp_c, b)) + 
   geom_point(size = 5, alpha = 0.7) +
   theme_classic(base_size = 15) +
+  facet_wrap(~rate) +
   NULL
 
-# add in species-specific lines
-colourCount <- length(unique(s_dat$common_name)) # number of levels
+##-- Species specific lines
+nb.cols <- length(unique(s_dat$species))
+mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
 
 ggplot(s_dat, aes(temp_c, b, color = common_name)) + 
-  geom_point(size = 5, alpha = 0.7) +
+  geom_point(size = 5) +
   theme_classic(base_size = 15) +
-  stat_smooth(method = "lm", se = F) +
-  stat_smooth(aes(group = lm_all), method = "lm", colour = "black", size = 3) +
-  scale_color_manual(values = colorRampPalette(brewer.pal(8, "Dark2"))(colourCount)) +
+  stat_smooth(method = "lm", se = F, size = 2) +
+  guides(color = FALSE) +
+  scale_color_manual(values = mycolors) + 
+  facet_wrap(~ rate) +
   NULL
 
-# plotting temp as difference between fishbase temp
-ggplot(s_dat, aes(env_temp_mid_ct, b)) + 
-  geom_point(size = 5, alpha = 0.7) +
+##-- Temperature centered to env. midpoint from fishbase
+ggplot(s_dat, aes(env_temp_mid_norm, b)) + 
+  geom_point(size = 6, fill = "black", 
+             color = "white", shape = 21, alpha = 0.5) +
   theme_classic(base_size = 15) +
-  stat_smooth(aes(group = lm_all), method = "lm", colour = "black", size = 3) +
+  stat_smooth(method = "lm", se = F, size = 2) +
+  guides(color = FALSE) +
+  scale_color_manual(values = mycolors) + 
+  facet_wrap(~ rate) +
   NULL
 
-summary(lm(s_dat$b ~ s_dat$env_temp_mid_ct))
-
-# add in species colour
-ggplot(s_dat, aes(env_temp_mid_ct, b, color = common_name)) + 
-  geom_point(size = 5, alpha = 0.7) +
+##-- Temperature centered to env. midpoint from fishbase, species lines
+ggplot(s_dat, aes(env_temp_mid_norm, b, color = common_name)) + 
+  geom_point(size = 5) +
   theme_classic(base_size = 15) +
-  stat_smooth(method = "lm", se = F) +
-  stat_smooth(aes(group = lm_all), method = "lm", colour = "black", size = 3) +
-  scale_color_manual(values = colorRampPalette(brewer.pal(8, "Dark2"))(colourCount)) +
+  stat_smooth(method = "lm", se = F, size = 2) +
+  guides(color = FALSE) +
+  scale_color_manual(values = mycolors) + 
+  facet_wrap(~ rate) +
   NULL
 
-ggplot(s_dat, aes(pref_temp_mid_ct, b)) + 
-  geom_point(size = 5, alpha = 0.7) +
-  theme_classic(base_size = 15) +
-  stat_smooth(aes(group = lm_all), method = "lm", colour = "black", size = 3) +
+##-- Comparing Cmax and metabolism exponents
+# Rainclouds with boxplots
+# source code from github
+ggplot(s_dat, aes(x = rate, y = b, fill = rate, colour = rate))+
+  geom_flat_violin(position = position_nudge(x = .25, y = 0), adjust = 2, trim = FALSE, alpha = 0.8)+
+  geom_point(position = position_jitter(width = .15), size = 3, alpha = 0.8)+
+  geom_boxplot(aes(x = rate, y = b),
+               outlier.shape = NA, alpha = 0.3, width = .2, color = "black", size = 1) +
+  coord_flip() + 
+  guides(fill = FALSE, colour = FALSE) +
+  scale_colour_brewer(palette = "Set2") +
+  scale_fill_brewer(palette = "Set2") +
+  theme_classic(base_size = 20) +
   NULL
 
-# plotting temp as difference between mean in experiment
-ggplot(s_dat, aes(temp_c_ct, b)) + 
-  geom_point(size = 5, alpha = 0.7) +
-  theme_classic(base_size = 15) +
-  stat_smooth(aes(group = lm_all), method = "lm", colour = "black", size = 3) +
-  NULL
+summary(lm(b~rate, data=s_dat))
 
-## CORRECT
-ggplot(s_dat, aes(temp_c_ct2, b)) + 
-  geom_point(size = 5, alpha = 0.7) +
-  theme_classic(base_size = 15) +
-  stat_smooth(aes(group = lm_all), method = "lm", colour = "black", size = 3) +
-  NULL
+  
 
-## Not a good methods anyway because of the plot showing they experimental temepratures are differently spread around environmental temperature
-
-# plot normalized constant a within species
-s_dat %>% 
-  group_by(species) %>%
-  mutate(a_norm = (a - min(a))/(max(a) - min(a))) %>%   
-  ggplot(., aes(env_temp_mid_ct, a_norm)) + 
-  theme_classic(base_size = 15) +
-  geom_point(size = 5, alpha = 0.5) +
-  stat_smooth(span = 1, se = F, size = 3, col = "black") +
-  #scale_color_manual(values = colorRampPalette(brewer.pal(8, "Dark2"))(colourCount)) +
-  NULL
-
-# species unique slopes
-s_dat %>% 
-  group_by(common_name) %>%
-  filter(max(a) < 1000) %>% 
-  mutate(a_norm = (a - min(a))/(max(a) - min(a))) %>%   
-  ggplot(., aes(env_temp_mid_ct, a_norm, color = common_name)) + 
-  geom_point(size = 2, alpha = 0.7) +
-  facet_wrap(~species, scales = "free") +
-  theme_classic(base_size = 15) +
-  stat_smooth(se = F, span = 1) +
-  guides(color = F) +
-  scale_color_manual(values = colorRampPalette(brewer.pal(8, "Dark2"))(colourCount)) +
-  NULL
 
 # b vs log max size
 ggplot(dat, aes(log(w_max_published_g), b)) + 

@@ -22,7 +22,8 @@ pkgs <- c("dplyr",
           "ggplot2",
           "viridis",
           "plyr",
-          "RColorBrewer")
+          "RColorBrewer",
+          "magrittr")
 
 # Install packages
 #install.packages(pkgs)
@@ -34,8 +35,8 @@ lapply(pkgs, library, character.only = TRUE)
 # x <- devtools::session_info(pkgs = pkgs)
 # x <- as.data.frame(x$packages)
 # x <- dplyr::filter(x, package %in% pkgs) %>% 
-# dplyr::select(-`*`, -date, -source) %>% 
-# dplyr::arrange(package)
+#  dplyr::select("package", "loadedversion") %>% 
+#  dplyr::arrange(package)
 # x
 
 # package   version

@@ -18,7 +18,8 @@ pkgs <- c("dplyr",
           "tidyr",
           "tidylog",
           "readxl",
-          "RCurl")
+          "RCurl",
+          "magrittr")
 
 ## Install packages
 #install.packages(pkgs)
@@ -26,12 +27,12 @@ pkgs <- c("dplyr",
 ## Load all packages
 lapply(pkgs, library, character.only = TRUE)
 
-## Print package version
+# Print package version
 # x <- devtools::session_info(pkgs = pkgs)
 # x <- as.data.frame(x$packages)
 # x <- dplyr::filter(x, package %in% pkgs) %>% 
-# dplyr::select(-`*`, -date, -source) %>% 
-# dplyr::arrange(package)
+#  dplyr::select("package", "loadedversion") %>% 
+#  dplyr::arrange(package)
 # x
 
 # package   version
