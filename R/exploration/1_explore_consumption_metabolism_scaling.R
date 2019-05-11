@@ -13,7 +13,7 @@
 rm(list = ls())
 
 #==** Load packages ====
-# Provide package names
+## Provide package names
 pkgs <- c("dplyr",
           "tidyr",
           "tidylog",
@@ -25,15 +25,15 @@ pkgs <- c("dplyr",
           "RColorBrewer",
           "magrittr")
 
-# Install packages
-if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
-  install.packages(setdiff(packages, rownames(installed.packages())))
+## Install packages
+if (length(setdiff(pkgs, rownames(installed.packages()))) > 0) {
+  install.packages(setdiff(pkgs, rownames(installed.packages())))
 }
 
-# Load all packages
+## Load all packages
 lapply(pkgs, library, character.only = TRUE)
 
-# Print package version
+## Print package version
 # x <- devtools::session_info(pkgs = pkgs)
 # x <- as.data.frame(x$packages)
 # x <- dplyr::filter(x, package %in% pkgs) %>% 
@@ -272,6 +272,45 @@ ggplot(filter(dat, significant_size == "Y" & pref_temp_mid > 0),
   facet_wrap(~rate) +
   NULL
 
+##-- b vs log max size
+ggplot(dat, aes(log(w_max_published_g), b)) + 
+  theme_classic(base_size = 15) +
+  geom_point(size = 4, alpha = 0.7) + 
+  facet_wrap(~rate) +
+  NULL
+
+##-- b vs trophic level
+ggplot(dat, aes(trophic_level, b)) + 
+  theme_classic(base_size = 15) +
+  geom_point(size = 5, alpha = 0.7) +
+  facet_wrap(~rate) +
+  NULL
+
+##-- b vs lifestyle
+ggplot(dat, aes(lifestyle, b)) + 
+  theme_classic(base_size = 15) +
+  geom_point(size = 5, alpha = 0.7) +
+  geom_boxplot() +
+  facet_wrap(~rate) +
+  NULL
+
+##-- b vs biogeography
+ggplot(dat, aes(biogeography, b)) + 
+  theme_classic(base_size = 15) +
+  geom_point(size = 5, alpha = 0.7) +
+  geom_boxplot() +
+  facet_wrap(~rate) +
+  NULL
+
+##-- b vs genus
+ggplot(dat, aes(genus, b)) + 
+  theme_classic(base_size = 15) +
+  geom_point(size = 5, alpha = 0.7) +
+  geom_boxplot() +
+  facet_wrap(~rate) +
+  NULL
+
+
 #==**** Intraspecific ==== 
 s_dat <- dat %>% 
   filter(significant_size == "Y") %>% 
@@ -321,74 +360,31 @@ ggplot(s_dat, aes(env_temp_mid_norm, b, color = common_name)) +
 
 ##-- Comparing Cmax and metabolism exponents
 # Rainclouds with boxplots
-# source code from github
+# source code from github:
+script <- getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/raincloud_plot.R", ssl.verifypeer = FALSE)
+
+eval(parse(text = script))
+
+nb.cols <- 8
+
+mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
+
 ggplot(s_dat, aes(x = rate, y = b, fill = rate, colour = rate))+
   geom_flat_violin(position = position_nudge(x = .25, y = 0), adjust = 2, trim = FALSE, alpha = 0.8)+
-  geom_point(position = position_jitter(width = .15), size = 3, alpha = 0.8)+
+  geom_point(position = position_jitter(width = .15), size = 3, alpha = 1)+
   geom_boxplot(aes(x = rate, y = b),
                outlier.shape = NA, alpha = 0.3, width = .2, color = "black", size = 1) +
   coord_flip() + 
   guides(fill = FALSE, colour = FALSE) +
-  scale_colour_brewer(palette = "Set2") +
-  scale_fill_brewer(palette = "Set2") +
+  scale_color_manual(values = mycolors) + 
+  scale_fill_manual(values = mycolors) + 
   theme_classic(base_size = 20) +
+  labs(y = "Size-scaling exponent", x = "Rate") +
   NULL
 
 summary(lm(b~rate, data=s_dat))
 
   
-
-
-# b vs log max size
-ggplot(dat, aes(log(w_max_published_g), b)) + 
-  theme_classic(base_size = 15) +
-  geom_point(size = 5, alpha = 0.7) +
-  scale_color_manual(values = colorRampPalette(brewer.pal(8, "Dark2"))(colourCount)) +
-  NULL
-
-# b vs trophic level
-ggplot(dat, aes(trophic_level, b)) + 
-  theme_classic(base_size = 15) +
-  geom_point(size = 5, alpha = 0.7) +
-  scale_color_manual(values = colorRampPalette(brewer.pal(8, "Dark2"))(colourCount)) +
-  NULL
-
-# b vs lifestyle
-ggplot(dat, aes(lifestyle, b)) + 
-  theme_classic(base_size = 15) +
-  geom_point(size = 5, alpha = 0.7) +
-  geom_boxplot() +
-  scale_color_manual(values = colorRampPalette(brewer.pal(8, "Dark2"))(colourCount)) +
-  NULL
-
-# b vs biogeography
-ggplot(dat, aes(biogeography, b)) + 
-  theme_classic(base_size = 15) +
-  geom_point(size = 5, alpha = 0.7) +
-  geom_boxplot() +
-  scale_color_manual(values = colorRampPalette(brewer.pal(8, "Dark2"))(colourCount)) +
-  NULL
-
-# b vs genus
-ggplot(dat, aes(genus, b)) + 
-  theme_classic(base_size = 15) +
-  geom_point(size = 5, alpha = 0.7) +
-  geom_boxplot() +
-  scale_color_manual(values = colorRampPalette(brewer.pal(8, "Dark2"))(colourCount)) +
-  NULL
-
-# b vs difference between max size and max size in experiment
-colourCount <- length(unique(dat$common_name)) # number of levels
-getPalette <- colorRampPalette(brewer.pal(8, "Dark2"))
-
-dat %>% 
-  mutate(size_ratio = max_mass_g/w_max_published_g) %>% 
-  ggplot(., aes(size_ratio, b, color = common_name)) + 
-  theme_classic(base_size = 15) +
-  geom_point(size = 5, alpha = 0.7) +
-  scale_color_manual(values = colorRampPalette(brewer.pal(8, "Dark2"))(colourCount)) +
-  NULL
-
 
 
 

@@ -22,7 +22,9 @@ pkgs <- c("dplyr",
           "magrittr")
 
 ## Install packages
-#install.packages(pkgs)
+if (length(setdiff(pkgs, rownames(installed.packages()))) > 0) {
+  install.packages(setdiff(pkgs, rownames(installed.packages())))
+}
 
 ## Load all packages
 lapply(pkgs, library, character.only = TRUE)
