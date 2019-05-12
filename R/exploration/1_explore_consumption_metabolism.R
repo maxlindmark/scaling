@@ -31,12 +31,8 @@ pkgs <- c("dplyr",
 lapply(pkgs, library, character.only = TRUE)
 
 # Print package version
-# x <- devtools::session_info(pkgs = pkgs)
-# x <- as.data.frame(x$packages)
-# x <- dplyr::filter(x, package %in% pkgs) %>% 
-# dplyr::select(-`*`, -date, -source) %>% 
-# dplyr::arrange(package)
-# x
+script <- getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/functions/package_info.R", ssl.verifypeer = FALSE)
+pkg_info(pkgs)
 
 # package   version
 # 1        dplyr   0.8.0.1

@@ -13,7 +13,7 @@
 rm(list = ls())
 
 #==** Load packages ====
-## Provide package names
+# Provide package names
 pkgs <- c("dplyr",
           "tidyr",
           "tidylog",
@@ -25,21 +25,17 @@ pkgs <- c("dplyr",
           "RColorBrewer",
           "magrittr")
 
-## Install packages
+# Install packages
 if (length(setdiff(pkgs, rownames(installed.packages()))) > 0) {
   install.packages(setdiff(pkgs, rownames(installed.packages())))
 }
 
-## Load all packages
+# Load all packages
 lapply(pkgs, library, character.only = TRUE)
 
-## Print package version
-# x <- devtools::session_info(pkgs = pkgs)
-# x <- as.data.frame(x$packages)
-# x <- dplyr::filter(x, package %in% pkgs) %>% 
-#  dplyr::select("package", "loadedversion") %>% 
-#  dplyr::arrange(package)
-# x
+# Print package version
+script <- getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/functions/package_info.R", ssl.verifypeer = FALSE)
+pkg_info(pkgs)
 
 # package loadedversion
 # 1         dplyr       0.8.0.1
@@ -60,19 +56,28 @@ lapply(pkgs, library, character.only = TRUE)
 con <- read_excel("data/consumption_scaling_data.xlsx")
 met <- read_excel("data/metabolism_scaling_data.xlsx")
 
-con$rate <- "consumption"
-met$rate <- "metabolism"
-
-dat <- rbind(con, met)
-
 glimpse(dat)
 
 cols = c(1, 2, 3, 4, 5, 6, 7, 16, 17, 18, 19, 20, 21)
-dat[,cols] %<>% lapply(function(x) as.numeric(as.character(x)))
 
-glimpse(dat)
+con[,cols] %<>% lapply(function(x) as.numeric(as.character(x)))
+met[,cols] %<>% lapply(function(x) as.numeric(as.character(x)))
 
-unique(dat$species)
+con$rate <- "consumption"
+met$rate <- "metabolism"
+
+# Calculate mean b within species and rate
+con <- con %>% 
+  group_by(species, rate) %>% 
+  mutate(mean_b = ave(b, common_name))
+
+met <- met %>% 
+  group_by(species, rate) %>% 
+  mutate(mean_b = ave(b, common_name))
+
+dat <- rbind(con, met)
+
+dat$mean_b_ct <- dat$b - dat$mean_b
 
 #======== B. EXPLORE DATA ========
 #==** Normalize variables ==== 
@@ -88,7 +93,7 @@ dat$env_temp_mid_norm <- dat$temp_c - dat$env_temp_mid
 dat$pref_temp_mid_norm <- dat$temp_c - dat$pref_temp_mid
 
 #==** Plot general data ==== 
-##-- Trophic level
+#-- Trophic level
 ggplot(dat, aes(x = reorder(common_name, trophic_level), y = trophic_level)) +
   geom_point(stat = 'identity', size=6) +
   scale_fill_manual(name = "trophic_level") + 
@@ -100,7 +105,7 @@ ggplot(dat, aes(x = reorder(common_name, trophic_level), y = trophic_level)) +
   facet_wrap(~ rate) +
   NULL 
 
-##-- Temperature midpoint (Fishbase)
+#-- Temperature midpoint (Fishbase)
 ggplot(dat, aes(x = reorder(common_name, env_temp_mid), 
                 y = env_temp_mid)) +
   geom_point(stat = 'identity', size=5) +
@@ -113,7 +118,7 @@ ggplot(dat, aes(x = reorder(common_name, env_temp_mid),
   facet_wrap(~ rate) +
   NULL 
 
-##-- Mid env. temperature (Fishbase) compared to experimental temperature range
+#-- Mid env. temperature (Fishbase) compared to experimental temperature range
 dat %>% group_by(common_name) %>% 
   ggplot(., aes(x = reorder(common_name, env_temp_mid), 
                 y = env_temp_mid, color = "blue")) +
@@ -144,7 +149,7 @@ data.frame(t)
 
 # Utah chub, Stechlin cisco, Southern catfish have no temperature at all, will need to fix that
 
-##-- Max. published weight
+#-- Max. published weight
 ggplot(dat, aes(x = reorder(common_name, w_max_published_g), 
                 y = log10(w_max_published_g))) +
   geom_point(stat = 'identity', size=6) +
@@ -157,7 +162,7 @@ ggplot(dat, aes(x = reorder(common_name, w_max_published_g),
   facet_wrap(~ rate) +
   NULL 
 
-##-- Phylogeny
+#-- Phylogeny
 nb.cols <- length(unique(dat$species))
 mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
 
@@ -171,7 +176,7 @@ dat %>% distinct(common_name, .keep_all = TRUE) %>%
   NULL
 # Doesn't seem like we can do much about phyologey here..
 
-##-- Biogeography
+#-- Biogeography
 nb.cols <- length(unique(dat$biogeography))
 mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
 
@@ -185,7 +190,7 @@ dat %>% distinct(common_name, .keep_all = TRUE) %>%
   facet_wrap(~ rate) +
   NULL
 
-##-- Lifestyle
+#-- Lifestyle
 nb.cols <- length(unique(dat$lifestyle))
 mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
 
@@ -202,7 +207,7 @@ dat %>%
 
 #==** Plot response variable ==== 
 #==**** Interspecific ==== 
-##-- All exponents
+#-- All exponents
 ggplot(dat, aes(temp_c, b)) + 
   geom_point(size = 5, alpha = 0.7) +
   theme_classic(base_size = 15) +
@@ -210,7 +215,7 @@ ggplot(dat, aes(temp_c, b)) +
   facet_wrap(~ rate) +
   NULL
 
-##-- Significant weight weight effects
+#-- Significant weight weight effects
 ggplot(filter(dat, significant_size == "Y"), aes(temp_c, b)) + 
   ylim(0, 1.2) +
   geom_point(size = 5, alpha = 0.7) +
@@ -218,7 +223,7 @@ ggplot(filter(dat, significant_size == "Y"), aes(temp_c, b)) +
   facet_wrap(~ rate) +
   NULL
 
-##-- Color by species and add species-lines
+#-- Color by species and add species-lines
 nb.cols <- length(unique(dat$species))
 mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
 
@@ -231,7 +236,7 @@ ggplot(filter(dat, significant_size == "Y"), aes(temp_c, b, color = common_name)
   facet_wrap(~ rate) +
   NULL
 
-##-- Temperature centered to env. midpoint from fishbase
+#-- Temperature centered to env. midpoint from fishbase
 ggplot(filter(dat, significant_size == "Y"), 
        aes(env_temp_mid_norm, b)) + 
   geom_point(size = 6, fill = "black", 
@@ -243,7 +248,7 @@ ggplot(filter(dat, significant_size == "Y"),
   facet_wrap(~ rate) +
   NULL
 
-##-- Temperature centered to env. midpoint from fishbase, species lines
+#-- Temperature centered to env. midpoint from fishbase, species lines
 ggplot(filter(dat, significant_size == "Y"), 
        aes(env_temp_mid_norm, b, color = common_name)) + 
   geom_point(size = 5) +
@@ -254,7 +259,7 @@ ggplot(filter(dat, significant_size == "Y"),
   facet_wrap(~ rate) +
   NULL
 
-##-- Filter species with pref temp and plot b~pref_temp (Appendix analysis)
+#-- Filter species with pref temp and plot b~pref_temp (Appendix analysis)
 ggplot(filter(dat, significant_size == "Y" & pref_temp_mid > 0), 
        aes(pref_temp_mid, b)) + 
   geom_point(size = 5, alpha = 0.7) +
@@ -263,7 +268,7 @@ ggplot(filter(dat, significant_size == "Y" & pref_temp_mid > 0),
   facet_wrap(~rate) +
   NULL
 
-##-- Filter species with pref temp and plot b~pref_temp_centered
+#-- Filter species with pref temp and plot b~pref_temp_centered
 ggplot(filter(dat, significant_size == "Y" & pref_temp_mid > 0), 
        aes(pref_temp_mid_norm, b)) + 
   geom_point(size = 5, alpha = 0.7) +
@@ -272,21 +277,21 @@ ggplot(filter(dat, significant_size == "Y" & pref_temp_mid > 0),
   facet_wrap(~rate) +
   NULL
 
-##-- b vs log max size
+#-- b vs log max size
 ggplot(dat, aes(log(w_max_published_g), b)) + 
   theme_classic(base_size = 15) +
   geom_point(size = 4, alpha = 0.7) + 
   facet_wrap(~rate) +
   NULL
 
-##-- b vs trophic level
+#-- b vs trophic level
 ggplot(dat, aes(trophic_level, b)) + 
   theme_classic(base_size = 15) +
   geom_point(size = 5, alpha = 0.7) +
   facet_wrap(~rate) +
   NULL
 
-##-- b vs lifestyle
+#-- b vs lifestyle
 ggplot(dat, aes(lifestyle, b)) + 
   theme_classic(base_size = 15) +
   geom_point(size = 5, alpha = 0.7) +
@@ -294,7 +299,7 @@ ggplot(dat, aes(lifestyle, b)) +
   facet_wrap(~rate) +
   NULL
 
-##-- b vs biogeography
+#-- b vs biogeography
 ggplot(dat, aes(biogeography, b)) + 
   theme_classic(base_size = 15) +
   geom_point(size = 5, alpha = 0.7) +
@@ -302,7 +307,7 @@ ggplot(dat, aes(biogeography, b)) +
   facet_wrap(~rate) +
   NULL
 
-##-- b vs genus
+#-- b vs genus
 ggplot(dat, aes(genus, b)) + 
   theme_classic(base_size = 15) +
   geom_point(size = 5, alpha = 0.7) +
@@ -314,17 +319,19 @@ ggplot(dat, aes(genus, b)) +
 #==**** Intraspecific ==== 
 s_dat <- dat %>% 
   filter(significant_size == "Y") %>% 
-  group_by(common_name) %>% 
+  group_by(common_name, rate) %>% 
   filter(n()>1)
 
-##-- Plot all intra-specific data
+data.frame(s_dat)
+
+#-- Plot all intra-specific data
 ggplot(s_dat, aes(temp_c, b)) + 
   geom_point(size = 5, alpha = 0.7) +
   theme_classic(base_size = 15) +
   facet_wrap(~rate) +
   NULL
 
-##-- Species specific lines
+#-- Species specific lines
 nb.cols <- length(unique(s_dat$species))
 mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
 
@@ -337,7 +344,7 @@ ggplot(s_dat, aes(temp_c, b, color = common_name)) +
   facet_wrap(~ rate) +
   NULL
 
-##-- Temperature centered to env. midpoint from fishbase
+#-- Temperature centered to env. midpoint from fishbase
 ggplot(s_dat, aes(env_temp_mid_norm, b)) + 
   geom_point(size = 6, fill = "black", 
              color = "white", shape = 21, alpha = 0.5) +
@@ -348,7 +355,18 @@ ggplot(s_dat, aes(env_temp_mid_norm, b)) +
   facet_wrap(~ rate) +
   NULL
 
-##-- Temperature centered to env. midpoint from fishbase, species lines
+#-- Centered b across species
+ggplot(s_dat, aes(env_temp_mid_norm, mean_b_ct)) + 
+  geom_point(size = 6, fill = "black", 
+             color = "white", shape = 21, alpha = 0.5) +
+  theme_classic(base_size = 15) +
+  stat_smooth(method = "lm", se = F, size = 2) +
+  guides(color = FALSE) +
+  scale_color_manual(values = mycolors) + 
+  facet_wrap(~ rate) +
+  NULL
+
+#-- Temperature centered to env. midpoint from fishbase, species lines
 ggplot(s_dat, aes(env_temp_mid_norm, b, color = common_name)) + 
   geom_point(size = 5) +
   theme_classic(base_size = 15) +
@@ -358,10 +376,20 @@ ggplot(s_dat, aes(env_temp_mid_norm, b, color = common_name)) +
   facet_wrap(~ rate) +
   NULL
 
-##-- Comparing Cmax and metabolism exponents
+s_dat %>% 
+  filter(rate == "consumption") %>%
+  ggplot(., aes(env_temp_mid_norm, b, color = common_name)) + 
+  geom_point(size = 5) +
+  theme_classic(base_size = 15) +
+  stat_smooth(method = "lm", se = F, size = 2) +
+  scale_color_manual(values = mycolors) + 
+  NULL
+
+
+#-- Comparing Cmax and metabolism exponents
 # Rainclouds with boxplots
 # source code from github:
-script <- getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/raincloud_plot.R", ssl.verifypeer = FALSE)
+script <- getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/functions/raincloud_plot.R", ssl.verifypeer = FALSE)
 
 eval(parse(text = script))
 

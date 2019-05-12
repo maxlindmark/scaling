@@ -13,7 +13,7 @@
 rm(list = ls())
 
 #==** Load packages ====
-## Provide package names
+# Provide package names
 pkgs <- c("dplyr",
           "tidyr",
           "tidylog",
@@ -25,21 +25,17 @@ pkgs <- c("dplyr",
           "RColorBrewer",
           "magrittr")
 
-## Install packages
+# Install packages
 if (length(setdiff(pkgs, rownames(installed.packages()))) > 0) {
   install.packages(setdiff(pkgs, rownames(installed.packages())))
 }
 
-## Load all packages
+# Load all packages
 lapply(pkgs, library, character.only = TRUE)
 
-## Print package version
-# x <- devtools::session_info(pkgs = pkgs)
-# x <- as.data.frame(x$packages)
-# x <- dplyr::filter(x, package %in% pkgs) %>% 
-#  dplyr::select("package", "loadedversion") %>% 
-#  dplyr::arrange(package)
-# x
+# Print package version
+script <- getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/functions/package_info.R", ssl.verifypeer = FALSE)
+pkg_info(pkgs)
 
 # package   version
 # 1        dplyr   0.8.0.1
@@ -70,7 +66,7 @@ unique(dat$species)
 
 #======== B. EXPLORE DATA ========
 #==** General ====
-##-- Trophic level
+#-- Trophic level
 ggplot(dat, aes(x = reorder(common_name, trophic_level), y = trophic_level)) +
   geom_point(stat = 'identity', size=6) +
   scale_fill_manual(name = "trophic_level") + 
@@ -81,7 +77,7 @@ ggplot(dat, aes(x = reorder(common_name, trophic_level), y = trophic_level)) +
   coord_flip() +
   NULL 
 
-##-- Max. published weight
+#-- Max. published weight
 ggplot(dat, aes(x = reorder(common_name, w_max_published_g), 
                 y = log10(w_max_published_g))) +
   geom_point(stat = 'identity', size=6) +
@@ -93,7 +89,7 @@ ggplot(dat, aes(x = reorder(common_name, w_max_published_g),
   coord_flip() +
   NULL 
 
-##-- Phylogeny
+#-- Phylogeny
 nb.cols <- length(unique(dat$species))
 mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
 
@@ -105,7 +101,7 @@ dat %>% distinct(common_name, .keep_all = TRUE) %>%
   scale_fill_manual(values = mycolors) +
   NULL
 
-##-- Biogeography
+#-- Biogeography
 dat %>% distinct(common_name, .keep_all = TRUE) %>% 
   ggplot(., aes(biogeography, fill = biogeography)) +
   geom_bar() +
@@ -115,7 +111,7 @@ dat %>% distinct(common_name, .keep_all = TRUE) %>%
   scale_fill_manual(values = mycolors) +
   NULL
 
-##-- Lifestyle
+#-- Lifestyle
 dat %>% 
   distinct(common_name, .keep_all = TRUE) %>% 
   ggplot(., aes(habitat, fill  = lifestyle)) +
@@ -152,31 +148,31 @@ dat <- dat %>% filter(mass > 0)
 dat$mass_norm <- dat$mass / dat$w_max_published_g
 
 #====**** All data (also n=1 species) ========
-##-- Non-normalized mass
+#-- Non-normalized mass
 ggplot(dat, aes(mass, opt_temp_c)) + 
   geom_point(size = 5, alpha = 0.7) +
   theme_classic(base_size = 15) +
   NULL
 
-##-- Log10 mass
+#-- Log10 mass
 ggplot(dat, aes(log10(mass), opt_temp_c)) + 
   geom_point(size = 5, alpha = 0.7) +
   theme_classic(base_size = 15) +
   NULL
 
-##-- Normalized mass
+#-- Normalized mass
 ggplot(dat, aes(mass_norm, opt_temp_c)) + 
   geom_point(size = 5, alpha = 0.7) +
   theme_classic(base_size = 15) +
   NULL
 
-##-- Log10 normalized mass
+#-- Log10 normalized mass
 ggplot(dat, aes(log10(mass_norm), opt_temp_c)) + 
   geom_point(size = 5, alpha = 0.7) +
   theme_classic(base_size = 15) +
   NULL
 
-##-- Log10 normalized mass color species
+#-- Log10 normalized mass color species
 ggplot(dat, aes(log10(mass_norm), opt_temp_c, color = common_name)) + 
   geom_point(size = 5, alpha = 0.8) +
   geom_line(size = 3, alpha = 0.8) +
@@ -189,7 +185,7 @@ s_dat <- dat %>%
   group_by(common_name) %>% 
   filter(n()>1)
 
-##-- Split window by species
+#-- Split window by species
 ggplot(s_dat, aes(log10(mass_norm), opt_temp_c, color = common_name)) + 
   geom_line(size = 4, alpha = 0.4) +
   geom_point(size = 4, alpha = 1) +
@@ -199,7 +195,7 @@ ggplot(s_dat, aes(log10(mass_norm), opt_temp_c, color = common_name)) +
   scale_color_viridis(discrete = TRUE) +
   NULL
 
-##-- Log10 normalized mass color species
+#-- Log10 normalized mass color species
 ggplot(s_dat, aes(log10(mass_norm), opt_temp_c, color = common_name)) + 
   geom_point(size = 5, alpha = 0.7) +
   geom_line(size = 3, alpha = 0.2) +
@@ -244,7 +240,7 @@ summary(lm(s_dat$opt_temp_c_ct ~ log10(s_dat$mass_norm)))
 
 
 #====**** Extra ========
-##-- Growth rate at optimum over size 
+#-- Growth rate at optimum over size 
 ggplot(s_dat, aes(log10(mass_norm), `growth_rate_%day-1`, 
                   color = common_name)) + 
   geom_point(size = 5, alpha = 0.7) +
@@ -266,7 +262,7 @@ summary(lm(log(s_dat$growth_rate) ~ log(s_dat$mass)))
 # No one has done this for intraspecific growth and not using only optimum temperatures!
 # See Barneche's new paper for references on this...
 
-##-- Growth rate over temp
+#-- Growth rate over temp
 ggplot(s_dat, aes(opt_temp_c_ct, growth_rate, 
                   color = common_name)) + 
   geom_point(size = 7, alpha = 0.7) +

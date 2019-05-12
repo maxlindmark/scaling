@@ -13,7 +13,7 @@
 rm(list = ls())
 
 #====**** Load packages ========
-## Provide package names
+# Provide package names
 pkgs <- c("dplyr",
           "tidyr",
           "tidylog",
@@ -21,21 +21,17 @@ pkgs <- c("dplyr",
           "RCurl",
           "magrittr")
 
-## Install packages
+# Install packages
 if (length(setdiff(pkgs, rownames(installed.packages()))) > 0) {
   install.packages(setdiff(pkgs, rownames(installed.packages())))
 }
 
-## Load all packages
+# Load all packages
 lapply(pkgs, library, character.only = TRUE)
 
 # Print package version
-# x <- devtools::session_info(pkgs = pkgs)
-# x <- as.data.frame(x$packages)
-# x <- dplyr::filter(x, package %in% pkgs) %>% 
-#  dplyr::select("package", "loadedversion") %>% 
-#  dplyr::arrange(package)
-# x
+script <- getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/functions/package_info.R", ssl.verifypeer = FALSE)
+pkg_info(pkgs)
 
 # package   version
 # 1   dplyr   0.8.0.1
