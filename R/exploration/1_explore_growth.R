@@ -35,6 +35,7 @@ lapply(pkgs, library, character.only = TRUE)
 
 # Print package version
 script <- getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/functions/package_info.R", ssl.verifypeer = FALSE)
+eval(parse(text = script))
 pkg_info(pkgs)
 
 # package   version
