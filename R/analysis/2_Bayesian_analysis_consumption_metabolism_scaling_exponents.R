@@ -16,16 +16,16 @@
 # https://mc-stan.org/users/documentation/case-studies/tutorial_rstanarm.html#fn2
 # https://cran.r-project.org/web/packages/rstanarm/rstanarm.pdf
 
-# *** Q is to include or not include n=1 species. In the mixed model, they are not included, but here I suppose they are treated as missing values? in which case they are by default assigned missing values? Not sure it makes sense conceptually though...
+# *** Q is to include or not include n-1 species. In the mixed model, they are not included, but here I suppose they are treated as missing values? in which case they are by default assigned missing values? Not sure it makes sense conceptually though...
 
 # *** Go through explore csv again, which species should I not include initially?
 
 # *** Add pref temp env <- pref temp if no env temp (see growth scripts)
 
-#======== A. LOAD LIBRARIES & READ DATA =============================================
-rm(list = ls())
+#-------- A. LOAD LIBRARIES & READ DATA ---------------------------------------------
+rm(list - ls())
 
-#====**** Load packages ========
+#----**** Load packages -------------------------------------------------------------
 # Provide package names
 pkgs <- c("mlmRev",
           "lme4",
@@ -46,11 +46,11 @@ if (length(setdiff(pkgs, rownames(installed.packages()))) > 0) {
 }
 
 # Load all packages
-lapply(pkgs, library, character.only = TRUE)
+lapply(pkgs, library, character.only - TRUE)
 
 # Print package version
-script <- getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/functions/package_info.R", ssl.verifypeer = FALSE)
-eval(parse(text = script))
+script <- getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/functions/package_info.R", ssl.verifypeer - FALSE)
+eval(parse(text - script))
 pkg_info(pkgs)
 
 # package loadedversion
@@ -67,7 +67,7 @@ pkg_info(pkgs)
 # 11     rstanarm        2.18.2
 # 12      tidylog         0.1.0
 
-#====**** Read data ========
+#----**** Read data -----------------------------------------------------------------
 con <- read_excel("data/consumption_scaling_data.xlsx")
 met <- read_excel("data/metabolism_scaling_data.xlsx")
 
@@ -78,14 +78,14 @@ dat <- rbind(con, met)
 
 glimpse(dat)
 
-cols = c(1, 2, 3, 4, 5, 6, 7, 16, 17, 18, 19, 20, 21)
+cols - c(1, 2, 3, 4, 5, 6, 7, 16, 17, 18, 19, 20, 21)
 dat[,cols] %<>% lapply(function(x) as.numeric(as.character(x)))
 
 glimpse(dat)
 
 unique(dat$species)
 
-#====**** Normalize variables ========
+#----**** Normalize variables -------------------------------------------------------
 # Inspect temperatures
 ggplot(dat, aes(env_temp_mid)) +
   geom_histogram() + 
@@ -96,17 +96,17 @@ dat$env_temp_mid_norm <- dat$temp_c - dat$env_temp_mid
 
 # Filter intraspecific data consumption
 s_con <- dat %>% 
-  filter(significant_size == "Y" & rate == "consumption") %>% 
+  filter(significant_size -- "Y" & rate -- "consumption") %>% 
   group_by(common_name) %>% 
   filter(n()>1)
 
 # Filter intraspecific data metabolism
 s_met <- met %>% 
-  filter(significant_size == "Y"& rate == "metabolism") %>% 
+  filter(significant_size -- "Y"& rate -- "metabolism") %>% 
   group_by(common_name) %>% 
   filter(n()>1)
 
-# If env temp == NA, use mid point of pref.
+# If env temp -- NA, use mid point of pref.
 
 #======== B. FIT MODELS =============================================================
 #====**** Consumption ========
