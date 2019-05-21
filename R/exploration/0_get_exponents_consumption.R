@@ -1,4 +1,4 @@
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # 2019.05.02: Max Lindmark
 #
 # - This code estimates size-scaling exponents from data on the rate if it was not 
@@ -8,14 +8,13 @@
 #
 # B. Fit log-log model by species
 #
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#======== A. LOAD LIBRARIES & READ DATA =============================================
+#======== A. LOAD LIBRARIES & READ DATA ============================================
 rm(list = ls())
 
 # *** Not finished!
 
-#====**** Load packages ========
 # Provide package names
 pkgs <- c("dplyr",
           "tidyr",
@@ -44,7 +43,6 @@ pkg_info(pkgs)
 # 4 tidylog     0.1.0
 # 5   tidyr     0.8.3
 
-#====**** Read data ========
 # Will crate a csv that one can read once data collection is finished.
 # dat <- read_excel(text=GET("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/metabolism_data.xlsx"))
 
@@ -60,7 +58,7 @@ glimpse(dat)
 unique(dat$species)
 
 
-#======== B. FIT LOG-LOG MODEL BY SPECIES ===========================================
+#======== B. FIT LOG-LOG MODEL BY SPECIES ==========================================
 
 # check which species have "data" as source and redo them here
 

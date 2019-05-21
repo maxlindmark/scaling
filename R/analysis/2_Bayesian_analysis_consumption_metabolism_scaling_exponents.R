@@ -1,14 +1,14 @@
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # 2019.05.11: Max Lindmark
 #
-# - This code uses the rstanarm package to fit Bayesian hierarchical models using lme4
-#   syntax. 
+# - This code uses the rstanarm package to fit Bayesian hierarchical models using 
+#   lme4 syntax. 
 # 
 # A. Load libraries
 #
 # B. Fit model
 #
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 # This script is based on the following guides:
 # https://mc-stan.org/rstanarm/articles/rstanarm.html
@@ -22,7 +22,7 @@
 
 # *** Add pref temp env <- pref temp if no env temp (see growth scripts)
 
-#======== A. LOAD LIBRARIES & READ DATA =============================================
+#======== A. LOAD LIBRARIES & READ DATA ============================================
 rm(list = ls())
 
 # Provide package names
@@ -38,6 +38,8 @@ pkgs <- c("mlmRev",
           "dplyr",
           "plyr",
           "RColorBrewer")
+
+library(viridis)
 
 # Install packages
 if (length(setdiff(pkgs, rownames(installed.packages()))) > 0) {
@@ -107,10 +109,7 @@ s_met <- met %>%
 
 # If env temp == NA, use mid point of pref.
 
-#======== B. FIT MODEL: CONSUMPTION =============================================================
-#====**** Set up stan model ======================================================================
-# The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model, with the following syntax: lmer(b ~ temp_mid_ct + (temp_mid_ct | species), df_me)
-
+#======== B. CONSUMPTION ================================================
 # Plot data again
 nb.cols <- length(unique(s_con$species))
 mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
@@ -123,7 +122,9 @@ ggplot(s_con, aes(env_temp_mid_norm, b, color = species)) +
   scale_color_manual(values = mycolors)
 NULL
 
-#====**** Fit model =================================================================
+#====**** Set up stan model ========================================================
+# The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model, with the following syntax: lmer(b ~ temp_mid_ct + (temp_mid_ct | species), df_me)
+
 # *** dont rely on defaults, specify them for clarity and if defaults change...
 c1_stanlmer <- stan_lmer(formula = b ~ env_temp_mid_norm + (env_temp_mid_norm | species), 
                          data = s_con,
@@ -135,6 +136,8 @@ prior_summary(object = c1_stanlmer)
 # Print model summary
 print(c1_stanlmer, digits = 3)
 
+
+#====**** Check sampling quality & model convergence ===============================
 summary(c1_stanlmer, 
         probs = c(0.025, 0.975),
         digits = 5)
@@ -142,8 +145,18 @@ summary(c1_stanlmer,
 # *** What is difference from the previous mixed model? Which species have I removed? Fit mixed model and look at overall and species slope (not their CI, which is hard)
 # *** The exploring-data set should end with the selection I will use! Did I forget to list potentially wrong species?
 
+# Compare the observed distribution of b scores (dark blue line) to 100 simulated datasets from the posterior predictive distribution (light blue lines)
+pp_check(c1_stanlmer, nreps = 100)
+# pp_check(c1_stanlmer, plotfun = "stat_grouped", stat = "median", group = "species")
 
-#====**** Extract the posterior draws for all parameters ============================
+# Plot Rhat (1 is good)
+plot(c1_stanlmer, "rhat")
+
+# Plot ess
+plot(c1_stanlmer, "ess")
+
+
+#====**** Extract the posterior draws for all parameters ===========================
 sims <- as.matrix(c1_stanlmer)
 
 para_name <- colnames(sims)
@@ -194,49 +207,198 @@ species_b$pred_slope <- summaryc1_95$estimate
 species_b$pred_slope_lwr50 <- summaryc1_50$lower
 species_b$pred_slope_upr50 <- summaryc1_50$upper
 
-#====**** Plot species-prediction ===================================================
+#====**** Plot species-slopes ==================================================
 #blues <- colorRampPalette(brewer.pal(8, "Blues"))(9)
-pal <- colorRampPalette(brewer.pal(8, "Set1"))(9)
+pal <- colorRampPalette(brewer.pal(8, "Set1"))(10)
+pal2 <- viridis(n = 4)
 
 # Add overall mean 
 g_mean <- summary(c1_stanlmer, probs = c(0.025, 0.975), digits = 5)[2] # Get the slope
 g_mean_ci95 <- posterior_interval(c1_stanlmer, prob = 0.95, pars = "env_temp_mid_norm")
 
+# Scale parameters to make them slope, not diff from mean!
+pdat <- species_b
+pdat[, 3:9] <- sweep(species_b[, 3:9], 2, g_mean, FUN = "+")
+
+# Group species with "stronger" evidence
+pdat$sig <- ifelse(pdat$pred_slope < 0 & pdat$pred_slope_upr50 < 0, 
+                        2, -9)
+pdat$sig <- ifelse(pdat$pred_slope > 0 & pdat$pred_slope_lwr50 > 0, 
+                        1, pdat$sig )
+
 # Group positive and negative slopes
-species_b$sign <- ifelse(species_b$pred_slope < 0, "neg", "pos")
+pdat$sign <- ifelse(pdat$pred_slope < 0, "neg", "pos")
 
 # Reorder based on predicted slope
-ggplot(species_b, aes(reorder(species, pred_slope), pred_slope, 
-                      color = sign, shape = sign)) +
+ggplot(pdat, aes(reorder(species, pred_slope), pred_slope, shape = sign)) +
   geom_rect(data = species_b, aes(reorder(species, pred_slope), pred_slope),
             xmin = 0, xmax = 100, ymin = g_mean_ci95[1], ymax = g_mean_ci95[2],
-            color = "grey95", fill = "grey95") + # overplotting many rectangles here..
-  geom_hline(yintercept = 0, col = "black", linetype = 3, size = 1.1, alpha = 0.8) +
-  geom_hline(yintercept = g_mean, col = "red", linetype = 3, size = 1.1, alpha = 0.8) +
+            color = "grey93", fill = "grey93") + # overplotting many rectangles here..
+  geom_hline(yintercept = 0, col = "grey30", linetype = 1, size = 0.8, alpha = 0.5) +
+  geom_hline(yintercept = g_mean, col = pal[5], linetype = "twodash", size = 0.8, alpha = 0.7) +
   geom_errorbar(aes(reorder(species, pred_slope), 
                     ymin = pred_slope_lwr95, ymax = pred_slope_upr95), 
-                color = pal[4], size = 2, width = 0, alpha = 0.2) +
+                color = "gray20", size = 2, width = 0, alpha = 0.2) +
   geom_errorbar(aes(reorder(species, pred_slope), 
                     ymin = pred_slope_lwr90, ymax = pred_slope_upr90), 
-                color = pal[4], size = 2, width = 0, alpha = 0.4) +
+                color = "gray20", size = 2, width = 0, alpha = 0.3) +
   geom_errorbar(aes(reorder(species, pred_slope), 
                     ymin = pred_slope_lwr50, ymax = pred_slope_upr50), 
-                color = pal[4], size = 2, width = 0, alpha = 0.6) +
-  geom_point(size = 3) +
-  #guides(color = FALSE) + 
+                color = "gray20", size = 2, width = 0, alpha = 0.4) +
+  scale_fill_manual(values = pal[c(2, 1)]) +
+  scale_shape_manual(values = c(21, 23)) + 
+  geom_point(size = 2, fill = "gray30", alpha = 0.8, color = "white") +
+  geom_point(data = filter(pdat, sig > 0), 
+             aes(reorder(species, pred_slope), pred_slope, shape = sign, fill = factor(sig)), 
+             size = 2, alpha = 1, color = "white") +
   xlab("Species") + 
   ylab("Slope") +
   coord_flip() +
-  guides(color = FALSE, shape = FALSE) +
-  scale_color_manual(values = pal[c(1:2)]) + 
-  theme_classic(base_size = 13) +
-  theme(axis.text.y = element_text(size = 9, face = "italic"))
+  guides(color = FALSE, shape = FALSE, fill = FALSE) +
+  theme_classic(base_size = 11) +
+  theme(axis.text.y = element_text(size = 8, face = "italic")) +
+  theme(aspect.ratio = 1) +
+  ylim(min(pdat$pred_slope_lwr95), -1*min(pdat$pred_slope_lwr95)) +
   # theme(axis.text.y = element_blank()) + # If I end up with too many species
   NULL
 
-# *** Looks strange
-# Test same data with multiple lm's instead:
+ggsave("test.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm")
 
+
+#====**** Plot intercept (exponent at mid temp) ====================================
+inter <- tidy(c1_stanlmer, intervals = TRUE, prob =.95, 
+              parameters = "varying")
+
+inter <- inter %>% 
+  filter(term == "(Intercept)")
+
+inter$a <- inter$estimate + summary(c1_stanlmer, probs = c(0.025, 0.975), digits = 5)[1]
+
+ggplot(inter, aes(a)) +
+  geom_density(fill = pal[2], color = NA, alpha = 0.8) + 
+  coord_cartesian(xlim = c(0.39, 0.91), expand = c(0,0)) +
+  theme_classic(base_size = 15) +
+  geom_vline(xintercept = summary(c1_stanlmer, probs = c(0.025, 0.975), digits = 5)[1], 
+             size = 1.5, color = "gray20")
+  xlab("Intercept") +
+  theme(aspect.ratio = 1) +
+  NULL
+  
+# *** Need to check the arguments of this function...
+pp_check(c1_stanlmer) + 
+  theme(aspect.ratio = 1) +
+  theme_classic(base_size = 15)
+
+
+#====**** Plot overall prediction and data ====================================
+# Plot data again
+nb.cols <- length(unique(s_con$species))
+mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
+
+a <- summary(c1_stanlmer, probs = c(0.025, 0.975), digits = 5)[1]
+b <- summary(c1_stanlmer, probs = c(0.025, 0.975), digits = 5)[2]
+
+ggplot(s_con, aes(env_temp_mid_norm, b, color = species)) + 
+  geom_point(size = 5) +
+  geom_abline(intercept = a, slope = b, size = 2) +
+  theme_classic(base_size = 15) +
+  guides(color = FALSE) +
+  scale_color_manual(values = mycolors)
+NULL
+
+
+
+
+
+#------------------------------------ Testing raw stan 
+# The idea is to exactly reproduce the rstanarm model!
+
+# Check this for how to extract posterior distributions: http://www.maths.bath.ac.uk/~jjf23/stan/rbd.html
+
+# This is the main guide (paper): http://jakewestfall.org/misc/SorensenEtAl.pdf
+# and blog: https://cran.r-project.org/web/packages/rstan/vignettes/rstan.html
+
+# More examples here: http://www.maths.bath.ac.uk/~jjf23/stan/
+
+# Mathy paper here: https://arxiv.org/pdf/1506.06201.pdf and here https://pdfs.semanticscholar.org/d828/2c0cd55431b4fc7eaa0bceaa880ba1bafc34.pdf
+
+# Write a Stan Program
+stanmodel1 = "
+data {
+int<lower=0> J;          // number of schools 
+real y[J];               // estimated treatment effects
+real<lower=0> sigma[J];  // s.e. of effect estimates 
+}
+parameters {
+real mu; 
+real<lower=0> tau;
+vector[J] eta;
+}
+transformed parameters {
+vector[J] theta;
+theta = mu + tau * eta;
+}
+model {
+target += normal_lpdf(eta | 0, 1);
+target += normal_lpdf(y | theta, sigma);
+}
+"
+
+# Format data for Stan:
+stanDat <- list(subj = as.integer(s_con$subj),
+                item = as.integer(s_con$item),
+                rt = s_con$rt,
+                so = s_con$so,
+                N = nrow(s_con),
+                J = nlevels(s_con$subj),
+                K = nlevels(s_con$item))
+
+
+# Sample from the Posterior Distribution
+library(rstan)
+
+fit1 <- stan(
+  file = "schools.stan",  # Stan program
+  data = schools_data,    # named list of data
+  chains = 4,             # number of Markov chains
+  warmup = 1000,          # number of warmup iterations per chain
+  iter = 2000,            # total number of iterations per chain
+  cores = 2,              # number of cores (could use one per chain)
+  refresh = 0             # no progress shown
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#------------------------------------
+# Mixed model
+
+
+me1 <- lmer(b ~ env_temp_mid_norm + (env_temp_mid_norm | species), s_con)
+summary(me1)
+coef(me1)
+#------------------------------------
+
+
+
+#------------------------------------
+# Multiple LM's
+# Test same data with multiple lm's instead:
 p <- c()
 r <- c()
 s <- c()
@@ -247,9 +409,9 @@ for (i in unique(species_b$species)){
   
   m1 <- summary(lm(b ~ env_temp_mid_norm, data = p))
   s  <- data.frame(slope = m1$coefficients[2],
-                  species = i,
-                  p = m1$coefficients[,4][2],
-                  se = m1$coefficients[,2][2])
+                   species = i,
+                   p = m1$coefficients[,4][2],
+                   se = m1$coefficients[,2][2])
   t  <- rbind(t, s)
 }
 
@@ -271,15 +433,15 @@ ggplot(t, aes(reorder(species, slope), slope)) +
   coord_flip() +
   theme_classic(base_size = 15) +
   NULL
+#------------------------------------
 
 
-# *** Plot overall prediction and data
 
 
-#====**** Evaluating model convergence ==============================================
-plot(c1_stanlmer, "rhat")
-
-plot(c1_stanlmer, "ess")
 
 
-#======== B. FIT MODEL: METABOLISM ==================================================
+#------------------------------------
+
+#======== B. METABOLISM =================================================
+
+

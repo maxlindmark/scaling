@@ -1,4 +1,4 @@
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # 2019.05.02: Max Lindmark
 #
 # - Explore body growth rate data
@@ -7,12 +7,11 @@
 #
 # B. Explore growth data
 #
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#======== A. LOAD LIBRARIES & READ DATA =============================================
+#======== A. LOAD LIBRARIES & READ DATA ============================================
 rm(list = ls())
 
-#==** Load packages ====
 # Provide package names
 pkgs <- c("dplyr",
           "tidyr",
@@ -49,7 +48,6 @@ pkg_info(pkgs)
 # 8        tidyr     0.8.3
 # 9      viridis     0.5.1
 
-#==** Read data ====
 # Will crate a csv that one can read directly once data collection is finished.
 # dat <- read_excel(text=GET("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/growth_data.xlsx"))
 
@@ -65,9 +63,9 @@ glimpse(dat)
 unique(dat$species)
 
 
-#======== B. EXPLORE DATA ===========================================================
-#==** General ====
-#-- Trophic level
+#======== B. EXPLORE DATA ==========================================================
+#==** General ======================================================================
+# Trophic level
 ggplot(dat, aes(x = reorder(common_name, trophic_level), y = trophic_level)) +
   geom_point(stat = 'identity', size=6) +
   scale_fill_manual(name = "trophic_level") + 
@@ -78,7 +76,7 @@ ggplot(dat, aes(x = reorder(common_name, trophic_level), y = trophic_level)) +
   coord_flip() +
   NULL 
 
-#-- Max. published weight
+# Max. published weight
 ggplot(dat, aes(x = reorder(common_name, w_max_published_g), 
                 y = log10(w_max_published_g))) +
   geom_point(stat = 'identity', size=6) +
@@ -90,7 +88,7 @@ ggplot(dat, aes(x = reorder(common_name, w_max_published_g),
   coord_flip() +
   NULL 
 
-#-- Phylogeny
+# Phylogeny
 nb.cols <- length(unique(dat$species))
 mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
 
@@ -102,7 +100,7 @@ dat %>% distinct(common_name, .keep_all = TRUE) %>%
   scale_fill_manual(values = mycolors) +
   NULL
 
-#-- Biogeography
+# Biogeography
 dat %>% distinct(common_name, .keep_all = TRUE) %>% 
   ggplot(., aes(biogeography, fill = biogeography)) +
   geom_bar() +
@@ -112,7 +110,7 @@ dat %>% distinct(common_name, .keep_all = TRUE) %>%
   scale_fill_manual(values = mycolors) +
   NULL
 
-#-- Lifestyle
+# Lifestyle
 dat %>% 
   distinct(common_name, .keep_all = TRUE) %>% 
   ggplot(., aes(habitat, fill  = lifestyle)) +
@@ -123,7 +121,7 @@ dat %>%
   NULL
 
 
-#==** Growth rate ====
+#==** Growth rate ==================================================================
 # Normalize size by creating new column with size relative to max. In most cases this will be geometric mean, but can also be size class. I will then check if there are any NA's (Walleye) that doesn't have either size and make a data.
 
 # Mass for analysis
@@ -148,32 +146,32 @@ dat <- dat %>% filter(mass > 0)
 # Now normalize mass with respect to max mass
 dat$mass_norm <- dat$mass / dat$w_max_published_g
 
-#====**** All data (also n=1 species) ========
-#-- Non-normalized mass
+#====**** All data (also n=1 species) ==============================================
+# Non-normalized mass
 ggplot(dat, aes(mass, opt_temp_c)) + 
   geom_point(size = 5, alpha = 0.7) +
   theme_classic(base_size = 15) +
   NULL
 
-#-- Log10 mass
+# Log10 mass
 ggplot(dat, aes(log10(mass), opt_temp_c)) + 
   geom_point(size = 5, alpha = 0.7) +
   theme_classic(base_size = 15) +
   NULL
 
-#-- Normalized mass
+# Normalized mass
 ggplot(dat, aes(mass_norm, opt_temp_c)) + 
   geom_point(size = 5, alpha = 0.7) +
   theme_classic(base_size = 15) +
   NULL
 
-#-- Log10 normalized mass
+# Log10 normalized mass
 ggplot(dat, aes(log10(mass_norm), opt_temp_c)) + 
   geom_point(size = 5, alpha = 0.7) +
   theme_classic(base_size = 15) +
   NULL
 
-#-- Log10 normalized mass color species
+# Log10 normalized mass color species
 ggplot(dat, aes(log10(mass_norm), opt_temp_c, color = common_name)) + 
   geom_point(size = 5, alpha = 0.8) +
   geom_line(size = 3, alpha = 0.8) +
@@ -181,12 +179,12 @@ ggplot(dat, aes(log10(mass_norm), opt_temp_c, color = common_name)) +
   scale_color_viridis(discrete = TRUE) +
   NULL
 
-#====**** Intraspecific data (only n>1 species) ========
+#====**** Intraspecific data (only n>1 species) ====================================
 s_dat <- dat %>% 
   group_by(common_name) %>% 
   filter(n()>1)
 
-#-- Split window by species
+# Split window by species
 ggplot(s_dat, aes(log10(mass_norm), opt_temp_c, color = common_name)) + 
   geom_line(size = 4, alpha = 0.4) +
   geom_point(size = 4, alpha = 1) +
@@ -196,7 +194,7 @@ ggplot(s_dat, aes(log10(mass_norm), opt_temp_c, color = common_name)) +
   scale_color_viridis(discrete = TRUE) +
   NULL
 
-#-- Log10 normalized mass color species
+# Log10 normalized mass color species
 ggplot(s_dat, aes(log10(mass_norm), opt_temp_c, color = common_name)) + 
   geom_point(size = 5, alpha = 0.7) +
   geom_line(size = 3, alpha = 0.2) +
@@ -236,12 +234,12 @@ summary(lm(s_dat$opt_temp_c_ct ~ log10(s_dat$mass_norm)))
 # TO THINK ABOUT:
 # what is the rationale for not mixing species from different studies here? For Cmax we don't, but that's because they are so tricky to measure.. growth should be easier to measure. And by grouping species and sharing information, we do say the response variables are comparable. Note I also have much fewer species with dublicates in Cmax. 
 
-#====**** Conclusion ========
+#====**** Conclusion ===============================================================
 # Do intraspecific analysis, using the same filters as above. Fit LMM to start with to account for non-independence? Here' I'm not interested in the actual slopes of each species but only the overall effect, so should be straightforward
 
 
-#====**** Extra ========
-#-- Growth rate at optimum over size 
+#====**** Extra ====================================================================
+# Growth rate at optimum over size 
 ggplot(s_dat, aes(log10(mass_norm), `growth_rate_%day-1`, 
                   color = common_name)) + 
   geom_point(size = 5, alpha = 0.7) +
@@ -263,7 +261,7 @@ summary(lm(log(s_dat$growth_rate) ~ log(s_dat$mass)))
 # No one has done this for intraspecific growth and not using only optimum temperatures!
 # See Barneche's new paper for references on this...
 
-#-- Growth rate over temp
+# Growth rate over temp
 ggplot(s_dat, aes(opt_temp_c_ct, growth_rate, 
                   color = common_name)) + 
   geom_point(size = 7, alpha = 0.7) +

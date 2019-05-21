@@ -1,4 +1,4 @@
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # 2019.05.02: Max Lindmark
 #
 # - Explore consumption and metabolic scaling data
@@ -7,12 +7,11 @@
 #
 # B. Explore data
 #
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#======== A. LOAD LIBRARIES & READ DATA =============================================
+#======== A. LOAD LIBRARIES & READ DATA ============================================
 rm(list = ls())
 
-#==** Load packages ====
 # Provide package names
 pkgs <- c("dplyr",
           "tidyr",
@@ -46,7 +45,6 @@ pkg_info(pkgs)
 # 8        tidyr     0.8.3
 # 9      viridis     0.5.1
 
-#==** Read data ====
 # Will crate a csv that one can read directly once data collection is finished.
 # dat <- read_excel(text=GET("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/growth_data.xlsx"))
 
@@ -63,4 +61,4 @@ glimpse(dat)
 unique(dat$species)
 
 
-#======== B. EXPLORE DATA ===========================================================
+#======== B. EXPLORE DATA ==========================================================
