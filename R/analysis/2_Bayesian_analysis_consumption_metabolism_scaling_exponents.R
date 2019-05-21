@@ -22,7 +22,7 @@
 
 # *** Add pref temp env <- pref temp if no env temp (see growth scripts)
 
-#======== A. LOAD LIBRARIES & READ DATA ========
+#======== A. LOAD LIBRARIES & READ DATA =============================================
 rm(list = ls())
 
 #====**** Load packages ========
@@ -108,7 +108,7 @@ s_met <- met %>%
 
 # If env temp == NA, use mid point of pref.
 
-#======== B. FIT MODELS ========
+#======== B. FIT MODELS =============================================================
 #====**** Consumption ========
 # The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model, with the following syntax: lmer(b ~ temp_mid_ct + (temp_mid_ct | species), df_me)
 
@@ -193,7 +193,7 @@ species_b$pred_slope <- summaryc1_95$estimate
 species_b$pred_slope_lwr50 <- summaryc1_50$lower
 species_b$pred_slope_upr50 <- summaryc1_50$upper
 
-#-- Plot species-prediction
+# Plot species-prediction
 #blues <- colorRampPalette(brewer.pal(8, "Blues"))(9)
 pal <- colorRampPalette(brewer.pal(8, "Set1"))(9)
 
@@ -254,7 +254,7 @@ for (i in unique(species_b$species)){
 
 t
 
-# now plot coefficients from species-specific lm's
+# Now plot coefficients from species-specific lm's
 t$upper <- t$slope + t$se * 1.96 
 t$lower <- t$slope - t$se * 1.96
 

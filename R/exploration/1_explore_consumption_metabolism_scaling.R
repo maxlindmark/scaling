@@ -9,7 +9,7 @@
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#======== A. LOAD LIBRARIES & READ DATA ========
+#======== A. LOAD LIBRARIES & READ DATA =============================================
 rm(list = ls())
 
 #==** Load packages ====
@@ -80,7 +80,7 @@ dat <- rbind(con, met)
 
 dat$mean_b_ct <- dat$b - dat$mean_b
 
-#======== B. EXPLORE DATA ========
+#======== B. EXPLORE DATA ===========================================================
 #==** Normalize variables ==== 
 # Inspect temperatures
 ggplot(dat, aes(env_temp_mid)) +

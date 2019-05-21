@@ -1,7 +1,8 @@
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # 2019.05.02: Max Lindmark
 #
-# - This code estimates size-scaling exponents from data on the rate if it was not provided in the original paper
+# - This code estimates size-scaling exponents from data on the rate if it was not 
+#   provided in the original paper
 # 
 # A. Load libraries
 #
@@ -9,8 +10,10 @@
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#======== A. LOAD LIBRARIES & READ DATA ========
+#======== A. LOAD LIBRARIES & READ DATA =============================================
 rm(list = ls())
+
+# *** Not finished!
 
 #====**** Load packages ========
 # Provide package names
@@ -57,7 +60,7 @@ glimpse(dat)
 unique(dat$species)
 
 
-#======== B. FIT LOG-LOG MODEL BY SPECIES ========
+#======== B. FIT LOG-LOG MODEL BY SPECIES ===========================================
 
 # check which species have "data" as source and redo them here
 

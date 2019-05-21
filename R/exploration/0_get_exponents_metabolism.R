@@ -10,7 +10,7 @@
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#======== A. LOAD LIBRARIES & READ DATA ========
+#======== A. LOAD LIBRARIES & READ DATA =============================================
 rm(list = ls())
 
 #====**** Load packages ========
@@ -58,7 +58,7 @@ glimpse(dat)
 unique(dat$species)
 
 
-#======== B. FIT LOG-LOG MODEL BY SPECIES ========
+#======== B. FIT LOG-LOG MODEL BY SPECIES ===========================================
 #====**** Coregonus albula ========
 c_albula <- dat %>% 
   filter(species == "Coregonus albula")

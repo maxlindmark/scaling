@@ -9,7 +9,7 @@
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#======== A. LOAD LIBRARIES & READ DATA ========
+#======== A. LOAD LIBRARIES & READ DATA =============================================
 rm(list = ls())
 
 #==** Load packages ====
@@ -65,7 +65,7 @@ glimpse(dat)
 unique(dat$species)
 
 
-#======== B. EXPLORE DATA ========
+#======== B. EXPLORE DATA ===========================================================
 #==** General ====
 #-- Trophic level
 ggplot(dat, aes(x = reorder(common_name, trophic_level), y = trophic_level)) +
