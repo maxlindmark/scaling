@@ -226,28 +226,31 @@ pdat$sig <- ifelse(pdat$pred_slope < 0 & pdat$pred_slope_upr50 < 0,
 pdat$sig <- ifelse(pdat$pred_slope > 0 & pdat$pred_slope_lwr50 > 0, 
                         1, pdat$sig )
 
+pdat$sig_f <- as.factor(pdat$sig)
+
 # Group positive and negative slopes
 pdat$sign <- ifelse(pdat$pred_slope < 0, "neg", "pos")
 
 # Reorder based on predicted slope
-ggplot(pdat, aes(reorder(species, pred_slope), pred_slope, shape = sign)) +
+ggplot(pdat, aes(reorder(species, pred_slope), pred_slope)) +
   geom_rect(data = species_b, aes(reorder(species, pred_slope), pred_slope),
             xmin = 0, xmax = 100, ymin = g_mean_ci95[1], ymax = g_mean_ci95[2],
             color = "grey93", fill = "grey93") + # overplotting many rectangles here..
-  geom_hline(yintercept = 0, col = "grey30", linetype = 1, size = 0.8, alpha = 0.5) +
-  geom_hline(yintercept = g_mean, col = pal[5], linetype = "twodash", size = 0.8, alpha = 0.7) +
+  geom_hline(yintercept = 0, col = "grey20", linetype = 1, size = 0.4, alpha = 0.5) +
+  geom_hline(yintercept = g_mean, col = pal[5], linetype = "twodash", size = 0.4, alpha = 0.7) +
   geom_errorbar(aes(reorder(species, pred_slope), 
                     ymin = pred_slope_lwr95, ymax = pred_slope_upr95), 
-                color = "gray20", size = 2, width = 0, alpha = 0.2) +
+                color = "gray50", size = 1.5, width = 0, alpha = 0.2) +
   geom_errorbar(aes(reorder(species, pred_slope), 
                     ymin = pred_slope_lwr90, ymax = pred_slope_upr90), 
-                color = "gray20", size = 2, width = 0, alpha = 0.3) +
+                color = "gray50", size = 1.5, width = 0, alpha = 0.3) +
   geom_errorbar(aes(reorder(species, pred_slope), 
                     ymin = pred_slope_lwr50, ymax = pred_slope_upr50), 
-                color = "gray20", size = 2, width = 0, alpha = 0.4) +
+                color = "gray50", size = 1.5, width = 0, alpha = 1) +
   scale_fill_manual(values = pal[c(2, 1)]) +
   scale_shape_manual(values = c(21, 23)) + 
-  geom_point(size = 2, fill = "gray30", alpha = 0.8, color = "white") +
+  geom_point(data = pdat, aes(x = reorder(species, pred_slope), y = pred_slope, shape = sign), 
+             size = 2, fill = "grey10", alpha = 0.8, color = "white") +
   geom_point(data = filter(pdat, sig > 0), 
              aes(reorder(species, pred_slope), pred_slope, shape = sign, fill = factor(sig)), 
              size = 2, alpha = 1, color = "white") +
@@ -258,11 +261,11 @@ ggplot(pdat, aes(reorder(species, pred_slope), pred_slope, shape = sign)) +
   theme_classic(base_size = 11) +
   theme(axis.text.y = element_text(size = 8, face = "italic")) +
   theme(aspect.ratio = 1) +
-  ylim(min(pdat$pred_slope_lwr95), -1*min(pdat$pred_slope_lwr95)) +
-  # theme(axis.text.y = element_blank()) + # If I end up with too many species
+  #ylim(min(pdat$pred_slope_lwr95), -1*min(pdat$pred_slope_lwr95)) +
+  #theme(axis.text.y = element_blank()) + # If I end up with too many species
   NULL
 
-ggsave("test.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm")
+ggsave("figs/intraspec_con.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm")
 
 
 #====**** Plot intercept (exponent at mid temp) ====================================
