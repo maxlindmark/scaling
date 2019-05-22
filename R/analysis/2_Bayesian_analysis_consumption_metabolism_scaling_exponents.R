@@ -16,6 +16,8 @@
 # https://mc-stan.org/users/documentation/case-studies/tutorial_rstanarm.html#fn2
 # https://cran.r-project.org/web/packages/rstanarm/rstanarm.pdf
 
+# See also this for plotting! http://mc-stan.org/bayesplot/articles/plotting-mcmc-draws.html
+
 # *** Q is to include or not include n=1 species. In the mixed model, they are not included, but here I suppose they are treated as missing values? in which case they are by default assigned missing values? Not sure it makes sense conceptually though...
 
 # *** Go through explore csv again, which species should I not include initially?
@@ -37,7 +39,8 @@ pkgs <- c("mlmRev",
           "readxl",
           "dplyr",
           "plyr",
-          "RColorBrewer")
+          "RColorBrewer",
+          "bayesplot")
 
 library(viridis)
 
@@ -84,8 +87,6 @@ dat[,cols] %<>% lapply(function(x) as.numeric(as.character(x)))
 
 glimpse(dat)
 
-unique(dat$species)
-
 # Normalize variables
 # Inspect temperatures
 ggplot(dat, aes(env_temp_mid)) +
@@ -95,6 +96,15 @@ ggplot(dat, aes(env_temp_mid)) +
 # Relative to mid temp in environment
 dat$env_temp_mid_norm <- dat$temp_c - dat$env_temp_mid
 
+# Create abbreviated species name for plotting
+# Get first part of name
+sp1 <- substring(dat$species, 1, 1)
+
+# Get species name
+sp2 <- gsub( ".*\\s", "", dat$species )
+
+dat$species_ab <- paste(sp1, sp2, sep = ".")
+
 # Filter intraspecific data consumption
 s_con <- dat %>% 
   filter(significant_size == "Y" & rate == "consumption") %>% 
@@ -102,12 +112,13 @@ s_con <- dat %>%
   filter(n()>1)
 
 # Filter intraspecific data metabolism
-s_met <- met %>% 
-  filter(significant_size == "Y"& rate == "metabolism") %>% 
+s_met <- dat %>% 
+  filter(significant_size == "Y" & rate == "metabolism") %>% 
   group_by(common_name) %>% 
   filter(n()>1)
 
 # If env temp == NA, use mid point of pref.
+
 
 #======== B. CONSUMPTION ================================================
 # Plot data again
@@ -126,9 +137,9 @@ NULL
 # The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model, with the following syntax: lmer(b ~ temp_mid_ct + (temp_mid_ct | species), df_me)
 
 # *** dont rely on defaults, specify them for clarity and if defaults change...
-c1_stanlmer <- stan_lmer(formula = b ~ env_temp_mid_norm + (env_temp_mid_norm | species), 
+c1_stanlmer <- stan_lmer(formula = b ~ env_temp_mid_norm + (env_temp_mid_norm | species_ab), 
                          data = s_con,
-                         seed = 349)
+                         seed = 8194)
 
 # Summary of priors used
 prior_summary(object = c1_stanlmer)
@@ -155,6 +166,8 @@ plot(c1_stanlmer, "rhat")
 # Plot ess
 plot(c1_stanlmer, "ess")
 
+# See metabolism code for proper diagnostics
+
 
 #====**** Extract the posterior draws for all parameters ===========================
 sims <- as.matrix(c1_stanlmer)
@@ -164,26 +177,15 @@ para_name <- colnames(sims)
 para_name # *** need to know all parameters here (check sigma)
 
 # Create df of parameters I want to plot:
-species_b <- data.frame(species = sort(unique(s_con$species)))
+species_b_c <- data.frame(species = sort(unique(s_con$species_ab)))
 
-species_b$param <- paste("b[env_temp_mid_norm species:", 
-                         sort(unique(species_b$species)), 
-                         "]", 
-                         sep = "")
+species_b_c$param <- paste("b[env_temp_mid_norm species:", 
+                           sort(unique(species_b_c$species_ab)), 
+                           "]", 
+                           sep = "")
 
 # For now need to remove this species because I haven't put in a temperature and NAs are removed in Rstan
-species_b <- species_b[-which(species_b$species == "Epinephelus coioides"), ]
-
-# Extract each species slope and 95% CI
-summaryc1_95 <- tidy(c1_stanlmer, intervals = TRUE, prob =.95, 
-                     parameters = "varying")
-
-summaryc1_95 <- summaryc1_95 %>% 
-  filter(term == "env_temp_mid_norm")
-
-species_b$pred_slope <- summaryc1_95$estimate
-species_b$pred_slope_lwr95 <- summaryc1_95$lower
-species_b$pred_slope_upr95 <- summaryc1_95$upper
+species_b_c <- species_b_c[-which(species_b_c$species == "E.coioides"), ]
 
 # Extract each species slope and 90% CI
 summaryc1_90 <- tidy(c1_stanlmer, intervals = TRUE, prob =.9, 
@@ -192,72 +194,80 @@ summaryc1_90 <- tidy(c1_stanlmer, intervals = TRUE, prob =.9,
 summaryc1_90 <- summaryc1_90 %>% 
   filter(term == "env_temp_mid_norm")
 
-species_b$pred_slope <- summaryc1_95$estimate
-species_b$pred_slope_lwr90 <- summaryc1_90$lower
-species_b$pred_slope_upr90 <- summaryc1_90$upper
+# Grand mean
+species_b_c$pred_slope <- summaryc1_90$estimate
 
-# Extract each species slope and 50% CI
+# 90% CI
+species_b_c$pred_slope_lwr90 <- summaryc1_90$lower
+species_b_c$pred_slope_upr90 <- summaryc1_90$upper
+
+# 50% CI
 summaryc1_50 <- tidy(c1_stanlmer, intervals = TRUE, prob =.5, 
                      parameters = "varying")
 
 summaryc1_50 <- summaryc1_50 %>% 
   filter(term == "env_temp_mid_norm")
 
-species_b$pred_slope <- summaryc1_95$estimate
-species_b$pred_slope_lwr50 <- summaryc1_50$lower
-species_b$pred_slope_upr50 <- summaryc1_50$upper
+species_b_c$pred_slope_lwr50 <- summaryc1_50$lower
+species_b_c$pred_slope_upr50 <- summaryc1_50$upper
 
 #====**** Plot species-slopes ==================================================
 #blues <- colorRampPalette(brewer.pal(8, "Blues"))(9)
-pal <- colorRampPalette(brewer.pal(8, "Set1"))(10)
-pal2 <- viridis(n = 4)
+# pal2 <- viridis(n = 4)
+pal <- colorRampPalette(brewer.pal(8, "Paired"))(12)
 
-# Add overall mean 
-g_mean <- summary(c1_stanlmer, probs = c(0.025, 0.975), digits = 5)[2] # Get the slope
-g_mean_ci95 <- posterior_interval(c1_stanlmer, prob = 0.95, pars = "env_temp_mid_norm")
+# Add overall mean  and 90% & 50% CI
+g_mean <- summary(c1_stanlmer, probs = c(0.05, 0.95), digits = 5)[2] # Get the slope
+g_mean_ci90 <- posterior_interval(c1_stanlmer, prob = 0.90, pars = "env_temp_mid_norm")
+g_mean_ci50 <- posterior_interval(c1_stanlmer, prob = 0.50, pars = "env_temp_mid_norm")
 
 # Scale parameters to make them slope, not diff from mean!
-pdat <- species_b
-pdat[, 3:9] <- sweep(species_b[, 3:9], 2, g_mean, FUN = "+")
+pdat_c <- species_b_c
+pdat_c[, 3:9] <- sweep(species_b_c[, 3:7], 2, g_mean, FUN = "+")
 
 # Group species with "stronger" evidence
-pdat$sig <- ifelse(pdat$pred_slope < 0 & pdat$pred_slope_upr50 < 0, 
-                        2, -9)
-pdat$sig <- ifelse(pdat$pred_slope > 0 & pdat$pred_slope_lwr50 > 0, 
-                        1, pdat$sig )
+pdat_c$sig <- ifelse(pdat_c$pred_slope < 0 & pdat_c$pred_slope_upr50 < 0, 
+                     2, -9)
 
-pdat$sig_f <- as.factor(pdat$sig)
+pdat_c$sig <- ifelse(pdat_c$pred_slope > 0 & pdat_c$pred_slope_lwr50 > 0, 
+                     1, pdat_c$sig)
+
+pdat_c$sig <- ifelse(pdat_c$pred_slope < 0 & pdat_c$pred_slope_upr90 < 0, 
+                     3, pdat_c$sig)
+
+pdat_c$sig <- ifelse(pdat_c$pred_slope > 0 & pdat_c$pred_slope_lwr90 > 0, 
+                     4, pdat_c$sig)
+
+pdat_c$sig_f <- as.factor(pdat_c$sig)
 
 # Group positive and negative slopes
-pdat$sign <- ifelse(pdat$pred_slope < 0, "neg", "pos")
+pdat_c$sign <- ifelse(pdat_c$pred_slope < 0, "neg", "pos")
 
-# Reorder based on predicted slope
-ggplot(pdat, aes(reorder(species, pred_slope), pred_slope)) +
-  geom_rect(data = species_b, aes(reorder(species, pred_slope), pred_slope),
-            xmin = 0, xmax = 100, ymin = g_mean_ci95[1], ymax = g_mean_ci95[2],
+# Reorder based on predicted slope and plot!
+ggplot(pdat_c, aes(reorder(species, pred_slope), pred_slope, 
+                   shape = sign, color = sig_f)) +
+  geom_rect(data = pdat_c, aes(reorder(species, pred_slope), pred_slope),
+            xmin = 0, xmax = 100, ymin = g_mean_ci90[1], ymax = g_mean_ci90[2],
             color = "grey93", fill = "grey93") + # overplotting many rectangles here..
-  geom_hline(yintercept = 0, col = "grey20", linetype = 1, size = 0.4, alpha = 0.5) +
-  geom_hline(yintercept = g_mean, col = pal[5], linetype = "twodash", size = 0.4, alpha = 0.7) +
-  geom_errorbar(aes(reorder(species, pred_slope), 
-                    ymin = pred_slope_lwr95, ymax = pred_slope_upr95), 
-                color = "gray50", size = 1.5, width = 0, alpha = 0.2) +
+  geom_rect(data = pdat_c, aes(reorder(species, pred_slope), pred_slope),
+            xmin = 0, xmax = 100, ymin = g_mean_ci50[1], ymax = g_mean_ci50[2],
+            color = "grey83", fill = "grey83") + # overplotting many rectangles here..
+  geom_hline(yintercept = 0, col = "grey1", linetype = 1, size = 0.5, alpha = 0.5) +
+  geom_hline(yintercept = g_mean, col = pal[8], linetype = "twodash", size = 0.5, alpha = 0.7) +
   geom_errorbar(aes(reorder(species, pred_slope), 
                     ymin = pred_slope_lwr90, ymax = pred_slope_upr90), 
-                color = "gray50", size = 1.5, width = 0, alpha = 0.3) +
+                color = "gray70", size = 0.5, width = 0) +
   geom_errorbar(aes(reorder(species, pred_slope), 
                     ymin = pred_slope_lwr50, ymax = pred_slope_upr50), 
-                color = "gray50", size = 1.5, width = 0, alpha = 1) +
-  scale_fill_manual(values = pal[c(2, 1)]) +
-  scale_shape_manual(values = c(21, 23)) + 
-  geom_point(data = pdat, aes(x = reorder(species, pred_slope), y = pred_slope, shape = sign), 
-             size = 2, fill = "grey10", alpha = 0.8, color = "white") +
-  geom_point(data = filter(pdat, sig > 0), 
-             aes(reorder(species, pred_slope), pred_slope, shape = sign, fill = factor(sig)), 
-             size = 2, alpha = 1, color = "white") +
+                color = "gray50", size = 0.8, width = 0) +
+  scale_color_manual(values = pal[c(4,1,2)]) + # Need to watch out for this, depends on # levels
+  geom_point(size = 4, col = "gray50") +
+  geom_point(data = filter(pdat_c, sig > 0), 
+             aes(reorder(species, pred_slope), pred_slope, shape = sign, color = sig_f), size = 4) +
   xlab("Species") + 
-  ylab("Slope") +
+  ylab("Change in mass-scaling exponent per T (C)") +
   coord_flip() +
-  guides(color = FALSE, shape = FALSE, fill = FALSE) +
+  guides(shape = FALSE, color = FALSE) +
   theme_classic(base_size = 11) +
   theme(axis.text.y = element_text(size = 8, face = "italic")) +
   theme(aspect.ratio = 1) +
@@ -265,7 +275,7 @@ ggplot(pdat, aes(reorder(species, pred_slope), pred_slope)) +
   #theme(axis.text.y = element_blank()) + # If I end up with too many species
   NULL
 
-ggsave("figs/intraspec_con.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm")
+ggsave("figs/intraspec_con.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
 
 #====**** Plot intercept (exponent at mid temp) ====================================
@@ -282,7 +292,7 @@ ggplot(inter, aes(a)) +
   coord_cartesian(xlim = c(0.39, 0.91), expand = c(0,0)) +
   theme_classic(base_size = 15) +
   geom_vline(xintercept = summary(c1_stanlmer, probs = c(0.025, 0.975), digits = 5)[1], 
-             size = 1.5, color = "gray20")
+             size = 1.5, color = "gray20") +
   xlab("Intercept") +
   theme(aspect.ratio = 1) +
   NULL
@@ -306,8 +316,222 @@ ggplot(s_con, aes(env_temp_mid_norm, b, color = species)) +
   geom_abline(intercept = a, slope = b, size = 2) +
   theme_classic(base_size = 15) +
   guides(color = FALSE) +
+  scale_color_manual(values = mycolors) +
+NULL
+
+
+
+#======== B. METABOLISM =================================================
+# Plot data again
+nb.cols <- length(unique(s_met$species))
+mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
+
+ggplot(s_met, aes(env_temp_mid_norm, b, color = species)) + 
+  geom_point(size = 5) +
+  geom_line(size = 2) +
+  theme_classic(base_size = 15) +
+  guides(color = FALSE) +
+  scale_color_manual(values = mycolors) +
+NULL
+
+# Remove species with na temperature!
+s_met2 <- s_met
+s_met2$env_temp_mid_norm
+s_met2 <- s_met2 %>% drop_na(env_temp_mid_norm)
+s_met2$env_temp_mid_norm
+s_met2$b
+
+#====**** Set up stan model ========================================================
+# The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model, with the following syntax: lmer(b ~ temp_mid_ct + (temp_mid_ct | species), df_me)
+
+# *** dont rely on defaults, specify them for clarity and if defaults change...
+m1_stanlmer <- stan_lmer(formula = b ~ env_temp_mid_norm + (env_temp_mid_norm | species_ab), 
+                         data = s_met2,
+                         seed = 8194,
+                         adapt_delta = 0.999999999999) # This is essentially reducing the step size. Could be the reason for the autocorrelated samples... We did not need to do this for consumption. This is likely not optimal. Should wait for more data though before digging into changing error structure..
+
+# Summary of priors used
+prior_summary(object = m1_stanlmer)
+
+# Print model summary
+print(m1_stanlmer, digits = 3)
+
+
+#====**** Check sampling quality & model convergence ===============================
+summary(m1_stanlmer, 
+        probs = c(0.025, 0.975),
+        digits = 5)
+
+# *** What is difference from the previous mixed model? Which species have I removed? Fit mixed model and look at overall and species slope (not their CI, which is hard)
+# *** The exploring-data set should end with the selection I will use! Did I forget to list potentially wrong species?
+
+# Compare the observed distribution of b scores (dark blue line) to 100 simulated datasets from the posterior predictive distribution (light blue lines)
+pp_check(m1_stanlmer, nreps = 100)
+# pp_check(c1_stanlmer, plotfun = "stat_grouped", stat = "median", group = "species")
+
+# Plot Rhat (1 is good)
+plot(m1_stanlmer, "rhat")
+
+# Plot ess
+# *** This suggest low number of effective simulations, high autocorrelation...
+plot(m1_stanlmer, "ess")
+
+posterior <- as.array(m1_stanlmer)
+
+# *** Add this kind of diagnostics to Cmax as well...
+mcmc_trace(posterior, pars = c("env_temp_mid_norm"),
+           facet_args = list(ncol = 1, strip.position = "left"))
+
+
+#====**** Extract the posterior draws for all parameters ===========================
+sims <- as.matrix(m1_stanlmer)
+
+para_name <- colnames(sims)
+
+para_name # *** need to know all parameters here (check sigma)
+
+# Create df of parameters I want to plot:
+species_b_m <- data.frame(species = sort(unique(s_met2$species_ab))) # s_met2 because of filtering!
+
+species_b_m$param <- paste("b[env_temp_mid_norm species:", 
+                           sort(unique(species_b_m$species_ab)), 
+                           "]", 
+                           sep = "")
+
+# Extract each species slope and 90% CI
+summarym1_90 <- tidy(m1_stanlmer, intervals = TRUE, prob =.9, 
+                     parameters = "varying")
+
+summarym1_90 <- summarym1_90 %>% 
+  filter(term == "env_temp_mid_norm")
+
+# Grand mean
+species_b_m$pred_slope <- summarym1_90$estimate
+
+# 90% CI
+species_b_m$pred_slope_lwr90 <- summarym1_90$lower
+species_b_m$pred_slope_upr90 <- summarym1_90$upper
+
+# 50% CI
+summarym1_50 <- tidy(m1_stanlmer, intervals = TRUE, prob =.5, 
+                     parameters = "varying")
+
+summarym1_50 <- summarym1_50 %>% 
+  filter(term == "env_temp_mid_norm")
+
+species_b_m$pred_slope_lwr50 <- summarym1_50$lower
+species_b_m$pred_slope_upr50 <- summarym1_50$upper
+
+#====**** Plot species-slopes ==================================================
+#blues <- colorRampPalette(brewer.pal(8, "Blues"))(9)
+# pal2 <- viridis(n = 4)
+pal <- colorRampPalette(brewer.pal(8, "Paired"))(12)
+
+# Add overall mean  and 90% & 50% CI
+g_mean_m <- summary(m1_stanlmer, probs = c(0.05, 0.95), digits = 5)[2] # Get the slope
+g_mean_ci90 <- posterior_interval(m1_stanlmer, prob = 0.90, pars = "env_temp_mid_norm")
+g_mean_ci50 <- posterior_interval(m1_stanlmer, prob = 0.50, pars = "env_temp_mid_norm")
+
+# Scale parameters to make them slope, not diff from mean!
+pdat_m <- species_b_m
+pdat_m[, 3:9] <- sweep(species_b_m[, 3:7], 2, g_mean_m, FUN = "+")
+
+# Group species with "stronger" evidence
+pdat_m$sig <- ifelse(pdat_m$pred_slope < 0 & pdat_m$pred_slope_upr50 < 0, 
+                     2, -9)
+
+pdat_m$sig <- ifelse(pdat_m$pred_slope > 0 & pdat_m$pred_slope_lwr50 > 0, 
+                     1, pdat_m$sig)
+
+pdat_m$sig <- ifelse(pdat_m$pred_slope < 0 & pdat_m$pred_slope_upr90 < 0, 
+                     3, pdat_m$sig)
+
+pdat_m$sig <- ifelse(pdat_m$pred_slope > 0 & pdat_m$pred_slope_lwr90 > 0, 
+                     4, pdat_m$sig)
+
+pdat_m$sig_f <- as.factor(pdat_m$sig)
+
+# Group positive and negative slopes
+pdat_m$sign <- ifelse(pdat_m$pred_slope < 0, "neg", "pos")
+
+# Reorder based on predicted slope and plot!
+ggplot(pdat_m, aes(reorder(species, pred_slope), pred_slope, 
+                   shape = sign, color = sig_f)) +
+  geom_rect(data = pdat_m, aes(reorder(species, pred_slope), pred_slope),
+            xmin = 0, xmax = 100, ymin = g_mean_ci90[1], ymax = g_mean_ci90[2],
+            color = "grey93", fill = "grey93") + # overplotting many rectangles here..
+  geom_rect(data = pdat_m, aes(reorder(species, pred_slope), pred_slope),
+            xmin = 0, xmax = 100, ymin = g_mean_ci50[1], ymax = g_mean_ci50[2],
+            color = "grey83", fill = "grey83") + # overplotting many rectangles here..
+  geom_hline(yintercept = 0, col = "grey1", linetype = 1, size = 0.5, alpha = 0.5) +
+  geom_hline(yintercept = g_mean, col = pal[8], linetype = "twodash", size = 0.5, alpha = 0.7) +
+  geom_errorbar(aes(reorder(species, pred_slope), 
+                    ymin = pred_slope_lwr90, ymax = pred_slope_upr90), 
+                color = "gray70", size = 0.5, width = 0) +
+  geom_errorbar(aes(reorder(species, pred_slope), 
+                    ymin = pred_slope_lwr50, ymax = pred_slope_upr50), 
+                color = "gray50", size = 0.8, width = 0) +
+  scale_color_manual(values = pal[c(1,1,4)]) + # Need to watch out for this, depends on # levels
+  geom_point(size = 4, col = "gray50") +
+  geom_point(data = filter(pdat_m, sig > 0), 
+             aes(reorder(species, pred_slope), pred_slope, shape = sign, color = sig_f), size = 4) +
+  xlab("Species") + 
+  ylab("Change in mass-scaling exponent per T (C)") +
+  coord_flip() +
+  guides(shape = FALSE, color = FALSE) +
+  theme_classic(base_size = 11) +
+  theme(axis.text.y = element_text(size = 8, face = "italic")) +
+  theme(aspect.ratio = 1) +
+  ylim(-0.025, 0.02) + # This was not need for Cmax!
+  #ylim(min(pdat$pred_slope_lwr95), -1*min(pdat$pred_slope_lwr95)) +
+  #theme(axis.text.y = element_blank()) + # If I end up with too many species
+  NULL
+
+ggsave("figs/intraspec_met.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
+
+
+#====**** Plot intercept (exponent at mid temp) ====================================
+inter <- tidy(m1_stanlmer, intervals = TRUE, prob =.95, 
+              parameters = "varying")
+
+inter <- inter %>% 
+  filter(term == "(Intercept)")
+
+inter$a <- inter$estimate + summary(m1_stanlmer, probs = c(0.025, 0.975), digits = 5)[1]
+
+ggplot(inter, aes(a)) +
+  geom_density(fill = pal[2], color = NA, alpha = 0.8) + 
+  coord_cartesian(xlim = c(0.815, 0.865), expand = c(0,0)) +
+  theme_classic(base_size = 15) +
+  geom_vline(xintercept = summary(m1_stanlmer, probs = c(0.025, 0.975), digits = 5)[1], 
+             size = 1.5, color = "gray20") +
+  xlab("Intercept") +
+  theme(aspect.ratio = 1) +
+  NULL
+
+# *** Need to check the arguments of this function...
+pp_check(m1_stanlmer) + 
+  theme(aspect.ratio = 1) +
+  theme_classic(base_size = 15)
+
+
+#====**** Plot overall prediction and data ====================================
+# Plot data again
+nb.cols <- length(unique(s_met$species))
+mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
+
+a <- summary(m1_stanlmer, probs = c(0.025, 0.975), digits = 5)[1]
+b <- summary(m1_stanlmer, probs = c(0.025, 0.975), digits = 5)[2]
+
+ggplot(s_met2, aes(env_temp_mid_norm, b, color = species)) + 
+  geom_point(size = 5) +
+  geom_abline(intercept = a, slope = b, size = 2) +
+  theme_classic(base_size = 15) +
+  guides(color = FALSE) +
   scale_color_manual(values = mycolors)
 NULL
+
+
 
 
 
@@ -370,31 +594,20 @@ fit1 <- stan(
   refresh = 0             # no progress shown
 )
 
+# Continue here
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#------------------------------------
-# Mixed model
-
-
+#------------------------------------# Freq. Mixed model
 me1 <- lmer(b ~ env_temp_mid_norm + (env_temp_mid_norm | species), s_con)
 summary(me1)
 coef(me1)
+
+me2 <- lmer(b ~ env_temp_mid_norm + (env_temp_mid_norm | species), s_met2)
+summary(me1)
+coef(me1)
+
+## Singular fit!
+
 #------------------------------------
 
 
@@ -445,6 +658,6 @@ ggplot(t, aes(reorder(species, slope), slope)) +
 
 #------------------------------------
 
-#======== B. METABOLISM =================================================
+
 
 
