@@ -230,7 +230,6 @@ ggplot(s_dat, aes(log10(mass_norm), opt_temp_c_ct,
 
 summary(lm(s_dat$opt_temp_c_ct ~ log10(s_dat$mass_norm)))
 
-
 # TO THINK ABOUT:
 # what is the rationale for not mixing species from different studies here? For Cmax we don't, but that's because they are so tricky to measure.. growth should be easier to measure. And by grouping species and sharing information, we do say the response variables are comparable. Note I also have much fewer species with dublicates in Cmax. 
 
