@@ -9,7 +9,7 @@
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#======== A. LOAD LIBRARIES & READ DATA ============================================
+# A. LOAD LIBRARIES & READ DATA ====================================================
 rm(list = ls())
 
 # Provide package names
@@ -55,6 +55,7 @@ dat <- read_excel("data/growth_data.xlsx")
 
 glimpse(dat)
 
+# Which cols to make numeric?
 cols = c(1, 2, 3, 4, 5, 6, 15, 16, 17, 18, 19, 20)
 dat[,cols] %<>% lapply(function(x) as.numeric(as.character(x)))
 
@@ -63,8 +64,8 @@ glimpse(dat)
 unique(dat$species)
 
 
-#======== B. EXPLORE DATA ==========================================================
-#==** General ======================================================================
+# B. EXPLORE DATA ==================================================================
+#** General ========================================================================
 # Trophic level
 ggplot(dat, aes(x = reorder(common_name, trophic_level), y = trophic_level)) +
   geom_point(stat = 'identity', size=6) +
@@ -121,7 +122,7 @@ dat %>%
   NULL
 
 
-#==** Growth rate ==================================================================
+#** Growth rate ====================================================================
 # Normalize size by creating new column with size relative to max. In most cases this will be geometric mean, but can also be size class. I will then check if there are any NA's (Walleye) that doesn't have either size and make a data.
 
 # Mass for analysis
@@ -146,7 +147,8 @@ dat <- dat %>% filter(mass > 0)
 # Now normalize mass with respect to max mass
 dat$mass_norm <- dat$mass / dat$w_max_published_g
 
-#====**** All data (also n=1 species) ==============================================
+
+#**** All data (also n=1 species) ==================================================
 # Non-normalized mass
 ggplot(dat, aes(mass, opt_temp_c)) + 
   geom_point(size = 5, alpha = 0.7) +
@@ -179,7 +181,8 @@ ggplot(dat, aes(log10(mass_norm), opt_temp_c, color = common_name)) +
   scale_color_viridis(discrete = TRUE) +
   NULL
 
-#====**** Intraspecific data (only n>1 species) ====================================
+
+#**** Intraspecific data (only n>1 species) ========================================
 s_dat <- dat %>% 
   group_by(common_name) %>% 
   filter(n()>1)
@@ -233,11 +236,11 @@ summary(lm(s_dat$opt_temp_c_ct ~ log10(s_dat$mass_norm)))
 # TO THINK ABOUT:
 # what is the rationale for not mixing species from different studies here? For Cmax we don't, but that's because they are so tricky to measure.. growth should be easier to measure. And by grouping species and sharing information, we do say the response variables are comparable. Note I also have much fewer species with dublicates in Cmax. 
 
-#====**** Conclusion ===============================================================
+#** Conclusion =====================================================================
 # Do intraspecific analysis, using the same filters as above. Fit LMM to start with to account for non-independence? Here' I'm not interested in the actual slopes of each species but only the overall effect, so should be straightforward
 
 
-#====**** Extra ====================================================================
+#** Extra ==========================================================================
 # Growth rate at optimum over size 
 ggplot(s_dat, aes(log10(mass_norm), `growth_rate_%day-1`, 
                   color = common_name)) + 

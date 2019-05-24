@@ -10,7 +10,7 @@
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#======== A. LOAD LIBRARIES & READ DATA ============================================
+# A. LOAD LIBRARIES & READ DATA ====================================================
 rm(list = ls())
 
 # Provide package names
@@ -56,8 +56,8 @@ glimpse(dat)
 unique(dat$species)
 
 
-#======== B. FIT LOG-LOG MODEL BY SPECIES ==========================================
-#====**** Coregonus albula ========
+# B. FIT LOG-LOG MODEL BY SPECIES ==================================================
+#** Coregonus albula ===============================================================
 c_albula <- dat %>% 
   filter(species == "Coregonus albula")
 
@@ -81,7 +81,8 @@ d15
 plot(log(d15$metabolic_rate) ~ log(d15$mass_g))
 summary(lm(log(d15$metabolic_rate) ~ log(d15$mass_g)))
 
-#====**** Coregonus fontanae ========
+
+#** Coregonus fontanae =============================================================
 c_fontanae <- dat %>% 
   filter(species == "Coregonus fontanae")
 
@@ -105,7 +106,8 @@ d15
 plot(log(d15$metabolic_rate) ~ log(d15$mass_g))
 summary(lm(log(d15$metabolic_rate) ~ log(d15$mass_g)))
 
-#====**** Abramis brama ========
+
+#** Abramis brama ==================================================================
 a_brama <- dat %>% 
   filter(species == "Abramis brama")
 
@@ -141,7 +143,8 @@ d23
 plot(log(d23$metabolic_rate) ~ log(d23$mass_g))
 summary(lm(log(d23$metabolic_rate) ~ log(d23$mass_g)))
 
-#====**** Rutilus rutilus ========
+
+#** Rutilus rutilus ================================================================
 r_rutilus <- dat %>% 
   filter(species == "Rutilus rutilus")
 
@@ -178,7 +181,7 @@ plot(log(d23$metabolic_rate) ~ log(d23$mass_g))
 summary(lm(log(d23$metabolic_rate) ~ log(d23$mass_g)))
 
 
-#====**** Salvelinus confluentus ========
+#** Salvelinus confluentus =========================================================
 s_confluentus <- dat %>% 
   filter(species == unique(dat$species)[5]) # this is odd, can't write species name
 
@@ -220,7 +223,8 @@ d20
 plot(log(d20$metabolic_rate) ~ log(d20$mass_g))
 summary(lm(log(d20$metabolic_rate) ~ log(d20$mass_g))) # Not significant size effect
 
-#====**** Oncorhynchus mykiss ========
+
+#** Oncorhynchus mykiss ============================================================
 o_mykiss <- dat %>% 
   filter(species == "Oncorhynchus mykiss")
 
@@ -266,7 +270,8 @@ d20
 plot(log(d20$metabolic_rate) ~ log(d20$mass_g))
 summary(lm(log(d20$metabolic_rate) ~ log(d20$mass_g))) 
 
-#====**** Salvelinus fontinalis ========
+
+#** Salvelinus fontinalis ==========================================================
 s_fontinalis <- dat %>% 
   filter(species == unique(dat$species)[7]) # again same issue with filtering on chr...
 
@@ -290,7 +295,8 @@ d20
 plot(log(d20$metabolic_rate) ~ log(d20$mass_g))
 summary(lm(log(d20$metabolic_rate) ~ log(d20$mass_g))) 
 
-#====**** Salmo trutta ========
+
+#** Salmo trutta ===================================================================
 s_trutta <- dat %>% 
   filter(species == "Salmo trutta") 
 
@@ -302,7 +308,8 @@ d10
 plot(log(d10$metabolic_rate) ~ log(d10$mass_g))
 summary(lm(log(d10$metabolic_rate) ~ log(d10$mass_g))) 
 
-#====**** Catostomus commersonii ========
+
+#** Catostomus commersonii =========================================================
 c_commersonii <- dat %>% 
   filter(species == "Catostomus commersonii")
 
@@ -326,7 +333,8 @@ d20
 plot(log(d20$metabolic_rate) ~ log(d20$mass_g))
 summary(lm(log(d20$metabolic_rate) ~ log(d20$mass_g))) 
 
-#====**** Cyprinus carpio ========
+
+#** Cyprinus carpio ================================================================
 c_carpio <- dat %>% 
   filter(species == "Cyprinus carpio")
 
@@ -356,7 +364,8 @@ d35
 plot(log(d35$metabolic_rate) ~ log(d35$mass_g))
 summary(lm(log(d35$metabolic_rate) ~ log(d35$mass_g))) 
 
-#====**** Ameiurus nebulosus ========
+
+#** Ameiurus nebulosus =============================================================
 a_nebulosus <- dat %>% 
   filter(species == "Ameiurus nebulosus")
 
@@ -380,7 +389,8 @@ d30
 plot(log(d30$metabolic_rate) ~ log(d30$mass_g))
 summary(lm(log(d30$metabolic_rate) ~ log(d30$mass_g))) 
 
-#====**** Silurus meridionalis ========
+
+#** Silurus meridionalis ===========================================================
 s_meridionalis <- dat %>% 
   filter(species == "Silurus meridionalis")
 
@@ -416,7 +426,8 @@ d30
 plot(log(d30$metabolic_rate) ~ log(d30$mass_g))
 summary(lm(log(d30$metabolic_rate) ~ log(d30$mass_g))) 
 
-#====**** Carassius auratus ========
+
+#** Carassius auratus ==============================================================
 c_auratus <- dat %>% 
   filter(species == "Carassius auratus")
 
@@ -446,7 +457,8 @@ d35
 plot(log(d35$metabolic_rate) ~ log(d35$mass_g))
 summary(lm(log(d35$metabolic_rate) ~ log(d35$mass_g))) 
 
-#====**** Pomadasys commersonnii ========
+
+#** Pomadasys commersonnii =========================================================
 p_commersonnii <- dat %>% 
   filter(species == "Pomadasys commersonnii")
 

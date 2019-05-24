@@ -9,10 +9,9 @@
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#======== A. LOAD LIBRARIES & READ DATA ============================================
+# A. LOAD LIBRARIES & READ DATA ====================================================
 rm(list = ls())
 
-#==** Load packages ====
 # Provide package names
 pkgs <- c("dplyr",
           "tidyr",
@@ -50,15 +49,13 @@ pkg_info(pkgs)
 # 9         tidyr         0.8.3
 # 10      viridis         0.5.1
 
-#==** Read data ====
 # Will crate a csv that one can read directly once data collection is finished.
 # dat <- read_excel(text=GET("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/growth_data.xlsx"))
 
 con <- read_excel("data/consumption_scaling_data.xlsx")
 met <- read_excel("data/metabolism_scaling_data.xlsx")
 
-glimpse(dat)
-
+# Which cols to make numeric?
 cols = c(1, 2, 3, 4, 5, 6, 7, 16, 17, 18, 19, 20, 21)
 
 con[,cols] %<>% lapply(function(x) as.numeric(as.character(x)))
@@ -80,8 +77,8 @@ dat <- rbind(con, met)
 
 dat$mean_b_ct <- dat$b - dat$mean_b
 
-#======== B. EXPLORE DATA ==========================================================
-#==** Normalize variables ========================================================== 
+# B. EXPLORE DATA ==================================================================
+#** Normalize variables ============================================================
 # Inspect temperatures
 ggplot(dat, aes(env_temp_mid)) +
   geom_histogram() + 
@@ -93,10 +90,10 @@ dat$env_temp_mid_norm <- dat$temp_c - dat$env_temp_mid
 # Relative to "preferred" temp (not all species have this info)
 dat$pref_temp_mid_norm <- dat$temp_c - dat$pref_temp_mid
 
-#==** Plot general data ==== 
+#** Plot general data ==============================================================
 # Trophic level
 ggplot(dat, aes(x = reorder(common_name, trophic_level), y = trophic_level)) +
-  geom_point(stat = 'identity', size=6) +
+  geom_point(stat = 'identity', size = 4) +
   scale_fill_manual(name = "trophic_level") + 
   theme_classic(base_size = 15) +
   guides(colour = FALSE) +
@@ -109,7 +106,7 @@ ggplot(dat, aes(x = reorder(common_name, trophic_level), y = trophic_level)) +
 # Temperature midpoint (Fishbase)
 ggplot(dat, aes(x = reorder(common_name, env_temp_mid), 
                 y = env_temp_mid)) +
-  geom_point(stat = 'identity', size=5) +
+  geom_point(stat = 'identity', size = 5) +
   scale_fill_manual(name = "env_temp_mid") + 
   theme_classic(base_size = 15) +
   guides(colour = T) +
@@ -120,10 +117,12 @@ ggplot(dat, aes(x = reorder(common_name, env_temp_mid),
   NULL 
 
 # Mid env. temperature (Fishbase) compared to experimental temperature range
+pal <- viridis(n = 5)
+
 dat %>% group_by(common_name) %>% 
   ggplot(., aes(x = reorder(common_name, env_temp_mid), 
                 y = env_temp_mid, color = "blue")) +
-  geom_point(stat = 'identity', size=5) +
+  geom_point(stat = 'identity', size = 5) +
   geom_errorbar(aes(reorder(common_name, env_temp_mid), 
                     ymin = env_temp_min, 
                     ymax = env_temp_max, color = "blue"), 
@@ -133,7 +132,7 @@ dat %>% group_by(common_name) %>%
                  y = temp_c, color = "gray"), size = 3) +
   scale_color_manual(labels = c("Mid. Env. Temperature [C]", 
                                 "Experimental\ntemperature"), 
-                     values = c("#f1a340", "#998ec3")) +
+                     values = pal[c(3, 1)]) +
   scale_fill_manual(name = "env_temp_mid") + 
   theme_classic(base_size = 18) +
   guides(color = guide_legend(title = "")) +
@@ -155,7 +154,7 @@ data.frame(t)
 # Max. published weight
 ggplot(dat, aes(x = reorder(common_name, w_max_published_g), 
                 y = log10(w_max_published_g))) +
-  geom_point(stat = 'identity', size=6) +
+  geom_point(stat = 'identity', size = 6) +
   scale_fill_manual(name = "w_max_published_g") + 
   theme_classic(base_size = 15) +
   guides(colour = FALSE) +
@@ -208,8 +207,8 @@ dat %>%
   NULL
 
 
-#==** Plot response variable ======================================================= 
-#==**** Interspecific ============================================================== 
+#** Plot response variable =========================================================
+#**** Interspecific ================================================================
 # All exponents
 ggplot(dat, aes(temp_c, b)) + 
   geom_point(size = 5, alpha = 0.7) +
@@ -319,13 +318,14 @@ ggplot(dat, aes(genus, b)) +
   NULL
 
 
-#==**** Intraspecific ============================================================== 
+#**** Intraspecific ================================================================
 s_dat <- dat %>% 
   filter(significant_size == "Y") %>% 
   group_by(common_name, rate) %>% 
   filter(n()>1)
 
-data.frame(s_dat)
+length(unique(s_dat$common_name))
+length(unique(dat$common_name))
 
 # Plot all intra-specific data
 ggplot(s_dat, aes(temp_c, b)) + 

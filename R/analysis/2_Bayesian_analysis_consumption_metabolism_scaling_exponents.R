@@ -21,13 +21,13 @@
 # https://mjskay.github.io/tidybayes/articles/tidy-rstanarm.html
 # https://www.tjmahr.com/visualizing-uncertainty-rstanarm/
 
-# *** Q is to include or not include n=1 species. In the mixed model, they are not included, but here I suppose they are treated as missing values? in which case they are by default assigned missing values? Not sure it makes sense conceptually though...
+# --- Q is to include or not include n=1 species. In the mixed model, they are not included, but here I suppose they are treated as missing values? in which case they are by default assigned missing values? Not sure it makes sense conceptually though...
 
-# *** Go through explore csv again, which species should I not include initially?
+# --- Go through explore csv again, which species should I not include initially?
 
-# *** Add pref temp env <- pref temp if no env temp (see growth scripts)
+# --- Add pref temp env <- pref temp if no env temp (see growth scripts)
 
-#======== A. LOAD LIBRARIES & READ DATA ============================================
+# A. LOAD LIBRARIES & READ DATA ====================================================
 rm(list = ls())
 
 # Provide package names
@@ -90,6 +90,7 @@ dat <- rbind(con, met)
 
 glimpse(dat)
 
+# Which cols to make numeric?
 cols = c(1, 2, 3, 4, 5, 6, 7, 16, 17, 18, 19, 20, 21)
 dat[,cols] %<>% lapply(function(x) as.numeric(as.character(x)))
 
@@ -128,7 +129,7 @@ s_met <- dat %>%
 # If env temp == NA, use mid point of pref.
 
 
-#======== B. CONSUMPTION ===========================================================
+# B. CONSUMPTION ===================================================================
 # Plot data again
 nb.cols <- length(unique(s_con$species))
 mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
@@ -142,10 +143,10 @@ ggplot(s_con, aes(env_temp_mid_norm, b, color = species)) +
 NULL
 
 
-#====**** Set up stan model ========================================================
-# The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model, with the following syntax: lmer(b ~ temp_mid_ct + (temp_mid_ct | species), df_me)
+#** Set up stan model ==============================================================
+# The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model: lmer(b ~ temp_mid_ct + (temp_mid_ct | species), df_me)
 
-# *** dont rely on defaults, specify them for clarity and if defaults change...
+# --- dont rely on defaults, specify them for clarity and if defaults change...
 s_con <- s_con %>% drop_na(env_temp_mid_norm)
 
 c1_stanlmer <- stan_lmer(formula = b ~ env_temp_mid_norm + (env_temp_mid_norm | species_ab), 
@@ -159,7 +160,7 @@ prior_summary(object = c1_stanlmer)
 print(c1_stanlmer, digits = 3)
 
 
-#====**** Check sampling quality & model convergence ===============================
+#** Check sampling quality & model convergence =====================================
 summary(c1_stanlmer, 
         probs = c(0.025, 0.975),
         digits = 5)
@@ -174,11 +175,11 @@ plot(c1_stanlmer, "rhat")
 # Plot ess
 plot(c1_stanlmer, "ess")
 
-# *** See metabolism code for proper diagnostics
+# --- See metabolism code for proper diagnostics
 
 
-#====**** Extract the posterior draws for all parameters ===========================
-# *** testing alternative way of plotting posterior including densities!
+#** Extract the posterior draws for all parameters =================================
+# --- testing alternative way of plotting posterior including densities!
 # posterior <- as.array(c1_stanlmer)
 # 
 # test <- data.frame(species = sort(unique(s_con$species_ab)))
@@ -198,12 +199,11 @@ plot(c1_stanlmer, "ess")
 #   point_est = "mean"
 # ) + theme_classic(base_size = 12)
 
-
 sims <- as.matrix(c1_stanlmer)
 
 para_name <- colnames(sims)
 
-para_name # *** need to know all parameters here (check sigma)
+para_name # --- need to know all parameters here (check sigma)
 
 # Create df of parameters I want to plot:
 species_b_c <- data.frame(species = sort(unique(s_con$species_ab)))
@@ -239,7 +239,7 @@ species_b_c$pred_slope_lwr50 <- summaryc1_50$lower
 species_b_c$pred_slope_upr50 <- summaryc1_50$upper
 
 
-#====**** Plot species-slopes ======================================================
+#** Plot species-slopes ============================================================
 blues <- colorRampPalette(brewer.pal(5, "Blues"))(5)
 # pal2 <- viridis(n = 4)
 pal <- colorRampPalette(brewer.pal(8, "Paired"))(12)
@@ -309,8 +309,8 @@ ggplot(pdat_c, aes(reorder(species, pred_slope), pred_slope,
 ggsave("figs/intraspec_con.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
 
-#====**** Plot intercept (exponent at mid temp) ====================================
-# *** Do this differently... perhaps the same way as above? But still, I want the overall mean slope as well...
+#** Plot intercept (exponent at mid temp) ==========================================
+# --- Do this differently... perhaps the same way as above? But still, I want the overall mean slope as well...
 inter <- tidy(c1_stanlmer, intervals = TRUE, prob =.95, 
               parameters = "varying")
 
@@ -329,13 +329,13 @@ ggplot(inter, aes(a)) +
   theme(aspect.ratio = 1) +
   NULL
   
-# *** Need to check the arguments of this function...
+# --- Need to check the arguments of this function...
 pp_check(c1_stanlmer) + 
   theme(aspect.ratio = 1) +
   theme_classic(base_size = 15)
 
 
-#====**** Plot overall prediction and data =========================================
+#** Plot overall prediction and data =============================================
 # https://www.tjmahr.com/visualizing-uncertainty-rstanarm/
 fits <- c1_stanlmer %>% 
   as_data_frame %>% 
@@ -379,7 +379,7 @@ ggplot(s_con) +
 ggsave("figs/scatter_con_b.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
 
-#======== B. METABOLISM ============================================================
+# B. METABOLISM ====================================================================
 # Plot data again
 nb.cols <- length(unique(s_met$species))
 mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
@@ -400,10 +400,10 @@ s_met2$env_temp_mid_norm
 s_met2$b
 
 
-#====**** Set up stan model ========================================================
+#** Set up stan model ==============================================================
 # The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model, with the following syntax: lmer(b ~ temp_mid_ct + (temp_mid_ct | species), df_me)
 
-# *** dont rely on defaults, specify them for clarity and if defaults change...
+# --- dont rely on defaults, specify them for clarity and if defaults change...
 m1_stanlmer <- stan_lmer(formula = b ~ env_temp_mid_norm + (env_temp_mid_norm | species_ab), 
                          data = s_met2,
                          seed = 8194,
@@ -416,7 +416,7 @@ prior_summary(object = m1_stanlmer)
 print(m1_stanlmer, digits = 3)
 
 
-#====**** Check sampling quality & model convergence ===============================
+#** Check sampling quality & model convergence =====================================
 summary(m1_stanlmer, 
         probs = c(0.025, 0.975),
         digits = 5)
@@ -429,17 +429,17 @@ pp_check(m1_stanlmer, nreps = 100)
 plot(m1_stanlmer, "rhat")
 
 # Plot ess
-# *** This suggest low number of effective simulations, high autocorrelation...
+# --- This suggest low number of effective simulations, high autocorrelation...
 plot(m1_stanlmer, "ess")
 
 posterior <- as.array(m1_stanlmer)
 
-# *** Add this kind of diagnostics to Cmax as well...
+# --- Add this kind of diagnostics to Cmax as well...
 mcmc_trace(posterior, pars = c("env_temp_mid_norm"),
            facet_args = list(ncol = 1, strip.position = "left"))
 
 
-#====**** Extract the posterior draws for all parameters ===========================
+#** Extract the posterior draws for all parameters =================================
 sims <- as.matrix(m1_stanlmer)
 
 para_name <- colnames(sims)
@@ -480,7 +480,7 @@ species_b_m$pred_slope_lwr50 <- summarym1_50$lower
 species_b_m$pred_slope_upr50 <- summarym1_50$upper
 
 
-#====**** Plot species-slopes ======================================================
+#** Plot species-slopes ============================================================
 #blues <- colorRampPalette(brewer.pal(8, "Blues"))(9)
 # pal2 <- viridis(n = 4)
 pal <- colorRampPalette(brewer.pal(8, "Paired"))(12)
@@ -549,7 +549,7 @@ ggplot(pdat_m, aes(reorder(species, pred_slope), pred_slope,
 ggsave("figs/intraspec_met.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
 
-#====**** Plot intercept (exponent at mid temp) ====================================
+#** Plot intercept (exponent at mid temp) ==========================================
 inter <- tidy(m1_stanlmer, intervals = TRUE, prob =.95, 
               parameters = "varying")
 
@@ -568,13 +568,13 @@ ggplot(inter, aes(a)) +
   theme(aspect.ratio = 1) +
   NULL
 
-# *** Need to check the arguments of this function...
+# --- Need to check the arguments of this function...
 pp_check(m1_stanlmer) + 
   theme(aspect.ratio = 1) +
   theme_classic(base_size = 15)
 
 
-#====**** Plot overall prediction and data =========================================
+#** Plot overall prediction and data ===============================================
 fits <- m1_stanlmer %>% 
   as_data_frame %>% 
   #rename(intercept = `(Intercept)`) %>% 
@@ -616,130 +616,5 @@ ggplot(s_met) +
   NULL
 
 ggsave("figs/scatter_met_b.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
-
-
-
-
-
-
-#------------------------------------ Testing raw stan 
-# The idea is to exactly reproduce the rstanarm model!
-
-# Check this for how to extract posterior distributions: http://www.maths.bath.ac.uk/~jjf23/stan/rbd.html
-
-# This is the main guide (paper): http://jakewestfall.org/misc/SorensenEtAl.pdf
-# and blog: https://cran.r-project.org/web/packages/rstan/vignettes/rstan.html
-
-# More examples here: http://www.maths.bath.ac.uk/~jjf23/stan/
-
-# Mathy paper here: https://arxiv.org/pdf/1506.06201.pdf and here https://pdfs.semanticscholar.org/d828/2c0cd55431b4fc7eaa0bceaa880ba1bafc34.pdf
-
-# Write a Stan Program
-stanmodel1 = "
-data {
-int<lower=0> J;          // number of schools 
-real y[J];               // estimated treatment effects
-real<lower=0> sigma[J];  // s.e. of effect estimates 
-}
-parameters {
-real mu; 
-real<lower=0> tau;
-vector[J] eta;
-}
-transformed parameters {
-vector[J] theta;
-theta = mu + tau * eta;
-}
-model {
-target += normal_lpdf(eta | 0, 1);
-target += normal_lpdf(y | theta, sigma);
-}
-"
-
-# Format data for Stan:
-stanDat <- list(subj = as.integer(s_con$subj),
-                item = as.integer(s_con$item),
-                rt = s_con$rt,
-                so = s_con$so,
-                N = nrow(s_con),
-                J = nlevels(s_con$subj),
-                K = nlevels(s_con$item))
-
-
-# Sample from the Posterior Distribution
-library(rstan)
-
-fit1 <- stan(
-  file = "schools.stan",  # Stan program
-  data = schools_data,    # named list of data
-  chains = 4,             # number of Markov chains
-  warmup = 1000,          # number of warmup iterations per chain
-  iter = 2000,            # total number of iterations per chain
-  cores = 2,              # number of cores (could use one per chain)
-  refresh = 0             # no progress shown
-)
-
-
-
-
-
-#------------------------------------ Continue here -----------------------------
-
-#------------------------------------# Freq. Mixed model
-me1 <- lmer(b ~ env_temp_mid_norm + (env_temp_mid_norm | species), s_con)
-summary(me1)
-coef(me1)
-
-me2 <- lmer(b ~ env_temp_mid_norm + (env_temp_mid_norm | species), s_met2)
-summary(me1)
-coef(me1)
-
-## Singular fit!
-
-#------------------------------------
-
-
-
-#------------------------------------
-# Multiple LM's
-# Test same data with multiple lm's instead:
-p <- c()
-r <- c()
-s <- c()
-t <- data.frame()
-
-for (i in unique(species_b$species)){
-  p  <- data.frame(subset(s_con, species == i))  
-  
-  m1 <- summary(lm(b ~ env_temp_mid_norm, data = p))
-  s  <- data.frame(slope = m1$coefficients[2],
-                   species = i,
-                   p = m1$coefficients[,4][2],
-                   se = m1$coefficients[,2][2])
-  t  <- rbind(t, s)
-}
-
-t
-
-# Now plot coefficients from species-specific lm's
-t$upper <- t$slope + t$se * 1.96 
-t$lower <- t$slope - t$se * 1.96
-
-ggplot(t, aes(reorder(species, slope), slope)) +
-  geom_point(size = 5) +
-  geom_hline(yintercept = 0, col = "red", linetype = 2, size = 1.3) +
-  geom_errorbar(aes(ymin = lower, 
-                    ymax = upper), 
-                width = 0, color = "gray55", size = 1.5) + 
-  guides(color = FALSE) + 
-  xlab("Species") + 
-  ylab("Slope") +
-  coord_flip() +
-  theme_classic(base_size = 15) +
-  NULL
-#------------------------------------
-
-
-
 
 

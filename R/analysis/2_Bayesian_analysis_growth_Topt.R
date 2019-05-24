@@ -20,7 +20,7 @@
 # https://mjskay.github.io/tidybayes/articles/tidy-rstanarm.html
 # https://www.tjmahr.com/visualizing-uncertainty-rstanarm/
 
-#======== A. LOAD LIBRARIES & READ DATA ============================================
+# A. LOAD LIBRARIES & READ DATA ====================================================
 rm(list = ls())
 
 # Provide package names
@@ -77,11 +77,12 @@ dat <- read_excel("data/growth_data.xlsx")
 
 glimpse(dat)
 
+# Which cols to make numeric?
 cols = c(1, 2, 3, 4, 5, 6, 15, 16, 17, 18, 19, 20)
 dat[,cols] %<>% lapply(function(x) as.numeric(as.character(x)))
 
 
-#====**** Prepare data =============================================================
+#** Prepare data ===================================================================
 # Normalize size by creating new column with size relative to max. In most cases this will be geometric mean, but can also be size class. I will then check if there are any NA's (Walleye) that doesn't have either size and make a data.
 
 # Create abbreviated species name for plotting
@@ -127,7 +128,7 @@ s_dat$mean_opt_temp_c <- ave(s_dat$opt_temp_c, s_dat$common_name)
 s_dat$opt_temp_c_ct <- s_dat$opt_temp_c - s_dat$mean_opt_temp_c
 
 
-#======== B. Growth optimum model ===========================================================
+# B. Growth optimum model ==========================================================
 # Plot data
 nb.cols <- length(unique(s_dat$species))
 mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
@@ -139,27 +140,9 @@ ggplot(s_dat, aes(log10(mass_norm), opt_temp_c_ct,
   scale_color_manual(values = mycolors) +  
   NULL
 
-#======================================= TESTING ALTERNATIVE FORMULATION
-# This is in line with the rstanarm paper...
-test <- stan_lmer(formula = opt_temp_c_ct ~ log10_mass_n + (1 + log10_mass_n | species), 
-                        data = s_dat,
-                        seed = 8194,
-                        adapt_delta = 0.999)
 
-summary(test, 
-        probs = c(0.025, 0.975),
-        digits = 5)
-
-summary(m1stanlmer, 
-        probs = c(0.025, 0.975),
-        digits = 5)
-
- # Looks the same
-#=======================================
-
-
-#====**** Set up stan model ========================================================
-# The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model, with the following syntax: lmer(opt_temp_c_ct ~ log10_mass_n + (log10_mass_n | species), s_dat)
+#** Set up stan model ==============================================================
+# The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model: lmer(opt_temp_c_ct ~ log10_mass_n + (log10_mass_n | species), s_dat)
 
 # *** dont rely on defaults, specify them for clarity and if defaults change...
 m1stanlmer <- stan_lmer(formula = opt_temp_c_ct ~ log10_mass_n + (log10_mass_n | species), 
@@ -174,7 +157,7 @@ prior_summary(object = m1stanlmer)
 print(m1stanlmer, digits = 3)
 
 
-#====**** Check sampling quality & model convergence ===============================
+#** Check sampling quality & model convergence =====================================
 summary(m1stanlmer, 
         probs = c(0.025, 0.975),
         digits = 5)
@@ -190,7 +173,7 @@ plot(m1stanlmer, "rhat")
 plot(m1stanlmer, "ess")
 
 
-#====**** Extract the posterior draws for all parameters ===========================
+#** Extract the posterior draws for all parameters =================================
 sims <- as.matrix(m1stanlmer)
 
 para_name <- colnames(sims)
@@ -231,7 +214,7 @@ df$pred_slope_lwr50 <- summarym1_50$lower
 df$pred_slope_upr50 <- summarym1_50$upper
 
 
-#====**** Plot species-slopes ======================================================
+#** Plot species-slopes ============================================================
 #blues <- colorRampPalette(brewer.pal(8, "Blues"))(9)
 # pal2 <- viridis(n = 4)
 pal <- colorRampPalette(brewer.pal(8, "Paired"))(12)
@@ -301,7 +284,7 @@ ggplot(pdat, aes(reorder(species, pred_slope), pred_slope,
 ggsave("figs/growth_species.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
 
-#====**** Plot overall prediction and data =========================================
+#** Plot overall prediction and data ===============================================
 fits <- m1stanlmer %>% 
   as_data_frame %>% 
   #rename(intercept = `(Intercept)`) %>% 

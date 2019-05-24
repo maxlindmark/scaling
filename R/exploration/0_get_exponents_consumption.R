@@ -10,7 +10,7 @@
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#======== A. LOAD LIBRARIES & READ DATA ============================================
+#== A. LOAD LIBRARIES & READ DATA ==================================================
 rm(list = ls())
 
 # *** Not finished!
@@ -58,11 +58,11 @@ glimpse(dat)
 unique(dat$species)
 
 
-#======== B. FIT LOG-LOG MODEL BY SPECIES ==========================================
+#== B. FIT LOG-LOG MODEL BY SPECIES ================================================
 
-# check which species have "data" as source and redo them here
+# Check which species have "data" as source in exponent data set and redo them here
 
-#====**** Coregonus albula ========
+#==** Coregonus albula =============================================================
 c_albula <- dat %>% 
   filter(species == "Coregonus albula")
 
