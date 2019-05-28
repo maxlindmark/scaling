@@ -284,6 +284,15 @@ p1 <- s_datc %>%
   coord_cartesian(xlim = c(xmin, xmax)) +
   NULL
 
+# Plot actual masses in size classes
+s_datc %>% 
+  dplyr::mutate(quartile = ntile(mass_norm, nranks)) %>% 
+  ggplot(., aes(quartile, mass_norm, group = factor(quartile))) +
+  geom_boxplot() +
+  theme_classic(base_size = 15) +
+  geom_jitter(size = 2, alpha = 0.5)
+
+
 p2 <- s_datm %>% 
   dplyr::mutate(quartile = ntile(mass_norm, nranks)) %>% 
   dplyr::group_by(species) %>% 
@@ -304,7 +313,6 @@ p1 + p2
 # Looks ok so far. I can show that there is a tendency in the data to have declining 
 # optimum temperature for Cmax over ontogeny. I can also show that optimum curves 
 # overall are more evident for Cmax than metabolism. This is ok to show as it is...
-
 # ... But I will try and fit a polynomial like Garcia-Garcia to these data and see what 
 # comes out. Then we can plot predicted lines for the average size in the size classes 
 # I currently use for colors.
@@ -313,15 +321,36 @@ p1 + p2
 # as I don't focus on the actual values! That gives me some data points I can compare
 # with the T_opt figure.
 
+col <- viridis(n = 5)
+# get activation energy of CMax (Brown, 2004) 
+mc <- s_datc %>% 
+  dplyr::filter(env_temp_mid_norm > -11 & env_temp_mid_norm < 11) %>% 
+  dplyr::mutate(inv_temp = 1/((temp_c + 273.15) * 8.617332e-05))
 
+p3 <- ggplot(mc, aes(inv_temp, log(y))) +
+  theme_classic(base_size = 15) +
+  stat_smooth(method = "lm") +
+  labs(x = "Temperature (1/k*T", y = "Maximum consumption rate") +
+  theme(aspect.ratio = 1) +
+  geom_point(size = 2, alpha = 0.5, color = col[2])
 
+summary(lm(log(mc$y) ~ mc$inv_temp))
 
+# get activation energy of metabolism (Brown, 2004) 
+mm <- s_datm %>% 
+  dplyr::filter(env_temp_mid_norm > -11 & env_temp_mid_norm < 11) %>% 
+  dplyr::mutate(inv_temp = 1/((temp_c + 273.15) * 8.617332e-05))
 
+p4 <- ggplot(mm, aes(inv_temp, log(y))) +
+  theme_classic(base_size = 15) +
+  stat_smooth(method = "lm") +
+  labs(x = "Temperature (1/k*T", y = "Metabolic rate") +
+  theme(aspect.ratio = 1) +
+  geom_point(size = 2, alpha = 0.5, color = col[2])
 
-
-
-
-
-
-
+summary(lm(log(mm$y) ~ mm$inv_temp))
+par(mfrow = c(2,2))
+plot(lm(log(mm$y) ~ mm$inv_temp))
+par(mfrow = c(1,1))
+p3+p4  
 

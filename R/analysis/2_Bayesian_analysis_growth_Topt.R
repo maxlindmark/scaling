@@ -281,7 +281,7 @@ ggplot(pdat, aes(reorder(species, pred_slope), pred_slope,
   #theme(axis.text.y = element_blank()) + # If I end up with too many species
   NULL
 
-ggsave("figs/growth_species.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
+#ggsave("figs/growth_species.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
 
 #** Plot overall prediction and data ===============================================
@@ -324,7 +324,7 @@ ggplot(s_dat) +
        y = "Normalized optimum growth temperature") +
   NULL
 
-ggsave("figs/growth_scatter.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
+#ggsave("figs/growth_scatter.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
 
 

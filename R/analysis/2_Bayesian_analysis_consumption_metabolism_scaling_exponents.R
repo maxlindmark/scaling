@@ -47,8 +47,6 @@ pkgs <- c("mlmRev",
           "modelr",
           "tidybayes")
 
-library(viridis)
-
 # Install packages
 if (length(setdiff(pkgs, rownames(installed.packages()))) > 0) {
   install.packages(setdiff(pkgs, rownames(installed.packages())))
@@ -56,6 +54,8 @@ if (length(setdiff(pkgs, rownames(installed.packages()))) > 0) {
 
 # Load all packages
 lapply(pkgs, library, character.only = TRUE)
+
+library(viridis)
 
 # Print package version
 #script <- getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/functions/package_info.R", ssl.verifypeer = FALSE)
@@ -139,7 +139,7 @@ ggplot(s_con, aes(env_temp_mid_norm, b, color = species)) +
   # geom_line(size = 2) +
   theme_classic(base_size = 15) +
   guides(color = FALSE) +
-  scale_color_manual(values = mycolors)
+  scale_color_manual(values = mycolors) +
 NULL
 
 
@@ -147,7 +147,7 @@ NULL
 # The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model: lmer(b ~ temp_mid_ct + (temp_mid_ct | species), df_me)
 
 # --- dont rely on defaults, specify them for clarity and if defaults change...
-s_con <- s_con %>% drop_na(env_temp_mid_norm)
+s_con <- s_con %>% dplyr::drop_na(env_temp_mid_norm)
 
 c1_stanlmer <- stan_lmer(formula = b ~ env_temp_mid_norm + (env_temp_mid_norm | species_ab), 
                          data = s_con,
@@ -213,6 +213,9 @@ species_b_c$param <- paste("b[env_temp_mid_norm species:",
                            sort(unique(species_b_c$species)), 
                            "]", 
                            sep = "")
+
+# Remove E.coioides for now since it doesn't have a temperature
+species_b_c <- species_b_c[-which(species_b_c$species == "E.coioides"), ] 
 
 # Extract each species slope and 90% CI
 summaryc1_90 <- tidy(c1_stanlmer, intervals = TRUE, prob =.9, 
@@ -306,7 +309,7 @@ ggplot(pdat_c, aes(reorder(species, pred_slope), pred_slope,
   #theme(axis.text.y = element_blank()) + # If I end up with too many species
   NULL
 
-ggsave("figs/intraspec_con.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
+#ggsave("figs/intraspec_con.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
 
 #** Plot intercept (exponent at mid temp) ==========================================
@@ -376,7 +379,7 @@ ggplot(s_con) +
        y = "Mass-scaling exponent (consumption)") +
   NULL
 
-ggsave("figs/scatter_con_b.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
+#ggsave("figs/scatter_con_b.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
 
 # B. METABOLISM ====================================================================
@@ -546,7 +549,7 @@ ggplot(pdat_m, aes(reorder(species, pred_slope), pred_slope,
   #theme(axis.text.y = element_blank()) + # If I end up with too many species
   NULL
 
-ggsave("figs/intraspec_met.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
+#ggsave("figs/intraspec_met.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
 
 #** Plot intercept (exponent at mid temp) ==========================================
@@ -615,6 +618,6 @@ ggplot(s_met) +
        y = "Mass-scaling exponent (metabolism)") +
   NULL
 
-ggsave("figs/scatter_met_b.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
+#ggsave("figs/scatter_met_b.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
 
