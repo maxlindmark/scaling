@@ -41,7 +41,6 @@ pkgs <- c("mlmRev",
           "broom",
           "readxl",
           "dplyr",
-          "plyr",
           "RColorBrewer",
           "bayesplot",
           "modelr",
@@ -65,19 +64,18 @@ library(viridis)
 # package loadedversion
 # 1     bayesplot         1.6.0
 # 2         broom         0.4.4
-# 3         dplyr       0.8.0.1
+# 3         dplyr         0.8.1
 # 4       ggplot2         3.1.1
 # 5          lme4        1.1-19
 # 6      magrittr           1.5
 # 7        mlmRev         1.0-7
 # 8        modelr         0.1.4
-# 9          plyr         1.8.4
-# 10 RColorBrewer         1.1-2
-# 11        RCurl     1.95-4.12
-# 12       readxl         1.3.1
-# 13     rstanarm        2.18.2
-# 14    tidybayes         1.0.4
-# 15      tidylog         0.1.0
+# 9  RColorBrewer         1.1-2
+# 10        RCurl     1.95-4.12
+# 11       readxl         1.3.1
+# 12     rstanarm        2.18.2
+# 13    tidybayes         1.0.4
+# 14      tidylog         0.1.0
 
 # Read data
 con <- read_excel("data/consumption_scaling_data.xlsx")

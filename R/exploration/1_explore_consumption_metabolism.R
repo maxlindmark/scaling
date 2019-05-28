@@ -9,9 +9,6 @@
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-# --- Ok, something messes up tidyverse here... so when i manipulate data i need to 
-#     be careful to do dplyr:: first
-
 # A. LOAD LIBRARIES & READ DATA ====================================================
 rm(list = ls())
 
@@ -23,7 +20,6 @@ pkgs <- c("dplyr",
           "RCurl",
           "ggplot2",
           "viridis",
-          "plyr",
           "RColorBrewer",
           "magrittr")
 
@@ -39,16 +35,15 @@ lapply(pkgs, library, character.only = TRUE)
 # pkg_info(pkgs)
 
 # package loadedversion
-# 1         dplyr       0.8.0.1
-# 2       ggplot2         3.1.1
-# 3      magrittr           1.5
-# 4          plyr         1.8.4
-# 5  RColorBrewer         1.1-2
-# 6         RCurl     1.95-4.12
-# 7        readxl         1.3.1
-# 8       tidylog         0.1.0
-# 9         tidyr         0.8.3
-# 10      viridis         0.5.1
+# 1        dplyr         0.8.1
+# 2      ggplot2         3.1.1
+# 3     magrittr           1.5
+# 4 RColorBrewer         1.1-2
+# 5        RCurl     1.95-4.12
+# 6       readxl         1.3.1
+# 7      tidylog         0.1.0
+# 8        tidyr         0.8.3
+# 9      viridis         0.5.1
 
 # Also add patchwork
 # devtools::install_github("thomasp85/patchwork")
@@ -69,8 +64,8 @@ met[,cols] %<>% lapply(function(x) as.numeric(as.character(x)))
 colnames(con)
 head(con)
 
-con <- con %>% dplyr::rename(y = consumption)
-met <- met %>% dplyr::rename(y = metabolic_rate)
+con <- con %>% rename(y = consumption)
+met <- met %>% rename(y = metabolic_rate)
 
 con$rate <- "consumption"
 met$rate <- "metabolism"
@@ -96,6 +91,7 @@ dat$pref_temp_mid_norm <- dat$temp_c - dat$pref_temp_mid
 # Now normalize mass with respect to max mass
 dat$mass_norm <- dat$mass_g / dat$w_max_published_g
 # ---- Stechlin cisco har larger size than max*
+
 
 #** Plot general data ==============================================================
 # Trophic level
@@ -215,18 +211,21 @@ dat %>%
   NULL
 
 # Create data with with species that have also temperature repliates within species (intra-specific analysis)
-s_datc <- dat %>% 
-  dplyr::filter(rate == "consumption") %>% 
-  dplyr::group_by(species) %>% 
-  dplyr::mutate(unique_t = n_distinct(env_temp_mid_norm)) %>% 
-  dplyr::filter(unique_t > 1)
+s_datc <- data.frame(
+  dat %>% 
+  filter(rate == "consumption") %>% 
+  group_by(species) %>% 
+  mutate(unique_t = n_distinct(env_temp_mid_norm)) %>% 
+  filter(unique_t > 1)
+)
 
-s_datm <- dat %>% 
-  dplyr::filter(rate == "metabolism") %>% 
-  dplyr::group_by(species) %>% 
-  dplyr::mutate(unique_t = n_distinct(env_temp_mid_norm)) %>% 
-  dplyr::filter(unique_t > 1)
-
+s_datm <-  data.frame(
+  dat %>% 
+  filter(rate == "metabolism") %>% 
+  group_by(species) %>% 
+  mutate(unique_t = n_distinct(env_temp_mid_norm)) %>% 
+  filter(unique_t > 1)
+)
 
 #** Plot response variable =========================================================
 # All data, by species
@@ -263,21 +262,24 @@ s_datc %>%
 
 # Here I use only intra-specific data:
 # Set number of ranks
-nranks <- 6
+nranks <- 5
 pal <- viridis(n = nranks)
 pal2 <- colorRampPalette(brewer.pal(8, "Dark2"))(nranks)
 
 xmax <- max(c(max(s_datc$env_temp_mid_norm), max(s_datm$env_temp_mid_norm)))+0.1
 xmin <- min(c(min(s_datc$env_temp_mid_norm), min(s_datm$env_temp_mid_norm)))+0.1
 
+# Group by normalized mass
+# Consumption
 p1 <- s_datc %>% 
-  dplyr::mutate(quartile = ntile(mass_norm, nranks)) %>% 
-  dplyr::group_by(species) %>% 
-  dplyr::mutate(y_norm = y/max(y)) %>% 
+  mutate(quartile = ntile(mass_norm, nranks)) %>% 
+  group_by(species) %>% 
+  mutate(y_norm = y/max(y)) %>% 
   ggplot(., aes(env_temp_mid_norm, y_norm, color = factor(quartile))) + 
   theme_classic(base_size = 15) +
-  geom_point(size = 5, alpha = 0.4) +
+  geom_point(size = 4, alpha = 0.4) +
   guides(color = FALSE) +
+  labs(x = "Normalized temperature", y = "Normalized consumption") +
   scale_color_manual(values = rev(pal)) +
   #scale_color_manual(values = pal2) +
   stat_smooth(span = 1.0, se = F, size = 3, alpha = 1, geom = "line") +
@@ -286,24 +288,85 @@ p1 <- s_datc %>%
 
 # Plot actual masses in size classes
 s_datc %>% 
-  dplyr::mutate(quartile = ntile(mass_norm, nranks)) %>% 
-  ggplot(., aes(quartile, mass_norm, group = factor(quartile))) +
+  mutate(quartile = ntile(mass_norm, nranks)) %>% 
+  ggplot(., aes(quartile, mass_g, group = factor(quartile))) +
   geom_boxplot() +
   theme_classic(base_size = 15) +
   geom_jitter(size = 2, alpha = 0.5)
 
-
+# Metabolism
 p2 <- s_datm %>% 
-  dplyr::mutate(quartile = ntile(mass_norm, nranks)) %>% 
-  dplyr::group_by(species) %>% 
-  dplyr::mutate(y_norm = y/max(y)) %>% 
+  mutate(quartile = ntile(mass_norm, nranks)) %>% 
+  group_by(species) %>% 
+  mutate(y_norm = y/max(y)) %>% 
   ggplot(., aes(env_temp_mid_norm, y_norm, color = factor(quartile))) + 
   theme_classic(base_size = 15) +
-  geom_point(size = 5, alpha = 0.4) +
+  geom_point(size = 4, alpha = 0.4) +
+  labs(x = "Normalized temperature", y = "Normalized metabolism") +
   scale_color_manual(values = rev(pal)) +
   #scale_color_manual(values = pal2) +
   stat_smooth(span = 1.0, se = F, size = 3, alpha = 1, geom = "line") +
   coord_cartesian(xlim = c(xmin, xmax)) +
+  NULL
+
+p1 + p2
+
+opt <- data.frame(topt = c(10, 18, 19, 8, 5),
+                  sizecl = c(5,4,3,2,1))
+
+ggplot(opt, aes(sizecl, topt)) +
+  geom_point(size = 5, alpha = 0.4) + 
+  theme_classic(base_size = 15) +
+  NULL
+
+
+# Group by mass_g
+# Consumption
+p1 <- s_datc %>% 
+  ungroup %>% 
+  mutate(quartile = ntile(mass_g, nranks)) %>% 
+  group_by(species) %>% 
+  mutate(y_norm = y/max(y)) %>% 
+  ggplot(., aes(env_temp_mid_norm, y_norm, color = factor(quartile))) + 
+  theme_classic(base_size = 15) +
+  geom_point(size = 4, alpha = 0.4) +
+  guides(color = FALSE) +
+  labs(x = "Normalized temperature", y = "Normalized consumption") +
+  scale_color_manual(values = rev(pal)) +
+  #scale_color_manual(values = pal2) +
+  stat_smooth(span = 1.0, se = F, size = 3, alpha = 1, geom = "line") +
+  coord_cartesian(xlim = c(xmin, xmax)) +
+  NULL
+
+# Plot actual masses in size classes
+s_datc %>% 
+  mutate(quartile = ntile(mass_g, nranks)) %>% 
+  ggplot(., aes(quartile, mass_g, group = factor(quartile))) +
+  geom_boxplot() +
+  theme_classic(base_size = 15) +
+  geom_jitter(size = 2, alpha = 0.5)
+
+# Metabolism
+p2 <- s_datm %>% 
+  mutate(quartile = ntile(mass_g, nranks)) %>% 
+  group_by(species) %>% 
+  mutate(y_norm = y/max(y)) %>% 
+  ggplot(., aes(env_temp_mid_norm, y_norm, color = factor(quartile))) + 
+  theme_classic(base_size = 15) +
+  geom_point(size = 4, alpha = 0.4) +
+  labs(x = "Normalized temperature", y = "Normalized consumption") +
+  scale_color_manual(values = rev(pal)) +
+  #scale_color_manual(values = pal2) +
+  stat_smooth(span = 1.0, se = F, size = 3, alpha = 1, geom = "line") +
+  coord_cartesian(xlim = c(xmin, xmax)) +
+  NULL
+
+opt <- data.frame(topt = c(14, 8, 9, 2, 12),
+                  sizecl = c(5,4,3,2,1))
+
+ggplot(opt, aes(sizecl, topt)) +
+  geom_point(size = 5, alpha = 0.4) + 
+  theme_classic(base_size = 15) +
   NULL
 
 p1 + p2
@@ -322,7 +385,7 @@ p1 + p2
 # with the T_opt figure.
 
 col <- viridis(n = 5)
-# get activation energy of CMax (Brown, 2004) 
+# Get activation energy of CMax (Brown, 2004) 
 mc <- s_datc %>% 
   dplyr::filter(env_temp_mid_norm > -11 & env_temp_mid_norm < 11) %>% 
   dplyr::mutate(inv_temp = 1/((temp_c + 273.15) * 8.617332e-05))
@@ -336,7 +399,7 @@ p3 <- ggplot(mc, aes(inv_temp, log(y))) +
 
 summary(lm(log(mc$y) ~ mc$inv_temp))
 
-# get activation energy of metabolism (Brown, 2004) 
+# Get activation energy of metabolism (Brown, 2004) 
 mm <- s_datm %>% 
   dplyr::filter(env_temp_mid_norm > -11 & env_temp_mid_norm < 11) %>% 
   dplyr::mutate(inv_temp = 1/((temp_c + 273.15) * 8.617332e-05))
@@ -352,5 +415,6 @@ summary(lm(log(mm$y) ~ mm$inv_temp))
 par(mfrow = c(2,2))
 plot(lm(log(mm$y) ~ mm$inv_temp))
 par(mfrow = c(1,1))
+
 p3+p4  
 

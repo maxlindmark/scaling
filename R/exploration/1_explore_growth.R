@@ -20,7 +20,6 @@ pkgs <- c("dplyr",
           "RCurl",
           "ggplot2",
           "viridis",
-          "plyr",
           "RColorBrewer",
           "magrittr")
 
@@ -33,20 +32,20 @@ if (length(setdiff(pkgs, rownames(installed.packages()))) > 0) {
 lapply(pkgs, library, character.only = TRUE)
 
 # Print package version
-script <- getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/functions/package_info.R", ssl.verifypeer = FALSE)
-eval(parse(text = script))
-pkg_info(pkgs)
+# script <- getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/functions/package_info.R", ssl.verifypeer = FALSE)
+# eval(parse(text = script))
+# pkg_info(pkgs)
 
-# package   version
-# 1        dplyr   0.8.0.1
-# 2      ggplot2     3.0.0
-# 3         plyr     1.8.4
-# 4 RColorBrewer     1.1-2
-# 5        RCurl 1.95-4.10
-# 6       readxl     1.3.1
-# 7      tidylog     0.1.0
-# 8        tidyr     0.8.3
-# 9      viridis     0.5.1
+# package loadedversion
+# 1        dplyr         0.8.1
+# 2      ggplot2         3.1.1
+# 3     magrittr           1.5
+# 4 RColorBrewer         1.1-2
+# 5        RCurl     1.95-4.12
+# 6       readxl         1.3.1
+# 7      tidylog         0.1.0
+# 8        tidyr         0.8.3
+# 9      viridis         0.5.1
 
 # Will crate a csv that one can read directly once data collection is finished.
 # dat <- read_excel(text=GET("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/growth_data.xlsx"))
@@ -183,9 +182,11 @@ ggplot(dat, aes(log10(mass_norm), opt_temp_c, color = common_name)) +
 
 
 #**** Intraspecific data (only n>1 species) ========================================
-s_dat <- dat %>% 
+s_dat <- data.frame(
+  dat %>% 
   group_by(common_name) %>% 
   filter(n()>1)
+)
 
 # Split window by species
 ggplot(s_dat, aes(log10(mass_norm), opt_temp_c, color = common_name)) + 
@@ -223,26 +224,34 @@ s_dat$opt_temp_c_ct <- s_dat$opt_temp_c - s_dat$mean_opt_temp_c
 nb.cols <- length(unique(s_dat$species))
 mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
 
+# Mass normalized to max:
 ggplot(s_dat, aes(log10(mass_norm), opt_temp_c_ct, 
                   color = common_name)) + 
   geom_point(size = 5) +
-  #geom_line(size = 3, alpha = 0.4) +
   theme_classic(base_size = 15) +
   scale_color_manual(values = mycolors) +  
   NULL
 
 summary(lm(s_dat$opt_temp_c_ct ~ log10(s_dat$mass_norm)))
 
+# Just mass
+ggplot(s_dat, aes(log10(mid_mass_sizecl_g), opt_temp_c_ct, 
+                  color = common_name)) + 
+  geom_point(size = 5) +
+  theme_classic(base_size = 15) +
+  scale_color_manual(values = mycolors) +  
+  NULL
+
+summary(lm(s_dat$opt_temp_c_ct ~ log10(s_dat$mid_mass_sizecl_g)))
+
 # TO THINK ABOUT:
 # what is the rationale for not mixing species from different studies here? For Cmax we don't, but that's because they are so tricky to measure.. growth should be easier to measure. And by grouping species and sharing information, we do say the response variables are comparable. Note I also have much fewer species with dublicates in Cmax. 
 
-#** Conclusion =====================================================================
-# Do intraspecific analysis, using the same filters as above. Fit LMM to start with to account for non-independence? Here' I'm not interested in the actual slopes of each species but only the overall effect, so should be straightforward
 
 
 #** Extra ==========================================================================
 # Growth rate at optimum over size 
-ggplot(s_dat, aes(log10(mass_norm), `growth_rate_%day-1`, 
+ggplot(s_dat, aes(log10(mass_norm), growth_rate_.day.1, 
                   color = common_name)) + 
   geom_point(size = 5, alpha = 0.7) +
   stat_smooth(method = "lm", se = FALSE, size = 2, alpha = 0.2)+ 
@@ -250,7 +259,7 @@ ggplot(s_dat, aes(log10(mass_norm), `growth_rate_%day-1`,
   scale_color_viridis(discrete = TRUE) +
   NULL
 
-ggplot(s_dat, aes(log(mass), log(`growth_rate_%day-1`), 
+ggplot(s_dat, aes(log(mass), log(growth_rate_.day.1), 
                   color = common_name)) + 
   geom_point(size = 5, alpha = 0.7) +
   stat_smooth(method = "lm", se = FALSE, size = 2, alpha = 0.2)+ 
@@ -264,16 +273,13 @@ summary(lm(log(s_dat$growth_rate) ~ log(s_dat$mass)))
 # See Barneche's new paper for references on this...
 
 # Growth rate over temp
-ggplot(s_dat, aes(opt_temp_c_ct, growth_rate, 
+ggplot(s_dat, aes(opt_temp_c_ct, growth_rate_.day.1, 
                   color = common_name)) + 
   geom_point(size = 7, alpha = 0.7) +
   stat_smooth(method = "lm", se = FALSE, size = 2, alpha = 0.2)+ 
   theme_classic(base_size = 15) +
   scale_color_viridis(discrete = TRUE) +
   NULL
-
-
-
 
 
 

@@ -20,7 +20,6 @@ pkgs <- c("dplyr",
           "RCurl",
           "ggplot2",
           "viridis",
-          "plyr",
           "RColorBrewer",
           "magrittr")
 
@@ -33,21 +32,20 @@ if (length(setdiff(pkgs, rownames(installed.packages()))) > 0) {
 lapply(pkgs, library, character.only = TRUE)
 
 # Print package version
-script <- getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/functions/package_info.R", ssl.verifypeer = FALSE)
-eval(parse(text = script))
-pkg_info(pkgs)
+# script <- getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/functions/package_info.R", ssl.verifypeer = FALSE)
+# eval(parse(text = script))
+# pkg_info(pkgs)
 
 # package loadedversion
-# 1         dplyr       0.8.0.1
-# 2       ggplot2         3.1.1
-# 3      magrittr           1.5
-# 4          plyr         1.8.4
-# 5  RColorBrewer         1.1-2
-# 6         RCurl     1.95-4.12
-# 7        readxl         1.3.1
-# 8       tidylog         0.1.0
-# 9         tidyr         0.8.3
-# 10      viridis         0.5.1
+# 1        dplyr         0.8.1
+# 2      ggplot2         3.1.1
+# 3     magrittr           1.5
+# 4 RColorBrewer         1.1-2
+# 5        RCurl     1.95-4.12
+# 6       readxl         1.3.1
+# 7      tidylog         0.1.0
+# 8        tidyr         0.8.3
+# 9      viridis         0.5.1
 
 # Will crate a csv that one can read directly once data collection is finished.
 # dat <- read_excel(text=GET("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/growth_data.xlsx"))
@@ -67,11 +65,13 @@ met$rate <- "metabolism"
 # Calculate mean b within species and rate
 con <- con %>% 
   group_by(species, rate) %>% 
-  mutate(mean_b = ave(b, common_name))
+  mutate(mean_b = ave(b, common_name)) %>% 
+  ungroup()
 
 met <- met %>% 
   group_by(species, rate) %>% 
-  mutate(mean_b = ave(b, common_name))
+  mutate(mean_b = ave(b, common_name)) %>% 
+  ungroup()
 
 dat <- rbind(con, met)
 
@@ -319,11 +319,13 @@ ggplot(dat, aes(genus, b)) +
 
 
 #**** Intraspecific ================================================================
-s_dat <- dat %>% 
+s_dat <- data.frame(
+  dat %>% 
   filter(significant_size == "Y") %>% 
   group_by(common_name, rate) %>% 
   filter(n()>1)
-
+)
+  
 length(unique(s_dat$common_name))
 length(unique(dat$common_name))
 

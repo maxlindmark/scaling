@@ -34,7 +34,6 @@ pkgs <- c("mlmRev",
           "broom",
           "readxl",
           "dplyr",
-          "plyr",
           "RColorBrewer",
           "bayesplot",
           "modelr",
@@ -83,8 +82,8 @@ dat[,cols] %<>% lapply(function(x) as.numeric(as.character(x)))
 
 
 #** Prepare data ===================================================================
-# Normalize size by creating new column with size relative to max. In most cases this will be geometric mean, but can also be size class. I will then check if there are any NA's (Walleye) that doesn't have either size and make a data.
-
+# We use geometric mean for size, and if this is not possible we'll go with mid point 
+# of size range
 # Create abbreviated species name for plotting
 # Get first part of name
 sp1 <- substring(dat$species, 1, 1)
@@ -111,15 +110,20 @@ dat$mass[is.na(dat$mass)] <- -9
 dat <- dat %>% filter(mass > 0)
 
 # Now normalize mass with respect to max mass
-dat$mass_norm <- dat$mass / dat$w_max_published_g
+#dat$mass_norm <- dat$mass / dat$w_max_published_g
 
 # Intraspecific data (n>1 species)
-s_dat <- dat %>% 
+s_dat <- data.frame(
+  dat %>% 
   group_by(common_name) %>% 
   filter(n()>1)
+)
 
 # Log mass
-s_dat$log10_mass_n <- log10(s_dat$mass_norm)
+s_dat$log10_mass <- log10(s_dat$mass)
+
+# Log mass normalized
+#s_dat$log10_mass_n <- log10(s_dat$mass_norm)
 
 # Calculate mean optimum temperature within species
 s_dat$mean_opt_temp_c <- ave(s_dat$opt_temp_c, s_dat$common_name)
@@ -133,7 +137,7 @@ s_dat$opt_temp_c_ct <- s_dat$opt_temp_c - s_dat$mean_opt_temp_c
 nb.cols <- length(unique(s_dat$species))
 mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
 
-ggplot(s_dat, aes(log10(mass_norm), opt_temp_c_ct, 
+ggplot(s_dat, aes(log10(mass), opt_temp_c_ct, 
                   color = common_name)) + 
   geom_point(size = 5) +
   theme_classic(base_size = 15) +
@@ -145,10 +149,10 @@ ggplot(s_dat, aes(log10(mass_norm), opt_temp_c_ct,
 # The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model: lmer(opt_temp_c_ct ~ log10_mass_n + (log10_mass_n | species), s_dat)
 
 # *** dont rely on defaults, specify them for clarity and if defaults change...
-m1stanlmer <- stan_lmer(formula = opt_temp_c_ct ~ log10_mass_n + (log10_mass_n | species), 
+m1stanlmer <- stan_lmer(formula = opt_temp_c_ct ~ log10_mass + (log10_mass | species), 
                         data = s_dat,
                         seed = 8194,
-                        adapt_delta = 0.999)
+                        adapt_delta = 0.99)
 
 # Summary of priors used
 prior_summary(object = m1stanlmer)
@@ -184,7 +188,7 @@ para_name # *** need to know all parameters here (check sigma)
 df <- data.frame(species = sort(unique(s_dat$species_ab)))
 
 # Paste parameter name + species to get all species-specific parameters (slope in this case)
-df$param <- paste("b[log10_mass_n species:", 
+df$param <- paste("b[log10_mass species:", 
                   sort(unique(df$species_ab)), 
                   "]", 
                   sep = "")
@@ -194,7 +198,7 @@ summarym1_90 <- tidy(m1stanlmer, intervals = TRUE, prob =.9,
                      parameters = "varying")
 
 summarym1_90 <- summarym1_90 %>% 
-  filter(term == "log10_mass_n")
+  filter(term == "log10_mass")
 
 # Estimate
 df$pred_slope <- summarym1_90$estimate
@@ -208,80 +212,10 @@ summarym1_50 <- tidy(m1stanlmer, intervals = TRUE, prob =.5,
                      parameters = "varying")
 
 summarym1_50 <- summarym1_50 %>% 
-  filter(term == "log10_mass_n")
+  filter(term == "log10_mass")
 
 df$pred_slope_lwr50 <- summarym1_50$lower
 df$pred_slope_upr50 <- summarym1_50$upper
-
-
-#** Plot species-slopes ============================================================
-#blues <- colorRampPalette(brewer.pal(8, "Blues"))(9)
-# pal2 <- viridis(n = 4)
-pal <- colorRampPalette(brewer.pal(8, "Paired"))(12)
-pal2 <- c("#fdb863", "#b2abd2", "#5e3c99", "#e66101") # From colorbrewer website
-
-# Add overall mean  and 90% & 50% CI
-g_mean <- summary(m1stanlmer, probs = c(0.05, 0.95), digits = 5)[2] # Get the slope
-g_mean_ci90 <- posterior_interval(m1stanlmer, prob = 0.90, pars = "log10_mass_n")
-g_mean_ci50 <- posterior_interval(m1stanlmer, prob = 0.50, pars = "log10_mass_n")
-
-# Scale parameters to make them slope, not diff from mean!
-pdat <- df
-pdat[, 3:7] <- sweep(df[, 3:7], 2, g_mean, FUN = "+")
-
-# Group species with "stronger" evidence
-pdat$sig <- ifelse(pdat$pred_slope < 0 & pdat$pred_slope_upr50 < 0, 
-                   2, -9)
-
-pdat$sig <- ifelse(pdat$pred_slope > 0 & pdat$pred_slope_lwr50 > 0, 
-                   1, pdat$sig)
-
-pdat$sig <- ifelse(pdat$pred_slope < 0 & pdat$pred_slope_upr90 < 0, 
-                   3, pdat$sig)
-
-pdat$sig <- ifelse(pdat$pred_slope > 0 & pdat$pred_slope_lwr90 > 0, 
-                   4, pdat$sig)
-
-pdat$sig_f <- as.factor(pdat$sig)
-
-# Group positive and negative slopes
-pdat$sign <- ifelse(pdat$pred_slope < 0, "neg", "pos")
-
-# Reorder based on predicted slope and plot!
-ggplot(pdat, aes(reorder(species, pred_slope), pred_slope, 
-                 shape = sign, color = sig_f)) +
-  geom_rect(data = pdat, aes(reorder(species, pred_slope), pred_slope),
-            xmin = 0, xmax = 100, ymin = g_mean_ci90[1], ymax = g_mean_ci90[2],
-            color = "grey93", fill = "grey93") + # overplotting many rectangles here..
-  geom_rect(data = pdat, aes(reorder(species, pred_slope), pred_slope),
-            xmin = 0, xmax = 100, ymin = g_mean_ci50[1], ymax = g_mean_ci50[2],
-            color = "grey83", fill = "grey83") + # overplotting many rectangles here..
-  #geom_hline(yintercept = 0, col = "grey1", linetype = 1, size = 0.5, alpha = 0.5) +
-  geom_hline(yintercept = g_mean, col = pal[8], linetype = "twodash", size = 0.5, alpha = 0.7) +
-  geom_errorbar(aes(reorder(species, pred_slope), 
-                    ymin = pred_slope_lwr90, ymax = pred_slope_upr90), 
-                color = "gray70", size = 0.5, width = 0) +
-  geom_errorbar(aes(reorder(species, pred_slope), 
-                    ymin = pred_slope_lwr50, ymax = pred_slope_upr50), 
-                color = "gray50", size = 0.8, width = 0) +
-  #scale_color_manual(values = pal[c(4,1,2)]) + # Need to watch out for this, depends on # levels
-  #scale_color_manual(values = c("#b2abd2", "#fdb863", "#e66101", "#5e3c99")) + # Need to watch out for this, depends on # levels "pink"
-  scale_color_manual(values = pal2) + # Need to watch out for this, depends on # levels "pink"
-  geom_point(size = 4, col = "gray50") +
-  geom_point(data = filter(pdat, sig > 0), 
-             aes(reorder(species, pred_slope), pred_slope, shape = sign, color = sig_f), size = 4) +
-  xlab("Species") + 
-  ylab("Change in T_opt (C) for growth / order of magnitude change in mass") +
-  coord_flip() +
-  guides(shape = FALSE, color = FALSE) +
-  theme_classic(base_size = 11) +
-  theme(axis.text.y = element_text(size = 8, face = "italic")) +
-  theme(aspect.ratio = 1) +
-  #ylim(min(pdat$pred_slope_lwr95), -1*min(pdat$pred_slope_lwr95)) +
-  #theme(axis.text.y = element_blank()) + # If I end up with too many species
-  NULL
-
-#ggsave("figs/growth_species.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
 
 #** Plot overall prediction and data ===============================================
@@ -303,15 +237,15 @@ nb.cols <- length(unique(s_dat$species))
 mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
 
 ggplot(s_dat) + 
-  aes(x = log10_mass_n, y = opt_temp_c_ct, color = species) + 
+  aes(x = log10_mass, y = opt_temp_c_ct, color = species) + 
   # Plot a random sample of rows as gray semi-transparent lines
   geom_abline(aes(intercept = `(Intercept)`, 
-                  slope = log10_mass_n), 
+                  slope = log10_mass), 
               data = sample_n(fits, n_draws), color = col_draw, 
               alpha = alpha_level, size = 1.1) + 
   # Plot the median values in blue
   geom_abline(intercept = median(fits$`(Intercept)`), 
-              slope = median(fits$log10_mass_n), 
+              slope = median(fits$log10_mass), 
               size = 1.4, color = col_median) +
   geom_point(size = 4.5) +
   theme_classic(base_size = 15) +
@@ -320,7 +254,7 @@ ggplot(s_dat) +
   guides(color = FALSE) +
   theme_classic(base_size = 17) +
   theme(aspect.ratio = 4/5) +
-  labs(x = "Normalzied log10(mass)",
+  labs(x = "log10(mass)",
        y = "Normalized optimum growth temperature") +
   NULL
 
