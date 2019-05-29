@@ -168,11 +168,11 @@ ggplot(., aes(x = temp, y = ca)) +
   labs(x = bquote('Temperature'~(C^-1)), 
        y = bquote('Change in Cmax Exponent'~(C^-1)),
        fill = "Proportion change\nin asymptotic size") +
-  theme_classic(base_size = 16) +
+  theme_classic(base_size = 1) +
   theme(aspect.ratio = 1) +
   NULL
 
-# Heatmap with species "exponent-change" as points
+#**** Heatmap with species "exponent-change" as points =============================
 dat <- data.frame(expand.grid(mass = seq(0, 1000, 10),
                               temp = c(273.15 + 10, 273.15 + 12),
                               ca   = seq(-0.015, 0.004, 0.0005),
@@ -184,8 +184,7 @@ bi <- 2/3
 tref <- 273.15 + 10
 
 # Scale parameters with size and temperature
-# * NOTE I should use my parameter values for temperature scaling once I have good params. Now I have generic ones
-dat$a_c <- 0.1 * exp(0.4 * ((dat$temp - tref) / ((8.617332e-05) * dat$temp * tref)))
+dat$a_c <- 0.1 * exp(0.6 * ((dat$temp - tref) / ((8.617332e-05) * dat$temp * tref)))
 dat$b_c <- bi + dat$ca * (dat$temp - (273.15 + 10))
 
 dat$a_m <- 0.01 * exp(0.6 * ((dat$temp - tref) / ((8.617332e-05) * dat$temp * tref)))
@@ -311,7 +310,7 @@ ggplot(filter(dat, temp == 273.15 + 12), aes(x = cm, y = ca)) +
   theme(aspect.ratio = 1) +
   NULL
 
-#ggsave("figs/winf_species_heatmap.pdf", plot = last_plot(), scale = 1, width = 22, height = 22, units = "cm")
+#ggsave("figs/winf_species_heatmap.pdf", plot = last_plot(), scale = 1, width = 23, height = 23, units = "cm")
 
 #** Summary ========================================================================
 
