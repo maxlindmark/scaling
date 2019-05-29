@@ -405,9 +405,9 @@ mycolors <- viridis(n = 7)
 
 ggplot(s_dat, aes(x = rate, y = b, fill = rate, colour = rate))+
   geom_flat_violin(position = position_nudge(x = .25, y = 0), adjust = 2, trim = FALSE, alpha = 0.7)+
-  geom_point(position = position_jitter(width = .15), size = 3, alpha = 0.8)+
+  geom_point(position = position_jitter(width = .15), size = 1.7, alpha = 0.7)+
   geom_boxplot(aes(x = rate, y = b),
-               outlier.shape = NA, alpha = 0.3, width = .2, color = "black", size = 1) +
+               outlier.shape = NA, alpha = 0.2, width = .2, color = "black", size = 0.8) +
   coord_flip() + 
   guides(fill = FALSE, colour = FALSE) +
   scale_color_manual(values = mycolors[c(2,4)]) + # remove index if I skip viridis
@@ -419,9 +419,6 @@ ggplot(s_dat, aes(x = rate, y = b, fill = rate, colour = rate))+
 
 ggsave("figs/exp_raincloud.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
-summary(lm(b~rate, data=s_dat))
-
-  
 
 
 

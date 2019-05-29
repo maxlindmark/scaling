@@ -6,7 +6,9 @@
 # 
 # A. Load libraries
 #
-# B. Fit model
+# B. Fit model for consumption exponents ~ temperature
+#
+# C. Fit model for metabolic rate exponents ~ temperature
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -32,6 +34,7 @@ rm(list = ls())
 
 # Provide package names
 pkgs <- c("mlmRev",
+          "tidyr", 
           "lme4",
           "tidylog",
           "rstanarm",
@@ -44,7 +47,8 @@ pkgs <- c("mlmRev",
           "RColorBrewer",
           "bayesplot",
           "modelr",
-          "tidybayes")
+          "tidybayes",
+          "viridis")
 
 # Install packages
 if (length(setdiff(pkgs, rownames(installed.packages()))) > 0) {
@@ -53,8 +57,6 @@ if (length(setdiff(pkgs, rownames(installed.packages()))) > 0) {
 
 # Load all packages
 lapply(pkgs, library, character.only = TRUE)
-
-library(viridis)
 
 # Print package version
 #script <- getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/functions/package_info.R", ssl.verifypeer = FALSE)
@@ -76,6 +78,12 @@ library(viridis)
 # 12     rstanarm        2.18.2
 # 13    tidybayes         1.0.4
 # 14      tidylog         0.1.0
+# 15        tidyr         0.8.3
+# 16      viridis         0.5.1
+
+# Also add patchwork
+# devtools::install_github("thomasp85/patchwork")
+library(patchwork)
 
 # Read data
 con <- read_excel("data/consumption_scaling_data.xlsx")
@@ -124,8 +132,6 @@ s_met <- dat %>%
   group_by(common_name) %>% 
   filter(n()>1)
 
-# If env temp == NA, use mid point of pref.
-
 
 # B. CONSUMPTION ===================================================================
 # Plot data again
@@ -134,7 +140,6 @@ mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
 
 ggplot(s_con, aes(env_temp_mid_norm, b, color = species)) + 
   geom_point(size = 5) +
-  # geom_line(size = 2) +
   theme_classic(base_size = 15) +
   guides(color = FALSE) +
   scale_color_manual(values = mycolors) +
@@ -144,9 +149,9 @@ NULL
 #** Set up stan model ==============================================================
 # The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model: lmer(b ~ temp_mid_ct + (temp_mid_ct | species), df_me)
 
-# --- dont rely on defaults, specify them for clarity and if defaults change...
-s_con <- s_con %>% dplyr::drop_na(env_temp_mid_norm)
+s_con <- s_con %>% drop_na(env_temp_mid_norm)
 
+# --- dont rely on defaults, specify them for clarity and if defaults change...
 c1_stanlmer <- stan_lmer(formula = b ~ env_temp_mid_norm + (env_temp_mid_norm | species_ab), 
                          data = s_con,
                          seed = 8194)
@@ -163,46 +168,10 @@ summary(c1_stanlmer,
         probs = c(0.025, 0.975),
         digits = 5)
 
-# Compare the observed distribution of b scores (dark blue line) to 100 simulated datasets from the posterior predictive distribution (light blue lines)
-pp_check(c1_stanlmer, nreps = 100)
-# pp_check(c1_stanlmer, plotfun = "stat_grouped", stat = "median", group = "species")
-
-# Plot Rhat (1 is good)
-plot(c1_stanlmer, "rhat")
-
-# Plot ess
-plot(c1_stanlmer, "ess")
-
-# --- See metabolism code for proper diagnostics
+# Work on this...
 
 
 #** Extract the posterior draws for all parameters =================================
-# --- testing alternative way of plotting posterior including densities!
-# posterior <- as.array(c1_stanlmer)
-# 
-# test <- data.frame(species = sort(unique(s_con$species_ab)))
-# test <- test[-which(test$species == "E.coioides"), ]
-# 
-# 
-# par <- paste("b[env_temp_mid_norm species_ab:", 
-#              test, 
-#              "]", 
-#              sep = "")
-# 
-# mcmc_areas(
-#   posterior,
-#   pars = c(par),
-#   prob = 0.8, # 80% intervals
-#   prob_outer = 0.99, # 99%
-#   point_est = "mean"
-# ) + theme_classic(base_size = 12)
-
-sims <- as.matrix(c1_stanlmer)
-
-para_name <- colnames(sims)
-
-para_name # --- need to know all parameters here (check sigma)
-
 # Create df of parameters I want to plot:
 species_b_c <- data.frame(species = sort(unique(s_con$species_ab)))
 
@@ -211,9 +180,6 @@ species_b_c$param <- paste("b[env_temp_mid_norm species:",
                            sort(unique(species_b_c$species)), 
                            "]", 
                            sep = "")
-
-# Remove E.coioides for now since it doesn't have a temperature
-species_b_c <- species_b_c[-which(species_b_c$species == "E.coioides"), ] 
 
 # Extract each species slope and 90% CI
 summaryc1_90 <- tidy(c1_stanlmer, intervals = TRUE, prob =.9, 
@@ -242,7 +208,6 @@ species_b_c$pred_slope_upr50 <- summaryc1_50$upper
 
 #** Plot species-slopes ============================================================
 blues <- colorRampPalette(brewer.pal(5, "Blues"))(5)
-# pal2 <- viridis(n = 4)
 pal <- colorRampPalette(brewer.pal(8, "Paired"))(12)
 pal2 <- c("#fdb863", "#b2abd2", "#5e3c99", "#e66101") # From colorbrewer website
 
@@ -310,32 +275,6 @@ ggplot(pdat_c, aes(reorder(species, pred_slope), pred_slope,
 #ggsave("figs/intraspec_con.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
 
-#** Plot intercept (exponent at mid temp) ==========================================
-# --- Do this differently... perhaps the same way as above? But still, I want the overall mean slope as well...
-inter <- tidy(c1_stanlmer, intervals = TRUE, prob =.95, 
-              parameters = "varying")
-
-inter <- inter %>% 
-  filter(term == "(Intercept)")
-
-inter$a <- inter$estimate + summary(c1_stanlmer, probs = c(0.025, 0.975), digits = 5)[1]
-
-ggplot(inter, aes(a)) +
-  geom_density(fill = pal[2], color = NA, alpha = 0.8) + 
-  coord_cartesian(xlim = c(0.39, 0.91), expand = c(0,0)) +
-  theme_classic(base_size = 15) +
-  geom_vline(xintercept = summary(c1_stanlmer, probs = c(0.025, 0.975), digits = 5)[1], 
-             size = 1.5, color = "gray20") +
-  xlab("Intercept") +
-  theme(aspect.ratio = 1) +
-  NULL
-  
-# --- Need to check the arguments of this function...
-pp_check(c1_stanlmer) + 
-  theme(aspect.ratio = 1) +
-  theme_classic(base_size = 15)
-
-
 #** Plot overall prediction and data =============================================
 # https://www.tjmahr.com/visualizing-uncertainty-rstanarm/
 fits <- c1_stanlmer %>% 
@@ -371,16 +310,20 @@ ggplot(s_con) +
   #scale_color_manual(values = mycolors) +
   scale_color_viridis(discrete = TRUE) +
   guides(color = FALSE) +
+  annotate(geom = "text", x = 15, y = 1.1, 
+           label = paste("y=", round(median(fits$`(Intercept)`), digits = 2),
+                         round(median(fits$env_temp_mid_norm), digits = 4), "x", sep=""),
+           size = 5.5, fontface = "italic") +
   theme_classic(base_size = 17) +
   theme(aspect.ratio = 4/5) +
-  labs(x = "Normalzied temperature midpoint",
+  labs(x = "Normalzied temperature (midpoint)",
        y = "Mass-scaling exponent (consumption)") +
   NULL
 
 #ggsave("figs/scatter_con_b.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
 
-# B. METABOLISM ====================================================================
+# C. METABOLISM ====================================================================
 # Plot data again
 nb.cols <- length(unique(s_met$species))
 mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
@@ -393,20 +336,15 @@ ggplot(s_met, aes(env_temp_mid_norm, b, color = species)) +
   scale_color_manual(values = mycolors) +
 NULL
 
-# Remove species with na temperature!
-s_met2 <- s_met
-s_met2$env_temp_mid_norm
-s_met2 <- s_met2 %>% drop_na(env_temp_mid_norm)
-s_met2$env_temp_mid_norm
-s_met2$b
-
 
 #** Set up stan model ==============================================================
 # The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model, with the following syntax: lmer(b ~ temp_mid_ct + (temp_mid_ct | species), df_me)
 
+s_met <- s_met %>% drop_na(env_temp_mid_norm)
+
 # --- dont rely on defaults, specify them for clarity and if defaults change...
 m1_stanlmer <- stan_lmer(formula = b ~ env_temp_mid_norm + (env_temp_mid_norm | species_ab), 
-                         data = s_met2,
+                         data = s_met,
                          seed = 8194,
                          adapt_delta = 0.999999999999) # This is essentially reducing the step size. Could be the reason for the autocorrelated samples... We did not need to do this for consumption. This is likely not optimal. Should wait for more data though before digging into changing error structure..
 
@@ -422,33 +360,12 @@ summary(m1_stanlmer,
         probs = c(0.025, 0.975),
         digits = 5)
 
-# Compare the observed distribution of b scores (dark blue line) to 100 simulated datasets from the posterior predictive distribution (light blue lines)
-pp_check(m1_stanlmer, nreps = 100)
-# pp_check(c1_stanlmer, plotfun = "stat_grouped", stat = "median", group = "species")
-
-# Plot Rhat (1 is good)
-plot(m1_stanlmer, "rhat")
-
-# Plot ess
-# --- This suggest low number of effective simulations, high autocorrelation...
-plot(m1_stanlmer, "ess")
-
-posterior <- as.array(m1_stanlmer)
-
-# --- Add this kind of diagnostics to Cmax as well...
-mcmc_trace(posterior, pars = c("env_temp_mid_norm"),
-           facet_args = list(ncol = 1, strip.position = "left"))
+# Work on this...
 
 
 #** Extract the posterior draws for all parameters =================================
-sims <- as.matrix(m1_stanlmer)
-
-para_name <- colnames(sims)
-
-para_name # *** need to know all parameters here (check sigma)
-
 # Create df of parameters I want to plot:
-species_b_m <- data.frame(species = sort(unique(s_met2$species_ab))) # s_met2 because of filtering!
+species_b_m <- data.frame(species = sort(unique(s_met$species_ab)))
 
 # Paste parameter name + species to get all species-specific parameters (slope in this case)
 species_b_m$param <- paste("b[env_temp_mid_norm species:", 
@@ -482,8 +399,6 @@ species_b_m$pred_slope_upr50 <- summarym1_50$upper
 
 
 #** Plot species-slopes ============================================================
-#blues <- colorRampPalette(brewer.pal(8, "Blues"))(9)
-# pal2 <- viridis(n = 4)
 pal <- colorRampPalette(brewer.pal(8, "Paired"))(12)
 
 # Add overall mean  and 90% & 50% CI
@@ -550,31 +465,6 @@ ggplot(pdat_m, aes(reorder(species, pred_slope), pred_slope,
 #ggsave("figs/intraspec_met.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
 
-#** Plot intercept (exponent at mid temp) ==========================================
-inter <- tidy(m1_stanlmer, intervals = TRUE, prob =.95, 
-              parameters = "varying")
-
-inter <- inter %>% 
-  filter(term == "(Intercept)")
-
-inter$a <- inter$estimate + summary(m1_stanlmer, probs = c(0.025, 0.975), digits = 5)[1]
-
-ggplot(inter, aes(a)) +
-  geom_density(fill = pal[2], color = NA, alpha = 0.8) + 
-  coord_cartesian(xlim = c(0.815, 0.865), expand = c(0,0)) +
-  theme_classic(base_size = 15) +
-  geom_vline(xintercept = summary(m1_stanlmer, probs = c(0.025, 0.975), digits = 5)[1], 
-             size = 1.5, color = "gray20") +
-  xlab("Intercept") +
-  theme(aspect.ratio = 1) +
-  NULL
-
-# --- Need to check the arguments of this function...
-pp_check(m1_stanlmer) + 
-  theme(aspect.ratio = 1) +
-  theme_classic(base_size = 15)
-
-
 #** Plot overall prediction and data ===============================================
 fits <- m1_stanlmer %>% 
   as_data_frame %>% 
@@ -609,13 +499,59 @@ ggplot(s_met) +
   #scale_color_manual(values = mycolors) +
   scale_color_viridis(discrete = TRUE) +
   guides(color = FALSE) +
+  annotate(geom = "text", x = 10, y = 0.5, 
+           label = paste("y=", round(median(fits$`(Intercept)`), digits = 2),
+                         round(median(fits$env_temp_mid_norm), digits = 4), "x", sep=""),
+           size = 5.5, fontface = "italic") +
   theme_classic(base_size = 17) +
   theme(aspect.ratio = 4/5) +
   ylim(0.4, 1.25) + # removing outlier
-  labs(x = "Normalzied temperature midpoint",
+  labs(x = "Normalzied temperature (midpoint)",
        y = "Mass-scaling exponent (metabolism)") +
   NULL
 
 #ggsave("figs/scatter_met_b.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
+
+#** Plot intercepts (exponent at mid temp) ==========================================
+color_scheme_set("teal")
+con_post <- as.array(c1_stanlmer)
+dimnames(con_post)
+
+pc <- mcmc_areas(con_post,
+           pars = c("(Intercept)"),
+           prob = 0.8, # 80% intervals
+           prob_outer = 0.99, # 99%
+           point_est = "mean") +
+  theme_classic(base_size = 13) +
+  coord_cartesian(xlim = c(0.6, 0.95)) +
+  theme(axis.text.y = element_blank(),
+        aspect.ratio = 4/5,
+        plot.title = element_text(hjust = 0.5, size = 13)) +
+  ggtitle("Consumption") +
+  theme() +
+  NULL
+
+color_scheme_set("red")
+met_post <- as.array(m1_stanlmer)
+dimnames(met_post)
+pm <- mcmc_areas(met_post,
+                 pars = c("(Intercept)"),
+                 prob = 0.8, # 80% intervals
+                 prob_outer = 0.99, # 99%
+                 point_est = "mean") +
+  theme_classic(base_size = 13) +
+  coord_cartesian(xlim = c(0.6, 0.95)) +
+  labs(x = "Scaling exponent", y = "") +
+  theme(axis.text.y = element_blank(),
+        aspect.ratio = 4/5,
+        plot.title = element_text(hjust = 0.5, size = 13)) +
+  ggtitle("Metabolism") +
+  # scale_color_manual(values = mycolors[4]) + # remove index if I skip viridis
+  # scale_fill_manual(values = mycolors[4]) + 
+  NULL
+
+pc/pm
+
+ggsave("figs/posterior_intercept_exponent.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 

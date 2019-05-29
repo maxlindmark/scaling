@@ -5,7 +5,7 @@
 # 
 # A. Load libraries & read data
 #
-# B. Analyze growth data
+# B. Fit model for T_opt ~ temperature
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -166,24 +166,8 @@ summary(m1stanlmer,
         probs = c(0.025, 0.975),
         digits = 5)
 
-# Compare the observed distribution of b scores (dark blue line) to 100 simulated datasets from the posterior predictive distribution (light blue lines)
-pp_check(m1stanlmer, nreps = 100)
-# pp_check(c1_stanlmer, plotfun = "stat_grouped", stat = "median", group = "species")
-
-# Plot Rhat (1 is good)
-plot(m1stanlmer, "rhat")
-
-# Plot ess
-plot(m1stanlmer, "ess")
-
 
 #** Extract the posterior draws for all parameters =================================
-sims <- as.matrix(m1stanlmer)
-
-para_name <- colnames(sims)
-
-para_name # *** need to know all parameters here (check sigma)
-
 # Create df of parameters I want to plot:
 df <- data.frame(species = sort(unique(s_dat$species_ab)))
 
@@ -252,6 +236,10 @@ ggplot(s_dat) +
   #scale_color_manual(values = mycolors) +
   scale_color_viridis(discrete = TRUE) +
   guides(color = FALSE) +
+  annotate(geom = "text", x = 0, y = -2.5, 
+           label = paste("y=", round(median(fits$`(Intercept)`), digits = 2),
+                         round(median(fits$log10_mass), digits = 2), "x", sep=""),
+           size = 5.5, fontface = "italic") +
   theme_classic(base_size = 17) +
   theme(aspect.ratio = 4/5) +
   labs(x = "log10(mass)",
@@ -261,4 +249,17 @@ ggplot(s_dat) +
 #ggsave("figs/growth_scatter.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
 
+#** Plot posterior for slope ===============================================
+# --- not finished
+color_scheme_set("teal")
+g_slope_post <- as.array(m1stanlmer)
+dimnames(g_slope_post)
 
+mcmc_dens(g_slope_post,
+          pars = c("log10_mass"),
+          probs = 0.8) +
+  theme_classic(base_size = 13) +
+  theme(aspect.ratio = 4/5,
+        plot.title = element_text(hjust = 0.5, size = 13)) +
+  theme() +
+  NULL

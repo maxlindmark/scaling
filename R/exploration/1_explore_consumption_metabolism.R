@@ -1,7 +1,7 @@
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # 2019.05.23: Max Lindmark
 #
-# - Explore consumption and metabolic scaling data
+# - Explore consumption and metabolic data
 # 
 # A. Load libraries & read data
 #
@@ -88,9 +88,29 @@ dat$env_temp_mid_norm <- dat$temp_c - dat$env_temp_mid
 # Relative to "preferred" temp (not all species have this info)
 dat$pref_temp_mid_norm <- dat$temp_c - dat$pref_temp_mid
 
+# Create inverse temp
+dat$inv_temp <- 1/((dat$temp_c + 273.15) * 8.617332e-05)
+
 # Now normalize mass with respect to max mass
 dat$mass_norm <- dat$mass_g / dat$w_max_published_g
 # ---- Stechlin cisco har larger size than max*
+
+# Create data with with species that have also temperature repliates within species (intra-specific analysis)
+s_datc <- data.frame(
+  dat %>% 
+    filter(rate == "consumption") %>% 
+    group_by(species) %>% 
+    mutate(unique_t = n_distinct(env_temp_mid_norm)) %>% 
+    filter(unique_t > 1)
+)
+
+s_datm <-  data.frame(
+  dat %>% 
+    filter(rate == "metabolism") %>% 
+    group_by(species) %>% 
+    mutate(unique_t = n_distinct(env_temp_mid_norm)) %>% 
+    filter(unique_t > 1)
+)
 
 
 #** Plot general data ==============================================================
@@ -210,22 +230,6 @@ dat %>%
   facet_wrap(~ rate) +
   NULL
 
-# Create data with with species that have also temperature repliates within species (intra-specific analysis)
-s_datc <- data.frame(
-  dat %>% 
-  filter(rate == "consumption") %>% 
-  group_by(species) %>% 
-  mutate(unique_t = n_distinct(env_temp_mid_norm)) %>% 
-  filter(unique_t > 1)
-)
-
-s_datm <-  data.frame(
-  dat %>% 
-  filter(rate == "metabolism") %>% 
-  group_by(species) %>% 
-  mutate(unique_t = n_distinct(env_temp_mid_norm)) %>% 
-  filter(unique_t > 1)
-)
 
 #** Plot response variable =========================================================
 # All data, by species
@@ -249,7 +253,75 @@ s_datc %>%
   guides(color = F) +
   NULL
 
-# This looks promising! For species with a large temperature range there is an optimum. Now, normalize all data and split the plot into discrete size classes. We normalize by ranking all normalized masses (which describes mass relative to max mass of that species) by splitting up the data in 8 classes, 8 being largest. We then normalize consumption within species, so that all consumption rates are relative to the maximum consumption rate within species, across all sizes and temperatures. We do this because the feeding rates differ across species (likely due to ecology and experimental setup).
+# This looks promising! For species with a large temperature range there is an optimum. Now, normalize all data and plot together. Or at least filter the most common unit. I could plot the actual rates, but it if I do that the optimum dissapears. I suspect this is driven by species having very different Cmax. Hence I normalize to max within species below.
+ggplot(s_datc, aes(unit)) + geom_bar()
+ggplot(s_datm, aes(unit)) + geom_bar()
+
+# Group by normalized mass
+# Consumption
+p1 <- s_datc %>% 
+  group_by(species) %>% 
+  mutate(y_norm = y/max(y)) %>% 
+  ggplot(., aes(env_temp_mid_norm, y_norm)) + 
+  theme_classic(base_size = 15) +
+  geom_point(size = 4, alpha = 0.4, color = pal[2]) +
+  guides(color = FALSE) +
+  labs(x = "Normalized temperature", y = "Normalized consumption") +
+  stat_smooth(span = 1.0, se = F, size = 3, alpha = 0.4, geom = "line", color = pal[3]) +
+  stat_smooth(span = 1.2, se = F, size = 3, alpha = 0.4, geom = "line", color = pal[3]) +
+  stat_smooth(span = 0.8, se = F, size = 3, alpha = 0.4, geom = "line", color = pal[3]) +
+  theme(aspect.ratio = 1) +
+  coord_cartesian(xlim = c(min(c(min(s_datm$env_temp_mid_norm), min(s_datc$env_temp_mid_norm))),
+                           max(c(max(s_datm$env_temp_mid_norm), max(s_datc$env_temp_mid_norm))))) +
+  NULL
+
+# Metabolism
+p2 <- s_datm %>% 
+  filter(unit == "mg O2/h") %>% 
+  group_by(species) %>% 
+  mutate(y_norm = y/max(y)) %>% 
+  ggplot(., aes(env_temp_mid_norm, y_norm)) + 
+  theme_classic(base_size = 15) +
+  geom_point(size = 4, alpha = 0.4, color = pal[2]) +
+  guides(color = FALSE) +
+  labs(x = "Normalized temperature", y = "Normalized metabolic rate") +
+  stat_smooth(span = 1.0, se = F, size = 3, alpha = 0.4, geom = "line", color = pal[3]) +
+  stat_smooth(span = 1.2, se = F, size = 3, alpha = 0.4, geom = "line", color = pal[3]) +
+  stat_smooth(span = 0.8, se = F, size = 3, alpha = 0.4, geom = "line", color = pal[3]) +
+  theme(aspect.ratio = 1) +
+  coord_cartesian(xlim = c(min(c(min(s_datm$env_temp_mid_norm), min(s_datc$env_temp_mid_norm))),
+                           max(c(max(s_datm$env_temp_mid_norm), max(s_datc$env_temp_mid_norm))))) +
+  NULL
+
+p1 + p2
+
+# ggsave("figs/opt_curves.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm")
+
+
+# Now plot slope log(rate)~temp, where the slope is the activation energy, using sub-optimum temperatures! (<11, based on previous plots). Note I don't normalize here but plot the actual rates
+# Consumption
+p3 <- s_datc %>% 
+  filter(env_temp_mid_norm < 12) %>% 
+  ggplot(., aes(inv_temp, log(y))) + 
+  theme_classic(base_size = 15) +
+  geom_point(size = 4, alpha = 0.4, color = pal[2]) +
+  labs(x = "Inverse temperature [1/kT]", y = "log(consumption [g/day])") +
+  stat_smooth(method = "lm", size = 3, alpha = 0.4, geom = "line", color = pal[3]) +
+  NULL
+
+# Metabolism
+p4 <- s_datm %>% 
+  filter(unit == "mg O2/h" & env_temp_mid_norm < 12) %>% 
+  ggplot(., aes(inv_temp, log(y))) + 
+  theme_classic(base_size = 15) +
+  geom_point(size = 4, alpha = 0.4, color = pal[2]) +
+  labs(x = "Inverse temperature [1/kT]", y = "log(metabolic rate [mg O2/h])") +
+  stat_smooth(method = "lm", size = 3, alpha = 0.4, geom = "line", color = pal[3]) +
+  NULL
+
+p3 + p4
+
+# Split the plot into discrete size classes. We normalize by ranking all normalized masses (which describes mass relative to max mass of that species) by splitting up the data in 8 classes, 8 being largest. We then normalize consumption within species, so that all consumption rates are relative to the maximum consumption rate within species, across all sizes and temperatures. We do this because the feeding rates differ across species (likely due to ecology and experimental setup).
 
 # This is how ntile() works:
 # k <- data.frame(value = head(unique(dat$mass_norm), 10) * 1000,
@@ -271,8 +343,8 @@ xmin <- min(c(min(s_datc$env_temp_mid_norm), min(s_datm$env_temp_mid_norm)))+0.1
 
 # Group by normalized mass
 # Consumption
-p1 <- s_datc %>% 
-  mutate(quartile = ntile(mass_norm, nranks)) %>% 
+p3 <- s_datc %>% 
+  mutate(quartile = ntile(mass_g, nranks)) %>% 
   group_by(species) %>% 
   mutate(y_norm = y/max(y)) %>% 
   ggplot(., aes(env_temp_mid_norm, y_norm, color = factor(quartile))) + 
@@ -286,17 +358,9 @@ p1 <- s_datc %>%
   coord_cartesian(xlim = c(xmin, xmax)) +
   NULL
 
-# Plot actual masses in size classes
-s_datc %>% 
-  mutate(quartile = ntile(mass_norm, nranks)) %>% 
-  ggplot(., aes(quartile, mass_g, group = factor(quartile))) +
-  geom_boxplot() +
-  theme_classic(base_size = 15) +
-  geom_jitter(size = 2, alpha = 0.5)
-
 # Metabolism
-p2 <- s_datm %>% 
-  mutate(quartile = ntile(mass_norm, nranks)) %>% 
+p4 <- s_datm %>% 
+  mutate(quartile = ntile(mass_g, nranks)) %>% 
   group_by(species) %>% 
   mutate(y_norm = y/max(y)) %>% 
   ggplot(., aes(env_temp_mid_norm, y_norm, color = factor(quartile))) + 
@@ -309,67 +373,7 @@ p2 <- s_datm %>%
   coord_cartesian(xlim = c(xmin, xmax)) +
   NULL
 
-p1 + p2
-
-opt <- data.frame(topt = c(10, 18, 19, 8, 5),
-                  sizecl = c(5,4,3,2,1))
-
-ggplot(opt, aes(sizecl, topt)) +
-  geom_point(size = 5, alpha = 0.4) + 
-  theme_classic(base_size = 15) +
-  NULL
-
-
-# Group by mass_g
-# Consumption
-p1 <- s_datc %>% 
-  ungroup %>% 
-  mutate(quartile = ntile(mass_g, nranks)) %>% 
-  group_by(species) %>% 
-  mutate(y_norm = y/max(y)) %>% 
-  ggplot(., aes(env_temp_mid_norm, y_norm, color = factor(quartile))) + 
-  theme_classic(base_size = 15) +
-  geom_point(size = 4, alpha = 0.4) +
-  guides(color = FALSE) +
-  labs(x = "Normalized temperature", y = "Normalized consumption") +
-  scale_color_manual(values = rev(pal)) +
-  #scale_color_manual(values = pal2) +
-  stat_smooth(span = 1.0, se = F, size = 3, alpha = 1, geom = "line") +
-  coord_cartesian(xlim = c(xmin, xmax)) +
-  NULL
-
-# Plot actual masses in size classes
-s_datc %>% 
-  mutate(quartile = ntile(mass_g, nranks)) %>% 
-  ggplot(., aes(quartile, mass_g, group = factor(quartile))) +
-  geom_boxplot() +
-  theme_classic(base_size = 15) +
-  geom_jitter(size = 2, alpha = 0.5)
-
-# Metabolism
-p2 <- s_datm %>% 
-  mutate(quartile = ntile(mass_g, nranks)) %>% 
-  group_by(species) %>% 
-  mutate(y_norm = y/max(y)) %>% 
-  ggplot(., aes(env_temp_mid_norm, y_norm, color = factor(quartile))) + 
-  theme_classic(base_size = 15) +
-  geom_point(size = 4, alpha = 0.4) +
-  labs(x = "Normalized temperature", y = "Normalized consumption") +
-  scale_color_manual(values = rev(pal)) +
-  #scale_color_manual(values = pal2) +
-  stat_smooth(span = 1.0, se = F, size = 3, alpha = 1, geom = "line") +
-  coord_cartesian(xlim = c(xmin, xmax)) +
-  NULL
-
-opt <- data.frame(topt = c(14, 8, 9, 2, 12),
-                  sizecl = c(5,4,3,2,1))
-
-ggplot(opt, aes(sizecl, topt)) +
-  geom_point(size = 5, alpha = 0.4) + 
-  theme_classic(base_size = 15) +
-  NULL
-
-p1 + p2
+p3 + p4
 
 
 #**** Summary ======================================================================
@@ -384,37 +388,5 @@ p1 + p2
 # as I don't focus on the actual values! That gives me some data points I can compare
 # with the T_opt figure.
 
-col <- viridis(n = 5)
-# Get activation energy of CMax (Brown, 2004) 
-mc <- s_datc %>% 
-  dplyr::filter(env_temp_mid_norm > -11 & env_temp_mid_norm < 11) %>% 
-  dplyr::mutate(inv_temp = 1/((temp_c + 273.15) * 8.617332e-05))
 
-p3 <- ggplot(mc, aes(inv_temp, log(y))) +
-  theme_classic(base_size = 15) +
-  stat_smooth(method = "lm") +
-  labs(x = "Temperature (1/k*T", y = "Maximum consumption rate") +
-  theme(aspect.ratio = 1) +
-  geom_point(size = 2, alpha = 0.5, color = col[2])
-
-summary(lm(log(mc$y) ~ mc$inv_temp))
-
-# Get activation energy of metabolism (Brown, 2004) 
-mm <- s_datm %>% 
-  dplyr::filter(env_temp_mid_norm > -11 & env_temp_mid_norm < 11) %>% 
-  dplyr::mutate(inv_temp = 1/((temp_c + 273.15) * 8.617332e-05))
-
-p4 <- ggplot(mm, aes(inv_temp, log(y))) +
-  theme_classic(base_size = 15) +
-  stat_smooth(method = "lm") +
-  labs(x = "Temperature (1/k*T", y = "Metabolic rate") +
-  theme(aspect.ratio = 1) +
-  geom_point(size = 2, alpha = 0.5, color = col[2])
-
-summary(lm(log(mm$y) ~ mm$inv_temp))
-par(mfrow = c(2,2))
-plot(lm(log(mm$y) ~ mm$inv_temp))
-par(mfrow = c(1,1))
-
-p3+p4  
 
