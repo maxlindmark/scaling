@@ -362,7 +362,6 @@ summary(m1_stanlmer,
 
 # Work on this...
 
-
 #** Extract the posterior draws for all parameters =================================
 # Create df of parameters I want to plot:
 species_b_m <- data.frame(species = sort(unique(s_met$species_ab)))
@@ -553,5 +552,5 @@ pm <- mcmc_areas(met_post,
 
 pc/pm
 
-ggsave("figs/posterior_intercept_exponent.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
+# ggsave("figs/posterior_intercept_exponent.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
