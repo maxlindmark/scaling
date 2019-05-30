@@ -257,19 +257,21 @@ s_datc %>%
 ggplot(s_datc, aes(unit)) + geom_bar()
 ggplot(s_datm, aes(unit)) + geom_bar()
 
+pal <- viridis(n = 7)
+
 # Group by normalized mass
 # Consumption
 p1 <- s_datc %>% 
   group_by(species) %>% 
   mutate(y_norm = y/max(y)) %>% 
   ggplot(., aes(env_temp_mid_norm, y_norm)) + 
-  theme_classic(base_size = 15) +
-  geom_point(size = 4, alpha = 0.4, color = pal[2]) +
+  theme_classic(base_size = 14) +
+  geom_point(size = 2, alpha = 0.4, color = pal[4]) +
   guides(color = FALSE) +
   labs(x = "Normalized temperature", y = "Normalized consumption") +
-  stat_smooth(span = 1.0, se = F, size = 3, alpha = 0.4, geom = "line", color = pal[3]) +
-  stat_smooth(span = 1.2, se = F, size = 3, alpha = 0.4, geom = "line", color = pal[3]) +
-  stat_smooth(span = 0.8, se = F, size = 3, alpha = 0.4, geom = "line", color = pal[3]) +
+  stat_smooth(span = 1.0, se = F, size = 2, alpha = 0.4, geom = "line", color = pal[2]) +
+  stat_smooth(span = 1.2, se = F, size = 2, alpha = 0.4, geom = "line", color = pal[2]) +
+  stat_smooth(span = 0.8, se = F, size = 2, alpha = 0.4, geom = "line", color = pal[2]) +
   theme(aspect.ratio = 1) +
   coord_cartesian(xlim = c(min(c(min(s_datm$env_temp_mid_norm), min(s_datc$env_temp_mid_norm))),
                            max(c(max(s_datm$env_temp_mid_norm), max(s_datc$env_temp_mid_norm))))) +
@@ -281,13 +283,13 @@ p2 <- s_datm %>%
   group_by(species) %>% 
   mutate(y_norm = y/max(y)) %>% 
   ggplot(., aes(env_temp_mid_norm, y_norm)) + 
-  theme_classic(base_size = 15) +
-  geom_point(size = 4, alpha = 0.4, color = pal[2]) +
+  theme_classic(base_size = 14) +
+  geom_point(size = 2, alpha = 0.4, color = pal[4]) +
   guides(color = FALSE) +
   labs(x = "Normalized temperature", y = "Normalized metabolic rate") +
-  stat_smooth(span = 1.0, se = F, size = 3, alpha = 0.4, geom = "line", color = pal[3]) +
-  stat_smooth(span = 1.2, se = F, size = 3, alpha = 0.4, geom = "line", color = pal[3]) +
-  stat_smooth(span = 0.8, se = F, size = 3, alpha = 0.4, geom = "line", color = pal[3]) +
+  stat_smooth(span = 1.0, se = F, size = 2, alpha = 0.4, geom = "line", color = pal[2]) +
+  stat_smooth(span = 1.2, se = F, size = 2, alpha = 0.4, geom = "line", color = pal[2]) +
+  stat_smooth(span = 0.8, se = F, size = 2, alpha = 0.4, geom = "line", color = pal[2]) +
   theme(aspect.ratio = 1) +
   coord_cartesian(xlim = c(min(c(min(s_datm$env_temp_mid_norm), min(s_datc$env_temp_mid_norm))),
                            max(c(max(s_datm$env_temp_mid_norm), max(s_datc$env_temp_mid_norm))))) +

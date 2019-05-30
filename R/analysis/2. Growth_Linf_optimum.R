@@ -22,7 +22,8 @@ pkgs <- c("dplyr",
           "tidylog",
           "ggplot2",
           "viridis",
-          "RCurl")
+          "RCurl",
+          "RColorBrewer")
 
 # Install packages
 if (length(setdiff(pkgs, rownames(installed.packages()))) > 0) {
@@ -52,78 +53,61 @@ lapply(pkgs, library, character.only = TRUE)
 # on allometric functions, so here we need to simulate.
 # Create data frame (notice we now vary the activation energy for anabolism relative 
 # to catabolism with parameter E)
-dat <- data.frame(expand.grid(mass = seq(0, 1000, 10),
-                              temp = seq(273.15 + 10, 273.15 + 30, 1),
-                              E    = c(0.5, 0.6, 0.7),
-                              ca   = c(-0.003, 0)))
 
+# --- When I do a normal VBGE with arrhenius temperature, optimum is extremely dependent 
+#     on mass! So for the purpose of illustrating, I will use temperature-dependence of 
+#     Morita et al 2010, based on Atkinson 1994, and add temperature effects on exponents.
+#     Will need to figure this out though. Perhaps I should scale constants separately?
 
-tref <- 273.15 + 20
+dat <- data.frame(expand.grid(mass = seq(0, 500, 1),
+                              temp = seq(273.15 + 10, 273.15 + 25, 0.01),
+                              ca = c(0, -0.003)))
+tref <- 273.15 + 10
 
-# Scale rates with size and temperature
-dat$anab <- (0.1*dat$mass^((2/3)+(dat$ca*(dat$temp-tref)))) * exp((dat$E * (dat$temp - tref)) / ((8.617332e-05) * dat$temp * tref))
-
-dat$cata <- (0.01*dat$mass^1) * exp((0.6 * (dat$temp - tref)) / ((8.617332e-05) * dat$temp * tref))
+dat$anab <- (3+0.7*(dat$temp - tref))*dat$mass^(2/3 + (dat$ca*(dat$temp - tref)))
+dat$cata <- (0.01*(dat$temp - tref)^3)*dat$mass^1
 
 # Calculate difference in energy gains and losses
 dat$growth <- dat$anab - dat$cata
 
-# No c-effect
-dat %>% 
-  filter(ca == 0 & growth > 0) %>% 
-  ggplot(., aes(temp, growth, color = mass, group = factor(mass))) + 
-  geom_line(size = 3, alpha = 0.5) + 
-  facet_wrap(~E, scales = "free_y") +
-  theme_classic(base_size = 18) +
-  scale_color_viridis(discrete = F) +
+# Plot growth rates over temperature for specific sizes
+pal <- viridis(n = 5)
+
+p1 <- dat %>% 
+  filter(growth > 0 & mass %in% c(100, 200, 300, 400, 500)) %>% 
+  ggplot(., aes(temp-273.15, growth, color = factor(mass), linetype = factor(ca))) + 
+  geom_line(size = 1.5) + 
+  theme_classic(base_size = 16) +
+  labs(y = "Growth rate", x = "Temperature [C]") +
+  scale_color_manual(values = pal[c(1:5)], 
+                       name = "Mass [g]") +
+  scale_linetype_manual(values = c("twodash", "solid"), name = "c") + 
+  guides(linetype = guide_legend(override.aes = list(size = 1.3))) +
+  theme(aspect.ratio = 4/5,
+        legend.position = c(0.92, 0.65),
+        legend.text=element_text(size = 11)) +
   NULL
-
-# Negative c-effect also
-dat$E_p <- as.factor(dat$E)
-levels(dat$E_p) <- c("E=0.5", "E=0.6", "E=0.7")
-
-dat$ca_p <- as.factor(dat$ca)
-levels(dat$ca_p) <- c("ca=-0.003", "ca=0")
-
-dat %>% 
-  filter(growth > 0 & mass > 200 & mass < 800) %>% 
-  mutate(tempc = temp-273.15) %>% 
-  ggplot(., aes(tempc, growth, color = mass, group = factor(mass))) + 
-  geom_line(size = 3, alpha = 0.5) + 
-  facet_wrap(ca_p ~ E_p, scales = "free_y") +
-  labs(x = "Temperature [C]", y = "Growth rate") +
-  theme_classic(base_size = 15) +
-  scale_color_viridis(discrete = F) +
-  NULL
-
-#ggsave("figs/winf_species_heatmap.pdf", plot = last_plot(), scale = 1, width = 22, height = 22, units = "cm")
 
 # Trying to filter out optimum temperatures for each size...
-# STRONG DECLINES IN OPT WITH THESE PARAMETERS
-opt_dat <- dat %>% 
-  filter(growth > 0) %>% # Positive growth only
-  group_by(factor(mass), factor(E), factor(ca)) %>% # Find temp at max growth
-  filter(growth == max(growth) & temp > tref & temp < (273.15 + 30)) # Filter only highest growth (optimum) and remove size that have highest max at ref temp (optimum is lower!)
-  
-ggplot(opt_dat, aes(mass, temp, color = factor(ca), shape = factor(E))) + 
-  geom_point(size = 3, alpha = 0.5) +
-  theme_classic(base_size = 18) +
-  labs(x = "Mass [g]", y = "Optimum temperature") +
-  scale_color_viridis(discrete = T) +
+p2 <- dat %>% 
+  filter(growth > 0 & mass > 10) %>%
+  group_by(factor(mass), factor(ca)) %>% # Find temp at max growth
+  filter(growth == max(growth)) %>% 
+  ungroup() %>% 
+  ggplot(., aes(mass, temp-273.15, linetype = factor(ca))) + 
+  geom_line(size = 2) + 
+  theme_classic(base_size = 16) +
+  scale_color_viridis(discrete = TRUE) +
+  scale_linetype_manual(values = c("twodash", "solid"), name = "c") + 
+  guides(linetype = FALSE) +
+  labs(y = expression(paste(T[opt], " [C]")), 
+       x = "Mass [g]") +
+  theme(aspect.ratio = 4/5) +
   NULL
 
-ggplot(opt_dat, aes(x = mass, y = E)) + 
-  geom_raster(aes(fill = temp, z = temp), interpolate = F) +
-  scale_fill_viridis(begin = 0, end = 1) +
-  scale_y_continuous(expand = c(0, 0)) +
-  scale_x_continuous(expand = c(0, 0)) +
-  facet_wrap(~ca, nrow = 1) +
-  labs(x = "mass", 
-       y = "E",
-       fill = "Optimum growth temperature") +
-  theme_classic(base_size = 16) +
-  theme(aspect.ratio = 1) +
-  NULL
+p1 / p2
+  
+# ggsave("figs/t_opt_model.pdf", plot = last_plot(), scale = 1, width = 23, height = 23, units = "cm")
 
 
 #** Asymptotic size ================================================================
@@ -292,25 +276,25 @@ ggplot(filter(dat, temp == 273.15 + 12), aes(x = cm, y = ca)) +
   scale_fill_viridis(begin = 0, end = 1) +
   scale_y_continuous(expand = c(0, 0)) +
   scale_x_continuous(expand = c(0, 0)) +
-  labs(x = bquote('Change in Metabolism Exponent'~(C^-1)), 
-       y = bquote('Change in Imax Exponent'~(C^-1)),
+  labs(x = bquote('Change in Metabolism exponent'~(C^-1)), 
+       y = bquote('Change in Cmax exponent'~(C^-1)),
        fill = "Proportion change\nin asymptotic size\n(10C-12C)") +
   geom_line(data = sdat, aes(cm, ca), size = 1, col = "gray95", linetype = 2, z = NULL) +
-  #geom_abline(intercept = 0, slope = 1, col = "gray95", linetype = 2) +
   geom_point(data = all_spec, aes(cm, ca), size = 5, col = "white") +
   # Add c-effects from all species-analysis
   geom_segment(data = m80, aes(y = min(ca), yend = max(ca), x = -0.00106, xend = -0.00106), 
                size = 1, col = "red") +
   geom_segment(data = m80, aes(y = -0.00345, yend = -0.00345, x = min(cm), xend = max(cm)), 
                size = 1, col = "red") +
-  annotate("text", y = c(-0.0035, -0.01), x = c(-0.011, -0.011), size = 4.3, fontface = 3, 
-           color = "white", label = c("max. size increasing", "max. size decreasing"),
+  annotate("text", y = c(-0.012, -0.0012), x = c(-0.005, -0.010), size = 4.3, fontface = 3, 
+           color = "white", label = c("max. size decreasing", "max. size increasing"),
            angle = 45) +
   theme_classic(base_size = 22) +
   theme(aspect.ratio = 1) +
   NULL
 
 #ggsave("figs/winf_species_heatmap.pdf", plot = last_plot(), scale = 1, width = 23, height = 23, units = "cm")
+
 
 #** Summary ========================================================================
 
