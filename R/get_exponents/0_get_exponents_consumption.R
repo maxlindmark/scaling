@@ -32,9 +32,9 @@ if (length(setdiff(pkgs, rownames(installed.packages()))) > 0) {
 lapply(pkgs, library, character.only = TRUE)
 
 # Print package version
-script <- getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/functions/package_info.R", ssl.verifypeer = FALSE)
-eval(parse(text = script))
-pkg_info(pkgs)
+# script <- getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/functions/packageInfo.R", ssl.verifypeer = FALSE)
+# eval(parse(text = script))
+# pkg_info(pkgs)
 
 # package   version
 # 1   dplyr   0.8.0.1
@@ -61,6 +61,7 @@ unique(dat$species)
 #== B. FIT LOG-LOG MODEL BY SPECIES ================================================
 
 # Check which species have "data" as source in exponent data set and redo them here
+# to check they are the same!
 
 #==** Coregonus albula =============================================================
 c_albula <- dat %>% 
