@@ -40,9 +40,9 @@ pkgs <- c("mlmRev",
           "tidybayes")
 
 # Install packages
-if (length(setdiff(pkgs, rownames(installed.packages()))) > 0) {
-  install.packages(setdiff(pkgs, rownames(installed.packages())))
-}
+# if (length(setdiff(pkgs, rownames(installed.packages()))) > 0) {
+#   install.packages(setdiff(pkgs, rownames(installed.packages())))
+# }
 
 # Load all packages
 lapply(pkgs, library, character.only = TRUE)
@@ -152,57 +152,48 @@ ggplot(s_dat, aes(log10(mass), opt_temp_c_ct,
 m1stanlmer <- stan_lmer(formula = opt_temp_c_ct ~ log10_mass + (log10_mass | species), 
                         data = s_dat,
                         seed = 8194,
+                        iter = 3000,
                         adapt_delta = 0.99)
 
-# Summary of priors used
-prior_summary(object = m1stanlmer)
-
-# Print model summary
-print(m1stanlmer, digits = 3)
-
-
-#** Check sampling quality & model convergence =====================================
+# Summary of model
 summary(m1stanlmer, 
         probs = c(0.025, 0.975),
         digits = 5)
 
+# Summary of priors used
+prior_summary(object = m1stanlmer)
 
-#** Extract the posterior draws for all parameters =================================
-# Create df of parameters I want to plot:
-df <- data.frame(species = sort(unique(s_dat$species_ab)))
 
-# Paste parameter name + species to get all species-specific parameters (slope in this case)
-df$param <- paste("b[log10_mass species:", 
-                  sort(unique(df$species_ab)), 
-                  "]", 
-                  sep = "")
+#** Plot predictions ===============================================================
+# Posterior-predictive checks
+pp_check(m1stanlmer, nreps = 100) +
+  theme_classic(base_size = 18) +
+  theme(legend.text.align = 0)
 
-# Extract each species slope and 90% CI
-summarym1_90 <- tidy(m1stanlmer, intervals = TRUE, prob =.9, 
-                     parameters = "varying")
+# Plot species-varying intercepts
+m1stanlmer %>%
+  spread_draws(`(Intercept)`, b[,group]) %>%
+  mutate(condition_mean = `(Intercept)` + b) %>%
+  ggplot(aes(y = group, x = condition_mean)) +
+  geom_vline(aes(xintercept = m1stanlmer$coefficients[1]), 
+             color = "red", alpha = 0.6, size = 1) +
+  geom_halfeyeh() +
+  theme_classic(base_size = 16)
 
-summarym1_90 <- summarym1_90 %>% 
-  filter(term == "log10_mass")
-
-# Estimate
-df$pred_slope <- summarym1_90$estimate
-
-# 90% CI
-df$pred_slope_lwr90 <- summarym1_90$lower
-df$pred_slope_upr90 <- summarym1_90$upper
-
-# 50% CI
-summarym1_50 <- tidy(m1stanlmer, intervals = TRUE, prob =.5, 
-                     parameters = "varying")
-
-summarym1_50 <- summarym1_50 %>% 
-  filter(term == "log10_mass")
-
-df$pred_slope_lwr50 <- summarym1_50$lower
-df$pred_slope_upr50 <- summarym1_50$upper
+# Plot species-varying slopes
+m1stanlmer %>%
+  spread_draws(`log10_mass`, b[,group]) %>%
+  mutate(condition_mean = `log10_mass` + b) %>%
+  ggplot(aes(y = group, x = condition_mean)) +
+  geom_vline(aes(xintercept = m1stanlmer$coefficients[2]), 
+             color = "red", alpha = 0.6, size = 1) +
+  geom_halfeyeh() +
+  theme_classic(base_size = 16)
 
 
 #** Plot overall prediction and data ===============================================
+set.seed(41)
+
 fits <- m1stanlmer %>% 
   as_data_frame %>% 
   #rename(intercept = `(Intercept)`) %>% 
@@ -213,8 +204,8 @@ glimpse(fits)
 reds <- colorRampPalette(brewer.pal(5, "Reds"))(5)
 
 n_draws <- 500
-alpha_level <- .1
-col_draw <- "grey40"
+alpha_level <- .05
+col_draw <- "grey30"
 col_median <- reds[4]
 
 nb.cols <- length(unique(s_dat$species))
@@ -227,7 +218,7 @@ ggplot(s_dat) +
                   slope = log10_mass), 
               data = sample_n(fits, n_draws), color = col_draw, 
               alpha = alpha_level, size = 1.1) + 
-  # Plot the median values in blue
+  # Plot the median values in red
   geom_abline(intercept = median(fits$`(Intercept)`), 
               slope = median(fits$log10_mass), 
               size = 1.4, color = col_median) +
@@ -249,17 +240,5 @@ ggplot(s_dat) +
 #ggsave("figs/growth_scatter.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
 
-#** Plot posterior for slope ===============================================
-# --- not finished
-color_scheme_set("teal")
-g_slope_post <- as.array(m1stanlmer)
-dimnames(g_slope_post)
-
-mcmc_dens(g_slope_post,
-          pars = c("log10_mass"),
-          probs = 0.8) +
-  theme_classic(base_size = 13) +
-  theme(aspect.ratio = 4/5,
-        plot.title = element_text(hjust = 0.5, size = 13)) +
-  theme() +
-  NULL
+fits
+sample_n(fits, n_draws)

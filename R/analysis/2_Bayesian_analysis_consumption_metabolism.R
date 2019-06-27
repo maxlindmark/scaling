@@ -6,9 +6,11 @@
 # 
 # A. Load libraries & read data
 #
-# B. Fit model for consumption ~ temperature
+# B. Explore and normalize data
 #
-# C. Fit model for metabolic rate ~ temperature
+# C. Fit model for consumption ~ temperature
+#
+# D. Fit model for metabolic rate ~ temperature
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -24,13 +26,14 @@
 # https://www.tjmahr.com/visualizing-uncertainty-rstanarm/
 
 # --- Q is to include or not include n=1 species. In the mixed model, they are not included, but here I suppose they are treated as missing values? in which case they are by default assigned missing values? Not sure it makes sense conceptually though...
-
 # --- Go through explore csv again, which species should I not include initially?
-
 # --- Add pref temp env <- pref temp if no env temp (see growth scripts)
 
 # A. LOAD LIBRARIES & READ DATA ====================================================
 rm(list = ls())
+
+# Set seed
+set.seed(8194)
 
 # Provide package names
 pkgs <- c("mlmRev",
@@ -46,17 +49,16 @@ pkgs <- c("mlmRev",
           "RColorBrewer",
           "bayesplot",
           "modelr",
-          "tidybayes")
+          "tidybayes",
+          "viridis")
 
 # Install packages
-if (length(setdiff(pkgs, rownames(installed.packages()))) > 0) {
-  install.packages(setdiff(pkgs, rownames(installed.packages())))
-}
+# if (length(setdiff(pkgs, rownames(installed.packages()))) > 0) {
+#   install.packages(setdiff(pkgs, rownames(installed.packages())))
+# }
 
 # Load all packages
 lapply(pkgs, library, character.only = TRUE)
-
-library(viridis)
 
 # Print package version
 #script <- getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/functions/packageInfo.R", ssl.verifypeer = FALSE)
@@ -76,8 +78,9 @@ library(viridis)
 # 10        RCurl     1.95-4.12
 # 11       readxl         1.3.1
 # 12     rstanarm        2.18.2
-# 13    tidybayes         1.0.4
+# 13    tidybayes         1.1.0
 # 14      tidylog         0.1.0
+# 15      viridis         0.5.1
 
 # Also add patchwork
 # devtools::install_github("thomasp85/patchwork")
@@ -119,39 +122,50 @@ ggplot(dat, aes(env_temp_mid)) +
 # Relative to temp in environment
 dat$env_temp_mid_norm <- dat$temp_c - dat$env_temp_mid
 
-# Relative to "preferred" temp (not all species have this info)
-dat$pref_temp_mid_norm <- dat$temp_c - dat$pref_temp_mid
-
 # Create inverse temp
 dat$inv_temp <- 1/((dat$temp_c + 273.15) * 8.617332e-05)
 
-# Now normalize mass with respect to max mass
+# Mean-center inverse temp
+dat$inv_temp_ct <- dat$inv_temp - mean(dat$inv_temp)
+
+# Create inverse temp with based on centered temperature within species
+dat$inv_temp_sp <- 1/((dat$env_temp_mid_norm + 273.15) * 8.617332e-05)
+
+# Mean-center inverse temp with based on centered temperature within species
+dat$inv_temp_sp_ct <- dat$inv_temp_sp - mean(dat$inv_temp_sp, na.rm = T)
+
+# Center log(mass) relative to 100 (size-coefficient - size scaling exponent - is then for 100g individuals). 
+# Could also mean across species (130g)...
+dat$ln_mass_g <- log(dat$mass_g)
+dat$ln_mass_g_ct <- dat$ln_mass_g - mean(dat$ln_mass_g) # log(100)# log(mean(dat$mass_g))
+
+# Calculate normalized mass & mean-centre
 dat$mass_norm <- dat$mass_g / dat$w_max_published_g
-# ---- Stechlin cisco har larger size than max*
+dat$ln_mass_norm_ct <- log(dat$mass_norm) - log(mean(dat$mass_norm))
 
 # Create data with with species that have also temperature repliates within species (intra-specific analysis)
-s_datc <- data.frame(
+datc <- data.frame(
   dat %>% 
-    filter(rate == "consumption") %>% 
-    group_by(species) %>% 
-    mutate(unique_t = n_distinct(env_temp_mid_norm)) %>% 
-    filter(unique_t > 1)
+    dplyr::filter(rate == "consumption") %>% 
+    dplyr::group_by(species) %>% 
+    dplyr::mutate(unique_t = n_distinct(env_temp_mid_norm)) %>% 
+    dplyr::filter(unique_t > 1)
 )
 
-s_datm <-  data.frame(
+datm <-  data.frame(
   dat %>% 
-    filter(rate == "metabolism") %>% 
-    group_by(species) %>% 
-    mutate(unique_t = n_distinct(env_temp_mid_norm)) %>% 
-    filter(unique_t > 1)
+    dplyr::filter(rate == "metabolism") %>% 
+    dplyr::group_by(species) %>% 
+    dplyr::mutate(unique_t = n_distinct(env_temp_mid_norm)) %>% 
+    dplyr::filter(unique_t > 1)
 )
+
 
 # Plot data again (log rate vs inverse Boltzmann temp:
 pal <- viridis(n = 5)
 reds <- colorRampPalette(brewer.pal(5, "Reds"))(5)
 
-
-p1 <- s_datc %>% 
+p1 <- datc %>% 
   filter(env_temp_mid_norm < 13) %>% 
   ggplot(., aes(inv_temp, log(y), color = species)) +
   scale_color_viridis(discrete = TRUE) + 
@@ -163,7 +177,10 @@ p1 <- s_datc %>%
   NULL
 
 # Metabolism
-p2 <- s_datm %>% 
+# --- Filter also the same measurement? Routine vs Standard? Or, because I have species as a random factor, I account for that?
+# --- Or add "type of metabolism" as random intercept?
+
+p2 <- datm %>% 
   filter(unit == "mg O2/h" & env_temp_mid_norm < 13) %>% 
   ggplot(., aes(inv_temp, log(y), color = species)) + 
   scale_color_viridis(discrete = TRUE) + 
@@ -176,172 +193,184 @@ p2 <- s_datm %>%
 
 p1 + p2
 
-
 # Subset data according to filter above (below optimum [see data exploration script], specific unit)
-s_datc <- s_datc %>% filter(env_temp_mid_norm < 13)
-s_datm <- s_datm %>% filter(unit == "mg O2/h" & env_temp_mid_norm < 12)
-
-summary(lm(log(y) ~ inv_temp, data = s_datm))
-summary(lm(log(y) ~ inv_temp, data = s_datc))
+unique(datc$unit)
+datc <- datc %>% filter(env_temp_mid_norm < 13)
+datm <- datm %>% filter(unit == "mg O2/h" & env_temp_mid_norm < 12)
 
 
-# B. Consumption ===================================================================
+# C. Consumption ===================================================================
 #** Set up stan model ==============================================================
-# The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model: lmer(b ~ temp_mid_ct + (temp_mid_ct | species), df_me)
+# The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model
 
-# Test classic mixed model
-me1 <- lmer(log(y) ~ inv_temp + (inv_temp | species), s_datc)
-summary(me1)
-coef(me1)
+# Non-normalized mass 
+stanlmerCon <- stan_lmer(formula = log(y) ~ inv_temp_sp_ct + ln_mass_g_ct + (1 |species), 
+                         data = datc,
+                         iter = 3000,
+                         seed = 8194) 
 
-# --- dont rely on defaults, specify them for clarity and if defaults change...
-c1_stanlmer <- stan_lmer(formula = log(y) ~ inv_temp + (inv_temp | species), 
-                         data = s_datc,
-                         seed = 8194)
+# Check model summary
+summary(stanlmerCon, digits = 4)
 
 # Summary of priors used
-prior_summary(object = c1_stanlmer)
-
-# Print model summary
-print(c1_stanlmer, digits = 3)
+prior_summary(object = stanlmerCon)
 
 
-#** Check sampling quality & model convergence =====================================
-summary(c1_stanlmer, 
-        probs = c(0.025, 0.975),
-        digits = 5)
+#** Plot predictions ================================================================
+color_scheme_set("viridisC")
+
+# Plot species-varying intercepts as densities and intervals
+stanlmerCon %>%
+  spread_draws(`(Intercept)`, b[,group]) %>%
+  mutate(condition_mean = `(Intercept)` + b) %>%
+  ggplot(aes(y = group, x = condition_mean)) +
+  geom_vline(aes(xintercept = stanlmerCon$coefficients[1]), 
+             color = "red", alpha = 0.6, size = 1) +
+  geom_halfeyeh() +
+  ggtitle("Maximum Consumption Rate") +
+  theme_classic(base_size = 16)
+
+# Plot posterior predictive check
+pp_check(stanlmerCon, nreps = 100) +
+  xlab("Maximum consumption rate") +
+  theme_classic(base_size = 18) +
+  theme(legend.text.align = 0)
+
+# Plot posterior densities with credible intervals
+posteriorC <- as.array(stanlmerCon)
+dfsumC <- data.frame(summary(stanlmerCon, digits = 4, probs = c(0.025, 0.975, 0.1, 0.9)))
+
+head(dfsumC)
+
+# Activation energy
+c1 <- mcmc_dens(posteriorC, pars = c("inv_temp_sp_ct")) + 
+  geom_vline(xintercept = dfsumC$mean[2],
+             color = "black", alpha = 0.6, size = 0.9) +
+  geom_vline(xintercept = dfsumC$X2.5.[2],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 2) +
+  geom_vline(xintercept = dfsumC$X97.5.[2],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 2) +
+  geom_vline(xintercept = dfsumC$X10.[2],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 3) +
+  geom_vline(xintercept = dfsumC$X90.[2],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 3) +
+  # geom_segment(x = dfsumC$X2.5.[2], xend = dfsumC$X2.5.[2],
+  #              y = 0, yend = 2, 
+  #              color = "black", alpha = 0.6, size = 0.9, linetype = 2) +
+  # geom_segment(x = dfsumC$X97.5.[2], xend = dfsumC$X97.5.[2],
+  #              y = 0, yend = 2, 
+  #              color = "black", alpha = 0.6, size = 0.9, linetype = 2) +
+  # geom_segment(x = dfsumC$X10.[2], xend = dfsumC$X10.[2],
+  #              y = 0, yend = 6, 
+  #              color = "black", alpha = 0.6, size = 0.9, linetype = 3) +
+  # geom_segment(x = dfsumC$X90.[2], xend = dfsumC$X90.[2],
+  #              y = 0, yend = 6, 
+  #              color = "black", alpha = 0.6, size = 0.9, linetype = 3) +
+  theme_classic(base_size = 18) +
+  theme(axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20)) +
+  xlim(c(-0.63, -0.43)) +
+  ggtitle("Maximum Consumption Rate") +
+  labs(x = "")  
+
+# Size-exponent
+c2 <- mcmc_dens(posteriorC, pars = c("ln_mass_g_ct")) + 
+  geom_vline(xintercept = dfsumC$mean[3],
+             color = "black", alpha = 0.6, size = 0.9) +
+  geom_vline(xintercept = dfsumC$X2.5.[3],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 2) +
+  geom_vline(xintercept = dfsumC$X97.5.[3],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 2) +
+  geom_vline(xintercept = dfsumC$X10.[3],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 3) +
+  geom_vline(xintercept = dfsumC$X90.[3],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 3) +
+  theme_classic(base_size = 18) +
+  theme(axis.title = element_text(size = 20)) +
+  xlim(c(0.5, 0.8)) +
+  labs(x = "")  
 
 
-#** Plot overall prediction and data ===============================================
-fits <- c1_stanlmer %>% 
-  as_data_frame %>% 
-  #rename(intercept = `(Intercept)`) %>% 
-  select(-sigma)
-
-glimpse(fits)
-
-reds <- colorRampPalette(brewer.pal(5, "Reds"))(5)
-
-n_draws <- 500
-alpha_level <- .1
-col_draw <- "grey40"
-col_median <- reds[4]
-
-nb.cols <- length(unique(s_datc$species))
-mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
-
-ggplot(s_datc) + 
-  aes(x = inv_temp, y = log(y), color = species) + 
-  # Plot a random sample of rows as gray semi-transparent lines
-  geom_abline(aes(intercept = `(Intercept)`, 
-                  slope = inv_temp), 
-              data = sample_n(fits, n_draws), color = col_draw, 
-              alpha = alpha_level, size = 1.1) + 
-  # Plot the median values in blue
-  geom_abline(intercept = median(fits$`(Intercept)`), 
-              slope = median(fits$inv_temp), 
-              size = 1.4, color = col_median) +
-  geom_jitter(size = 4.5, width = 0, alpha = 0.5, height = 0) +
-  annotate(geom = "text", x = 38.4, y = -3.4, 
-           label = paste("y=", round(median(fits$`(Intercept)`), digits = 2),
-                         round(median(fits$inv_temp), digits = 2), "x", sep=""),
-           size = 5.5, fontface = "italic") +
-  theme_classic(base_size = 15) +
-  #scale_color_manual(values = mycolors) +
-  scale_color_viridis(discrete = TRUE) +
-  guides(color = FALSE) +
-  theme_classic(base_size = 17) +
-  theme(aspect.ratio = 4/5) +
-  labs(x = "Inverse temperature [1/kT]", 
-       y = "log(maximum consumption rate [g/d])") +
-  NULL
-
-#ggsave("figs/activation_energy_con.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
-
-
-# B. Metabolism ====================================================================
+# D. Metabolism ====================================================================
 #** Set up stan model ==============================================================
-# The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model: lmer(b ~ temp_mid_ct + (temp_mid_ct | species), df_me)
+# The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model
 
-# Test classic mixed model
-me1 <- lmer(log(y) ~ inv_temp + (inv_temp | species), s_datm)
-summary(me1)
-coef(me1)
+# Non-normalized mass 
+stanlmerMet <- stan_lmer(formula = log(y) ~ inv_temp_sp_ct + ln_mass_g_ct + (1 |species), 
+                         data = datm,
+                         iter = 3000,
+                         seed = 8194) 
 
-# --- dont rely on defaults, specify them for clarity and if defaults change...
-m1_stanlmer <- stan_lmer(formula = log(y) ~ inv_temp + (inv_temp | species), 
-                         data = s_datm,
-                         seed = 8194,
-                         adapt_delta = 0.99)
+# Check model summary
+summary(stanlmerMet, digits = 4)
 
 # Summary of priors used
-prior_summary(object = m1_stanlmer)
-
-# Print model summary
-print(m1_stanlmer, digits = 3)
+prior_summary(object = stanlmerMet)
 
 
-#** Check sampling quality & model convergence =====================================
-summary(m1_stanlmer, 
-        probs = c(0.025, 0.975),
-        digits = 5)
+#** Plot predictions ================================================================
+color_scheme_set("viridis")
 
-# Compare the observed distribution of b scores (dark blue line) to 100 simulated datasets from the posterior predictive distribution (light blue lines)
-pp_check(m1_stanlmer, nreps = 100)
-# pp_check(c1_stanlmer, plotfun = "stat_grouped", stat = "median", group = "species")
+# Plot species-varying intercepts as densities and intervals
+stanlmerMet %>%
+  spread_draws(`(Intercept)`, b[,group]) %>%
+  mutate(condition_mean = `(Intercept)` + b) %>%
+  ggplot(aes(y = group, x = condition_mean)) +
+  geom_vline(aes(xintercept = stanlmerMet$coefficients[1]), 
+             color = "red", alpha = 0.6, size = 1) +
+  geom_halfeyeh() +
+  ggtitle("Metabolic Rate") +
+  theme_classic(base_size = 16)
 
-# Plot Rhat (1 is good)
-plot(m1_stanlmer, "rhat")
+# Plot posterior predictive check
+pp_check(stanlmerMet, nreps = 100) +
+  xlab("Metabolic rate") +
+  theme_classic(base_size = 18) +
+  theme(legend.text.align = 0)
 
-# Plot ess
-plot(m1_stanlmer, "ess")
+# Plot posterior densities with credible intervals
+posteriorM <- as.array(stanlmerMet)
+dfsumM <- data.frame(summary(stanlmerMet, digits = 4, probs = c(0.025, 0.975, 0.1, 0.9)))
 
+# Activation energy
+m1 <- mcmc_dens(posteriorM, pars = c("inv_temp_sp_ct")) + 
+  geom_vline(xintercept = dfsumM$mean[2],
+             color = "black", alpha = 0.6, size = 0.9) +
+  geom_vline(xintercept = dfsumM$X2.5.[2],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 2) +
+  geom_vline(xintercept = dfsumM$X97.5.[2],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 2) +
+  geom_vline(xintercept = dfsumM$X10.[2],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 3) +
+  geom_vline(xintercept = dfsumM$X90.[2],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 3) +
+  theme_classic(base_size = 18) +
+  theme(axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20)) +
+  xlim(c(-0.63, -0.43)) +
+  ggtitle("Metabolic Rate") +
+  labs(x = "Activation Energy")  
 
-#** Plot overall prediction and data ===============================================
-fits <- m1_stanlmer %>% 
-  as_data_frame %>% 
-  #rename(intercept = `(Intercept)`) %>% 
-  select(-sigma)
-
-glimpse(fits)
-
-reds <- colorRampPalette(brewer.pal(5, "Reds"))(5)
-
-n_draws <- 500
-alpha_level <- .1
-col_draw <- "grey40"
-col_median <- reds[4]
-
-nb.cols <- length(unique(s_datm$species))
-mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
-
-ggplot(s_datm) + 
-  aes(x = inv_temp, y = log(y), color = species) + 
-  # Plot a random sample of rows as gray semi-transparent lines
-  geom_abline(aes(intercept = `(Intercept)`, 
-                  slope = inv_temp), 
-              data = sample_n(fits, n_draws), color = col_draw, 
-              alpha = alpha_level, size = 1.1) + 
-  # Plot the median values in blue
-  geom_abline(intercept = median(fits$`(Intercept)`), 
-              slope = median(fits$inv_temp), 
-              size = 1.4, color = col_median) +
-  geom_jitter(size = 4.5, width = 0.1, alpha = 0.5, height = 0) +
-  annotate(geom = "text", x = 38.8, y = -1.8, 
-           label = paste("y=", round(median(fits$`(Intercept)`), digits = 2),
-                         round(median(fits$inv_temp), digits = 2), "x", sep=""),
-           size = 5.5, fontface = "italic") +
-  theme_classic(base_size = 15) +
-  #scale_color_manual(values = mycolors) +
-  scale_color_viridis(discrete = TRUE) +
-  guides(color = FALSE) +
-  theme_classic(base_size = 17) +
-  theme(aspect.ratio = 4/5) +
-  labs(x = "Inverse temperature [1/kT]", 
-       y = expression(paste("log(metabolic rate [mg  ", O[2], "/h])"))) +
-  NULL
-
-#ggsave("figs/activation_energy_meta.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
+# Size-exponent
+m2 <- mcmc_dens(posteriorM, pars = c("ln_mass_g_ct")) + 
+  geom_vline(xintercept = dfsumM$mean[3],
+             color = "black", alpha = 0.6, size = 0.9) +
+  geom_vline(xintercept = dfsumM$X2.5.[3],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 2) +
+  geom_vline(xintercept = dfsumM$X97.5.[3],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 2) +
+  geom_vline(xintercept = dfsumM$X10.[3],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 3) +
+  geom_vline(xintercept = dfsumM$X90.[3],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 3) +
+  theme_classic(base_size = 18) +
+  theme(axis.title = element_text(size = 20)) +
+  xlim(c(0.5, 0.8)) +
+  labs(x = "Mass-Scaling Exponent")  
 
 
+#** All together ===================================================================
+p <- (c1+c2)/(m1+m2)
+
+ggsave("figs/posterior_E_b.pdf", plot = p, scale = 1, width = 20, height = 20, units = "cm")
 
