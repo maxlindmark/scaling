@@ -2,7 +2,7 @@
 ## Description
 Project investigating the intraspecific temperature- and size dependence of metabolism and consumption using data from a systematic literature search.
 
-**Authors:**: Max Lindmark, Jan Ohlberger, Anna Gårdmark
+**Authors:** Max Lindmark, Jan Ohlberger, Anna Gårdmark
 
 ## Data
 We use data at different levels in this study. The key information in each data set are:
