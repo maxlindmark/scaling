@@ -140,7 +140,7 @@ ggplot(dat, aes(x = reorder(common_name, env_temp_mid),
   NULL 
 
 # Mid env. temperature (Fishbase) compared to experimental temperature range
-pal <- viridis(n = 5)
+pal <- rev(viridis(n = 5))
   
 dat %>% group_by(common_name) %>% 
   ggplot(., aes(x = reorder(common_name, env_temp_mid), 

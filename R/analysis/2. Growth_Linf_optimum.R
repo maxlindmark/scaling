@@ -107,7 +107,7 @@ p2 <- dat %>%
 
 p1 / p2
   
-# ggsave("figs/t_opt_model.pdf", plot = last_plot(), scale = 1, width = 23, height = 23, units = "cm")
+#ggsave("figs/t_opt_model.pdf", plot = last_plot(), scale = 1, width = 23, height = 23, units = "cm")
 
 
 #** Asymptotic size ================================================================
@@ -176,7 +176,6 @@ dat$b_m <- bm + dat$cm * (dat$temp - (273.15 + 10))
 
 # Caluclate asymptotic mass (am^y – bm^z-  -->  (a/b)^1/(z−y))
 dat$w_inf <- (dat$a_c/dat$a_m)^(1/(dat$b_m−dat$b_c))
-
 
 # Add species combinations of cm and ca to be plotted on top of heatmap
 # Roach
@@ -268,8 +267,11 @@ sdat <- subset(dat, temp == 285.15 & mass_cent < 1.01 & mass_cent > 0.99)
 pal <- viridis_pal()
 
 # Data for 80% credible interval 
-m80 <- data.frame(ca = c(-0.00677, -0.00029),
-                  cm = c(-0.00619, 0.00406))
+m80 <- data.frame(ca = c(-0.0040, 0.0001),
+                  cm = c(-0.0059, 0.0011))
+
+cm_est <- -0.0024
+ca_est <- -0.0020
 
 ggplot(filter(dat, temp == 273.15 + 12), aes(x = cm, y = ca)) + 
   geom_raster(aes(fill = mass_cent, z = mass_cent), interpolate = F) +
@@ -282,10 +284,10 @@ ggplot(filter(dat, temp == 273.15 + 12), aes(x = cm, y = ca)) +
   geom_line(data = sdat, aes(cm, ca), size = 1, col = "gray95", linetype = 2, z = NULL) +
   geom_point(data = all_spec, aes(cm, ca), size = 5, col = "white") +
   # Add c-effects from all species-analysis
-  geom_segment(data = m80, aes(y = min(ca), yend = max(ca), x = -0.00106, xend = -0.00106), 
-               size = 1, col = "red") +
-  geom_segment(data = m80, aes(y = -0.00345, yend = -0.00345, x = min(cm), xend = max(cm)), 
-               size = 1, col = "red") +
+  # geom_segment(data = m80, aes(y = min(ca), yend = max(ca), x = cm_est, xend = cm_est), 
+  #              size = 1, col = "red") +
+  # geom_segment(data = m80, aes(y = ca_est, yend = ca_est, x = min(cm), xend = max(cm)), 
+  #              size = 1, col = "red") +
   annotate("text", y = c(-0.012, -0.0012), x = c(-0.005, -0.010), size = 4.3, fontface = 3, 
            color = "white", label = c("max. size decreasing", "max. size increasing"),
            angle = 45) +

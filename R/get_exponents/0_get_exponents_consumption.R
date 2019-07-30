@@ -60,7 +60,8 @@ unique(dat$species)
 
 #== B. FIT LOG-LOG MODEL BY SPECIES ================================================
 
-# Check which species have "data" as source in exponent data set and redo them here
+# ----------------------------------------------------------------------------------
+# -----------Check which species have "data" as source in exponent data set and redo them here
 # to check they are the same!
 
 #==** Coregonus albula =============================================================

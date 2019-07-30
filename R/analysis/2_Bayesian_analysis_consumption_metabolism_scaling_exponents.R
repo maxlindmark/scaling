@@ -156,6 +156,7 @@ stanlmerCon <- stan_lmer(formula = b ~ env_temp_mid_norm + (1 | species_ab),
 
 # Check model summary
 summary(stanlmerCon, digits = 4)
+summary(stanlmerCon, digits = 4, probs = c(0.1, 0.9))
 
 # Summary of priors used
 prior_summary(object = stanlmerCon)
@@ -246,7 +247,7 @@ ggplot(datc) +
        y = "Mass-scaling exponent (consumption)") +
   NULL
 
-ggsave("figs/scatter_con_b.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
+#ggsave("figs/scatter_con_b.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
 
 # C. METABOLISM ====================================================================
@@ -273,6 +274,7 @@ stanlmerMet <- stan_lmer(formula = b ~ env_temp_mid_norm + (1 | species_ab),
 
 # Check model summary
 summary(stanlmerMet, digits = 4)
+summary(stanlmerMet, digits = 4, probs = c(0.1, 0.9))
 
 # Summary of priors used
 prior_summary(object = stanlmerMet)
@@ -364,7 +366,7 @@ ggplot(datm) +
        y = "Mass-scaling exponent (metabolism)") +
   NULL
 
-ggsave("figs/scatter_met_b.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
+#ggsave("figs/scatter_met_b.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
 
 
 # D. PLOT TOGETHER =================================================================
@@ -410,4 +412,4 @@ m1 <- mcmc_dens(posteriorM, pars = c("env_temp_mid_norm")) +
 
 p <- c1/m1
 
-ggsave("figs/posterior_c.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
+#ggsave("figs/posterior_c.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm")
