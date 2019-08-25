@@ -1,4 +1,4 @@
-# Scaling of metabolism and maximum consumption with temperature and body size in within species of fish
+# Scaling of metabolism and maximum consumption with temperature and body size within species of fish
 ## Description
 Project investigating the intraspecific temperature- and size dependence of metabolism and consumption using data from a systematic literature search.
 
