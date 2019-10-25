@@ -155,7 +155,7 @@ dat %>% group_by(common_name) %>%
                  y = temp_c, color = "gray"), size = 3) +
   scale_color_manual(labels = c("Mid. Env. Temperature [C]", 
                                 "Experimental\ntemperature"), 
-                     values = pal[c(3, 1)]) + # c("#f1a340", "#998ec3")
+                     values = c("#f1a340", "#998ec3")) +
   scale_fill_manual(name = "env_temp_mid") + 
   theme_classic(base_size = 18) +
   guides(color = guide_legend(title = "")) +

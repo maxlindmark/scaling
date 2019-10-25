@@ -204,7 +204,7 @@ datm <- datm %>% filter(unit == "mg O2/h" & env_temp_mid_norm < 12)
 # The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model
 
 # Non-normalized mass 
-stanlmerCon <- stan_lmer(formula = log(y) ~ inv_temp_sp_ct + ln_mass_g_ct + (1 |species), 
+stanlmerCon <- stan_lmer(formula = log(y) ~ inv_temp_sp_ct*ln_mass_g_ct + (1 |species), 
                          data = datc,
                          iter = 3000,
                          seed = 8194) 
@@ -288,15 +288,34 @@ c2 <- mcmc_dens(posteriorC, pars = c("ln_mass_g_ct")) +
   theme_classic(base_size = 18) +
   theme(axis.title = element_text(size = 20)) +
   xlim(c(0.5, 0.8)) +
+  labs(x = "") 
+
+# Size-temp interaction
+c3 <- mcmc_dens(posteriorC, pars = c("inv_temp_sp_ct:ln_mass_g_ct")) + 
+  geom_vline(xintercept = dfsumC$mean[4],
+             color = "black", alpha = 0.6, size = 0.9) +
+  geom_vline(xintercept = dfsumC$X2.5.[4],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 2) +
+  geom_vline(xintercept = dfsumC$X97.5.[4],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 2) +
+  geom_vline(xintercept = dfsumC$X10.[4],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 3) +
+  geom_vline(xintercept = dfsumC$X90.[4],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 3) +
+  theme_classic(base_size = 18) +
+  theme(axis.title = element_text(size = 20)) +
+  xlim(c(-0.08, 0.04)) +
+  ggtitle("Maximum Consumption Rate [g/day]") +
   labs(x = "")  
 
+c3
 
 # D. Metabolism ====================================================================
 #** Set up stan model ==============================================================
 # The rstanarm package uses lme4 syntax. In a preliminary analysis I explored a random intercept and slope model
 
 # Non-normalized mass 
-stanlmerMet <- stan_lmer(formula = log(y) ~ inv_temp_sp_ct + ln_mass_g_ct + (1 |species), 
+stanlmerMet <- stan_lmer(formula = log(y) ~ inv_temp_sp_ct * ln_mass_g_ct + (1 |species), 
                          data = datm,
                          iter = 3000,
                          seed = 8194) 
@@ -368,9 +387,34 @@ m2 <- mcmc_dens(posteriorM, pars = c("ln_mass_g_ct")) +
   xlim(c(0.5, 0.8)) +
   labs(x = "Mass-Scaling Exponent")  
 
+# Size-temperature interaction
+m3 <- mcmc_dens(posteriorM, pars = c("inv_temp_sp_ct:ln_mass_g_ct")) + 
+  geom_vline(xintercept = dfsumM$mean[4],
+             color = "black", alpha = 0.6, size = 0.9) +
+  geom_vline(xintercept = dfsumM$X2.5.[4],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 2) +
+  geom_vline(xintercept = dfsumM$X97.5.[4],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 2) +
+  geom_vline(xintercept = dfsumM$X10.[4],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 3) +
+  geom_vline(xintercept = dfsumM$X90.[4],
+             color = "black", alpha = 0.6, size = 0.9, linetype = 3) +
+  theme_classic(base_size = 18) +
+  theme(axis.title = element_text(size = 20)) +
+  xlim(c(-0.08, 0.04)) +
+  ggtitle("Metabolic Rate [g/day]") +
+  labs(x = "Change in Mass-scaling exponent per unit C")  
+
+m3
 
 #** All together ===================================================================
 p <- (c1+c2)/(m1+m2)
 
 ggsave("figs/posterior_E_b.pdf", plot = p, scale = 1, width = 20, height = 20, units = "cm")
+
+
+p <- c3/m3
+
+ggsave("figs/posterior_interaction.pdf", plot = p, scale = 1, width = 20, height = 20, units = "cm")
+
 
