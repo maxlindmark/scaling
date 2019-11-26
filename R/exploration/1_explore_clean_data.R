@@ -28,6 +28,7 @@ library(ggplot2)
 library(viridis)
 library(RColorBrewer)
 library(magrittr)
+library(readr)
 # devtools::install_github("thomasp85/patchwork")
 library(patchwork)
 
@@ -52,8 +53,8 @@ con$type <- NA
 
 cols = c(1,2,3,13,14,15,16,17,18)
 
-con[,cols] %<>% lapply(function(x) as.numeric(as.character(x)))
-met[,cols] %<>% lapply(function(x) as.numeric(as.character(x)))
+con[,cols] %<>% lapply(function(x) as.numeric(x))
+met[,cols] %<>% lapply(function(x) as.numeric(x))
 
 con <- con %>% rename(y = consumption)
 met <- met %>% rename(y = metabolic_rate)
@@ -69,18 +70,20 @@ head(dat)
 # B. EXPLORE DATA ==================================================================
 #** Normalize variables ============================================================
 # Inspect temperatures
-ggplot(dat, aes(env_temp_mid)) +
+ggplot(dat, aes(env_temp_mid, fill = common_name)) +
   geom_histogram() + 
   facet_wrap(~rate) + 
   coord_cartesian(expand = 0) +
   theme_classic() +
   NULL
 
+# Create a single temperature for analysis. This is midpoint of environment (mainly),
+# but sometimes midpoint of preferred (both from fishbase), and in two cases other literature
 dat$pref_temp_mid[is.na(dat$pref_temp_mid)] <- -9
 dat$env_temp_mid[is.na(dat$env_temp_mid)] <- -9
-t <- data.frame(filter(dat, pref_temp_mid == -9 & env_temp_mid == -9))
 
 # Some species with no temperature-information
+t <- data.frame(filter(dat, pref_temp_mid == -9 & env_temp_mid == -9))
 unique(t$common_name)
 
 # For Stechlin cisco, well use the sympatric species Coregonus albula
@@ -103,7 +106,6 @@ dat$median_temp <- dat$env_temp_mid
 
 # Take median of "preferred" temperature if environment temp is NA
 # Replace NA with -9...
-
 dat$median_temp <- ifelse(dat$median_temp == -9,
                           dat$pref_temp_mid,
                           dat$median_temp)
@@ -123,7 +125,7 @@ dat$temp_norm_arr <- dat$temp_arr - dat$median_temp_arr
 # Standardize temperatures to median-reference temperature on C scale
 dat$temp_norm <- dat$temp_c - dat$median_temp
 
-# Mean center predictor variable
+# Mean center predictor variables
 dat$temp_norm_arr_ct <- dat$temp_norm_arr - mean(dat$temp_norm_arr)
 dat$temp_norm_ct <- dat$temp_norm - mean(dat$temp_norm)
 
@@ -140,26 +142,13 @@ dat$log_mass_norm_ct <- dat$log_mass_norm - mean(dat$log_mass_norm)
 # Create data with with species that have also temperature repliates within species (intra-specific analysis)
 s_datc <- data.frame(
   dat %>% 
-    dplyr::filter(rate == "consumption") %>% 
-    dplyr::group_by(species) %>% 
-    dplyr::mutate(unique_t = n_distinct(temp_norm_arr_ct)) %>% 
-    dplyr::filter(unique_t > 1)
+    dplyr::filter(rate == "consumption")
 )
-
-str(s_datc)
-ggplot(s_datc, aes(unique_t)) + geom_histogram()
 
 s_datm <-  data.frame(
   dat %>% 
-    dplyr::filter(rate == "metabolism") %>% 
-    dplyr::group_by(species) %>% 
-    dplyr::mutate(unique_t = n_distinct(temp_norm_arr_ct)) %>% 
-    dplyr::filter(unique_t > 1)
+    dplyr::filter(rate == "metabolism")
 )
-
-ggplot(s_datm, aes(unique_t)) + geom_histogram()
-
-str(s_datm)
 
 
 #** Plot general data ==============================================================
@@ -186,10 +175,12 @@ ggplot(dat, aes(x = reorder(common_name, env_temp_mid),
   ylab("Mid. Env. Temperature [C]") + 
   coord_flip() +
   facet_wrap(~ rate) +
+  ggsave("figures/supp/temperatures.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm")
   NULL 
 
 # Mid env. temperature (Fishbase) compared to experimental temperature range
 pal <- rev(brewer.pal("Dark2", n = 5))
+pal <- rev(viridis(n = 3))
   
 dat %>% 
   dplyr::group_by(common_name) %>% 
@@ -205,7 +196,7 @@ dat %>%
                  y = temp_c, color = "gray"), size = 1) +
   scale_color_manual(labels = c("Mid. Env. Temperature [C]", 
                                 "Experimental\ntemperature"), 
-                     values = c(pal)) +
+                     values = c(pal[2:3])) +
   scale_fill_manual(name = "env_temp_mid") + 
   theme_classic(base_size = 12) +
   guides(color = guide_legend(title = "")) +
@@ -276,20 +267,7 @@ dat %>%
 
 
 #** Plot response variable =========================================================
-str(dat)
-
-# All data, by species
-dat %>% 
-  dplyr::filter(rate == "consumption") %>% 
-  ggplot(., aes(temp_norm_ct, y)) + 
-  geom_point(size = 2, alpha = 0.3) +
-  theme_classic(base_size = 11) +
-  facet_wrap(~species, scales = "free_y") +
-  stat_smooth(se = F) +
-  guides(color = F) +
-  NULL
-
-# Only intraspecific data, by species
+# Consumption
 s_datc %>% 
   ggplot(., aes(temp_norm_ct, y))+ 
   geom_point(size = 2, alpha = 0.3) +
@@ -299,6 +277,7 @@ s_datc %>%
   guides(color = F) +
   NULL
 
+# Metabolism
 s_datm %>% 
   ggplot(., aes(temp_norm_ct, y))+ 
   geom_point(size = 2, alpha = 0.3) +
@@ -358,7 +337,6 @@ for(i in unique(s_datm$common_name)) {
   
 }  
 
-
 # Group by normalized mass
 # Consumption
 p1 <- s_datc %>% 
@@ -370,9 +348,9 @@ p1 <- s_datc %>%
   #guides(color = FALSE) +
   scale_color_viridis() +
   labs(x = "Normalized temperature", y = "Normalized consumption") +
-  stat_smooth(span = 1.0, se = F, size = 1, alpha = 0.4, geom = "line", color = pal[2]) +
-  stat_smooth(span = 1.2, se = F, size = 1, alpha = 0.4, geom = "line", color = pal[2]) +
-  stat_smooth(span = 0.8, se = F, size = 1, alpha = 0.4, geom = "line", color = pal[2]) +
+  stat_smooth(span = 1.0, se = F, size = 1, alpha = 0.4, geom = "line", color = "red") +
+  stat_smooth(span = 1.2, se = F, size = 1, alpha = 0.4, geom = "line", color = "red") +
+  stat_smooth(span = 0.8, se = F, size = 1, alpha = 0.4, geom = "line", color = "red") +
   theme(aspect.ratio = 1) +
   NULL
 
@@ -387,9 +365,9 @@ p2 <- s_datm %>%
   scale_color_viridis() +
   #guides(color = FALSE) +
   labs(x = "Normalized temperature", y = "Normalized metabolic rate") +
-  stat_smooth(span = 1.0, se = F, size = 1, alpha = 0.4, geom = "line", color = pal[2]) +
-  stat_smooth(span = 1.2, se = F, size = 1, alpha = 0.4, geom = "line", color = pal[2]) +
-  stat_smooth(span = 0.8, se = F, size = 1, alpha = 0.4, geom = "line", color = pal[2]) +
+  stat_smooth(span = 1.0, se = F, size = 1, alpha = 0.4, geom = "line", color = "red") +
+  stat_smooth(span = 1.2, se = F, size = 1, alpha = 0.4, geom = "line", color = "red") +
+  stat_smooth(span = 0.8, se = F, size = 1, alpha = 0.4, geom = "line", color = "red") +
   theme(aspect.ratio = 1) +
   NULL
 
@@ -408,7 +386,7 @@ p3 <- s_datc %>%
   geom_point(size = 1, alpha = 0.8) +
   scale_color_viridis() +
   labs(x = "Inverse temperature [1/kT]", y = "log(consumption [g/day])") +
-  stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = pal[2]) +
+  stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = "red") +
   NULL
 
 # Metabolism
@@ -418,7 +396,7 @@ p4 <- s_datm %>%
   geom_point(size = 1, alpha = 0.8) +
   scale_color_viridis() +
   labs(x = "Inverse temperature [1/kT]", y = "log(metabolic rate [mg O2/h])") +
-  stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = pal[2]) +
+  stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = "red") +
   NULL
 
 p3 / p4
@@ -437,7 +415,7 @@ p5 <- s_datc %>%
   geom_point(size = 1, alpha = 0.6) +
   scale_color_viridis() +
   labs(x = "Normalized mass", y = "log(consumption [g/day])", color = "Inverse temperature [1/kT]") +
-  stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = pal[2]) +
+  stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = "red") +
   NULL
 
 # Metabolism
@@ -447,14 +425,13 @@ p6 <- s_datm %>%
   geom_point(size = 1, alpha = 0.6) +
   scale_color_viridis() +
   labs(y = "log(metabolic rate [mg O2/h])", x = "Normalized mass", color = "Inverse temperature [1/kT]") +
-  stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = pal[2]) +
+  stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = "red") +
   NULL
 
 p5 / p6
 
 # ggsave("figures/supp/rates_mass.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm")
-
-# Seriously clustered data! color by species instead
+# SERIOUSLY clustered data! color by species instead
 # Consumption
 p7 <- s_datc %>% 
   dplyr::filter(temp_norm_ct < 12) %>% 
@@ -464,19 +441,18 @@ p7 <- s_datc %>%
   guides(color = FALSE) +
   scale_color_viridis(discrete = TRUE) +
   labs(x = "Normalized mass", y = "log(consumption [g/day])", color = "Inverse temperature [1/kT]") +
-  stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = pal[2]) +
+  stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = "red") +
   NULL
 
 # Metabolism
 p8 <- s_datm %>% 
-  dplyr::filter(unit == "mg O2/h") %>% 
   ggplot(., aes(log_mass_norm_ct, log10(y), color = species)) + 
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.6) +
   guides(color = FALSE) +
   scale_color_viridis(discrete = TRUE) +
   labs(y = "log(metabolic rate [mg O2/h])", x = "Normalized mass", color = "Inverse temperature [1/kT]") +
-  stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = pal[2]) +
+  stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = "red") +
   NULL
 
 p7 / p8
@@ -484,7 +460,6 @@ p7 / p8
 # ggsave("figures/supp/rates_species.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm")
 
 # Split the plot into discrete size classes. We normalize by ranking all normalized masses (which describes mass relative to max mass of that species) by splitting up the data in 8 classes, 8 being largest. We then normalize consumption within species, so that all consumption rates are relative to the maximum consumption rate within species, across all sizes and temperatures. We do this because the feeding rates differ across species (likely due to ecology and experimental setup).
-
 # This is how ntile() works:
 # k <- data.frame(value = head(unique(dat$mass_norm), 10) * 1000,
 #                 species = rep(c("A", "B"), each = 5))
@@ -544,4 +519,16 @@ p9 / p10
 
 
 # C. SAVE DATA =====================================================================
+s_datm %>% 
+  select(y, mass_g, temp_c, above_optimum, common_name, species, unit, original_unit, 
+         type, rate, median_temp, median_temp_arr, temp_arr, temp_norm_arr, 
+         temp_norm, temp_norm_arr_ct, temp_norm, mass_norm, log_mass_norm, log_mass_norm_ct) %>% 
+  write_csv(., "data/met_analysis.csv", ";")
+
+s_datc %>% 
+  select(y, mass_g, temp_c, above_optimum, common_name, species, unit, original_unit, 
+         type, rate, median_temp, median_temp_arr, temp_arr, temp_norm_arr, 
+         temp_norm, temp_norm_arr_ct, temp_norm, mass_norm, log_mass_norm, log_mass_norm_ct) %>% 
+  write_csv(., "data/con_analysis.csv", ";")
+
 
