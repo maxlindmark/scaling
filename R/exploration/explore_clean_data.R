@@ -133,8 +133,8 @@ dat$temp_norm_ct <- dat$temp_norm - mean(dat$temp_norm)
 dat$mass_norm <- dat$mass_g / dat$w_max_published_g
 # ---- Stechlin cisco har larger size than max*
 
-# Calculate log10 mass
-dat$log_mass_norm <- log10(dat$mass_norm)
+# Calculate log mass
+dat$log_mass_norm <- log(dat$mass_norm)
 
 # Mean center mass
 dat$log_mass_norm_ct <- dat$log_mass_norm - mean(dat$log_mass_norm)
@@ -175,7 +175,7 @@ ggplot(dat, aes(x = reorder(common_name, env_temp_mid),
   ylab("Mid. Env. Temperature [C]") + 
   coord_flip() +
   facet_wrap(~ rate) +
-  ggsave("figures/supp/temperatures.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm")
+  ggsave("figures/supp/temperatures.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm") +
   NULL 
 
 # Mid env. temperature (Fishbase) compared to experimental temperature range
@@ -210,13 +210,13 @@ dat %>%
 
 # Max. published weight
 ggplot(dat, aes(x = reorder(common_name, w_max_published_g), 
-                y = log10(w_max_published_g))) +
+                y = log(w_max_published_g))) +
   geom_point(stat = 'identity', size = 2) +
   scale_fill_manual(name = "w_max_published_g") + 
   theme_classic(base_size = 12) +
   guides(colour = FALSE) +
   xlab("") + 
-  ylab("log10(max published weight) [g]") + 
+  ylab("log(max published weight) [g]") + 
   coord_flip() +
   facet_wrap(~ rate) +
   NULL 
@@ -381,21 +381,21 @@ p1 / p2
 # Consumption
 p3 <- s_datc %>% 
   dplyr::filter(temp_norm_ct < 12) %>% 
-  ggplot(., aes(temp_norm_arr_ct, log10(y), color = log_mass_norm_ct)) + 
+  ggplot(., aes(temp_norm_arr_ct, log(y), color = log_mass_norm_ct)) + 
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.8) +
   scale_color_viridis() +
-  labs(x = "Inverse temperature [1/kT]", y = "log(consumption [g/day])") +
+  labs(x = "Inverse temperature [1/kT]", y = "ln(consumption [g/day])") +
   stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = "red") +
   NULL
 
 # Metabolism
 p4 <- s_datm %>% 
-  ggplot(., aes(temp_norm_arr_ct, log10(y), color = log_mass_norm_ct)) + 
+  ggplot(., aes(temp_norm_arr_ct, log(y), color = log_mass_norm_ct)) + 
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.8) +
   scale_color_viridis() +
-  labs(x = "Inverse temperature [1/kT]", y = "log(metabolic rate [mg O2/h])") +
+  labs(x = "Inverse temperature [1/kT]", y = "ln(metabolic rate [mg O2/h])") +
   stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = "red") +
   NULL
 
@@ -410,21 +410,21 @@ p3 / p4
 # Consumption
 p5 <- s_datc %>% 
   dplyr::filter(temp_norm_ct < 12) %>% 
-  ggplot(., aes(log_mass_norm_ct, log10(y), color = temp_norm_ct)) + 
+  ggplot(., aes(log_mass_norm_ct, log(y), color = temp_norm_ct)) + 
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.6) +
   scale_color_viridis() +
-  labs(x = "Normalized mass", y = "log(consumption [g/day])", color = "Inverse temperature [1/kT]") +
+  labs(x = "Normalized mass", y = "ln(consumption [g/day])", color = "Inverse temperature [1/kT]") +
   stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = "red") +
   NULL
 
 # Metabolism
 p6 <- s_datm %>% 
-  ggplot(., aes(log_mass_norm_ct, log10(y), color = temp_norm_ct)) + 
+  ggplot(., aes(log_mass_norm_ct, log(y), color = temp_norm_ct)) + 
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.6) +
   scale_color_viridis() +
-  labs(y = "log(metabolic rate [mg O2/h])", x = "Normalized mass", color = "Inverse temperature [1/kT]") +
+  labs(y = "ln(metabolic rate [mg O2/h])", x = "Normalized mass", color = "Inverse temperature [1/kT]") +
   stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = "red") +
   NULL
 
@@ -435,23 +435,23 @@ p5 / p6
 # Consumption
 p7 <- s_datc %>% 
   dplyr::filter(temp_norm_ct < 12) %>% 
-  ggplot(., aes(log_mass_norm_ct, log10(y), color = species)) + 
+  ggplot(., aes(log_mass_norm_ct, log(y), color = species)) + 
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.6) +
   guides(color = FALSE) +
   scale_color_viridis(discrete = TRUE) +
-  labs(x = "Normalized mass", y = "log(consumption [g/day])", color = "Inverse temperature [1/kT]") +
+  labs(x = "Normalized mass", y = "ln(consumption [g/day])", color = "Inverse temperature [1/kT]") +
   stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = "red") +
   NULL
 
 # Metabolism
 p8 <- s_datm %>% 
-  ggplot(., aes(log_mass_norm_ct, log10(y), color = species)) + 
+  ggplot(., aes(log_mass_norm_ct, log(y), color = species)) + 
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.6) +
   guides(color = FALSE) +
   scale_color_viridis(discrete = TRUE) +
-  labs(y = "log(metabolic rate [mg O2/h])", x = "Normalized mass", color = "Inverse temperature [1/kT]") +
+  labs(y = "ln(metabolic rate [mg O2/h])", x = "Normalized mass", color = "Inverse temperature [1/kT]") +
   stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = "red") +
   NULL
 
