@@ -28,12 +28,6 @@ library(viridis)
 library(patchwork)
 library(bayesplot)
 
-# print(sessionInfo())
-# > print(sessionInfo())
-# R version 3.5.0 (2018-04-23)
-# Platform: x86_64-w64-mingw32/x64 (64-bit)
-# Running under: Windows 7 x64 (build 7601) Service Pack 1
-
 # other attached packages:
 # [1] bayesplot_1.7.1    patchwork_0.0.1    viridis_0.5.1      viridisLite_0.3.0  magrittr_1.5       readxl_1.3.1      
 # [7] RCurl_1.95-4.12    bitops_1.0-6       ggmcmc_1.3         ggplot2_3.2.1      tidyr_1.0.0        dplyr_0.8.3       
@@ -131,7 +125,16 @@ data = list(
 
 
 # C. MODEL SELECTION ===============================================================
-#** MAXIMUM CONSUMPTION RATE =======================================================
+# Here we fit models with different hierarcial structures
+# Specifically, we consider:
+
+# M1 - all coefficients vary by species
+# M2 - intercept, mass, temperature vary by species
+# M3a - intercept and mass vary by species
+# M3b - intercept and temperature vary by species
+# M4 - intercept vary by species
+# M5 no interaction
+
 #**** M1 ===========================================================================
 cat(
   "model{
@@ -289,17 +292,17 @@ c(pd.WAIC, WAIC)
 waic_m2 <- WAIC
 
 
-#**** M3 =============================================================================
+#**** M3a =============================================================================
 cat(
   "model{
   
   for(i in 1:n_obs){
     y[i] ~ dnorm(mu[i], tau)
     mu[i] <- 
-      b0[species_n[i]] + 
-      b1[species_n[i]]*mass[i] + 
-      b2*temp[i] +
-      b3*mass[i]*temp[i]
+      b0[species_n[i]] +          # varying intercept 
+      b1[species_n[i]]*mass[i] +  # varying mass-exponent
+      b2*temp[i] +                # non-varying activation energy
+      b3*mass[i]*temp[i]          # non-varying M*T interaction
     # Add log likelihood computation for each observation
     pd[i] <- dnorm(y[i], mu[i], tau)
     
@@ -325,9 +328,9 @@ cat(
   tau_b0 <- 1/sigma_b0^2
   tau_b1 <- 1/sigma_b1^2
   
-  }", fill = TRUE, file = "R/analysis/model_selection/m3_consumption.txt")
+  }", fill = TRUE, file = "R/analysis/model_selection/m3a_consumption.txt")
 
-model = "R/analysis/model_selection/m3_consumption.txt"
+model = "R/analysis/model_selection/m3a_consumption.txt"
 
 jm = jags.model(model,
                 data = data, 
@@ -338,8 +341,8 @@ burn.in = 10000 # Length of burn-in
 
 update(jm, n.iter = burn.in) 
 
-dic_m3 = dic.samples(jm, n.iter = 2500, type = "pD")
-dic_m3
+dic_m3a = dic.samples(jm, n.iter = 2500, type = "pD")
+dic_m3a
 
 # Monitor the likelihood to calculate WAIC
 zj = jags.samples(jm, 
@@ -359,7 +362,80 @@ pd.WAIC <- sum((summary(zj$log_pd, sd)$stat)^2) # Penalty
 WAIC <- lppd + 2*pd.WAIC
 
 c(pd.WAIC, WAIC)
-waic_m3 <- WAIC
+waic_m3a <- WAIC
+
+
+#**** M3b =============================================================================
+cat(
+  "model{
+  
+  for(i in 1:n_obs){
+    y[i] ~ dnorm(mu[i], tau)
+    mu[i] <- 
+      b0[species_n[i]] +          # varying intercept 
+      b1*mass[i] +                # non-varying mass-exponent
+      b2[species_n[i]]*temp[i] +  # varying activation energy
+      b3*mass[i]*temp[i]          # non-varying M*T interaction
+    # Add log likelihood computation for each observation
+    pd[i] <- dnorm(y[i], mu[i], tau)
+    
+    # Calculates the log PPD
+    log_pd[i] <- log(dnorm(y[i], mu[i], tau))
+  }
+  
+  # Second level (species-level effects)
+  for(j in 1:max(species_n)){
+    b0[j] ~ dnorm(mu_b0, tau_b0)
+    b2[j] ~ dnorm(mu_b2, tau_b2)
+  }
+  
+  #-- Priors	
+  b1 ~ dnorm(-0.25, 0.5)
+  b3 ~ dnorm(0, 0.5)
+  mu_b0 ~ dnorm(0, 0.5)
+  mu_b2 ~ dnorm(-0.6, 0.5)
+  sigma ~ dunif(0, 10) 
+  sigma_b0 ~ dunif(0, 10)
+  sigma_b2 ~ dunif(0, 10)
+  tau <- 1/sigma^2
+  tau_b0 <- 1/sigma_b0^2
+  tau_b2 <- 1/sigma_b2^2
+  
+  }", fill = TRUE, file = "R/analysis/model_selection/m3b_consumption.txt")
+
+model = "R/analysis/model_selection/m3b_consumption.txt"
+
+jm = jags.model(model,
+                data = data, 
+                n.adapt = 5000, 
+                n.chains = 3)
+
+burn.in = 10000 # Length of burn-in
+
+update(jm, n.iter = burn.in) 
+
+dic_m3b = dic.samples(jm, n.iter = 2500, type = "pD")
+dic_m3b
+
+# Monitor the likelihood to calculate WAIC
+zj = jags.samples(jm, 
+                  variable.names = c("pd", "log_pd"), 
+                  n.iter = 10000, 
+                  thin = 1)
+
+# Calculate model fit by summing over the log of means of the posterior distribution of 
+# the PPD and multiply by -2 (i.e. negative log likelihood).
+lppd <- -2*sum(log(summary(zj$pd, mean)$stat))
+
+# Calculate penalty (i.e. the number of parameters) as the variance of
+# the log of PPD. Do this by squaring the standard deviation.
+pd.WAIC <- sum((summary(zj$log_pd, sd)$stat)^2) # Penalty
+
+# WAIC = model fit + 2*penalty
+WAIC <- lppd + 2*pd.WAIC
+
+c(pd.WAIC, WAIC)
+waic_m3b <- WAIC
 
 
 #**** M4 =============================================================================
@@ -369,10 +445,10 @@ cat(
   for(i in 1:n_obs){
     y[i] ~ dnorm(mu[i], tau)
       mu[i] <- 
-      b0[species_n[i]] + 
-      b1*mass[i] + 
-      b2*temp[i] +
-      b3*mass[i]*temp[i]
+      b0[species_n[i]] + # varying intercept
+      b1*mass[i] +       # non-varying mass exponent
+      b2*temp[i] +       # non-varying activation energy
+      b3*mass[i]*temp[i] # non-varying M*T interaction
   # Add log likelihood computation for each observation!
   pd[i] <- dnorm(y[i], mu[i], tau)
   
@@ -432,48 +508,108 @@ c(pd.WAIC, WAIC)
 waic_m4 <- WAIC
 
 
+#**** M5 =============================================================================
+cat(
+  "model{
+  
+  for(i in 1:n_obs){
+    y[i] ~ dnorm(mu[i], tau)
+    mu[i] <- 
+      b0[species_n[i]] +           # varying intercept 
+      b1[species_n[i]]*mass[i] +   # varying mass-exponent
+      b2[species_n[i]]*temp[i]     # varying activation energy
+  
+  # Add log likelihood computation for each observation
+  pd[i] <- dnorm(y[i], mu[i], tau)
+  
+  # Calculates the log PPD
+  log_pd[i] <- log(dnorm(y[i], mu[i], tau))
+  }
+  
+  # Second level (species-level effects)
+  for(j in 1:max(species_n)){
+    b0[j] ~ dnorm(mu_b0, tau_b0)
+    b1[j] ~ dnorm(mu_b1, tau_b1)
+    b2[j] ~ dnorm(mu_b2, tau_b2)
+  }
+  
+  #-- Priors	
+  mu_b0 ~ dnorm(0, 0.5)      # varying intercept
+  mu_b1 ~ dnorm(-0.25, 0.5)  # varying mass-exponent
+  mu_b2 ~ dnorm(-0.6, 0.5)   # varying activation energy
+  sigma ~ dunif(0, 10) 
+  sigma_b0 ~ dunif(0, 10)
+  sigma_b1 ~ dunif(0, 10)
+  sigma_b2 ~ dunif(0, 10)
+  tau <- 1/sigma^2
+  tau_b0 <- 1/sigma_b0^2
+  tau_b1 <- 1/sigma_b1^2
+  tau_b2 <- 1/sigma_b2^2
+  
+  }", fill = TRUE, file = "R/analysis/model_selection/m5_consumption.txt")
+
+model = "R/analysis/model_selection/m5_consumption.txt"
+
+jm = jags.model(model,
+                data = data, 
+                n.adapt = 5000, 
+                n.chains = 3)
+
+burn.in = 10000 # Length of burn-in
+
+update(jm, n.iter = burn.in) 
+
+dic_m5 = dic.samples(jm, n.iter = 2500, type = "pD")
+dic_m5
+
+# Monitor the likelihood to calculate WAIC
+zj = jags.samples(jm, 
+                  variable.names = c("pd", "log_pd"), 
+                  n.iter = 10000, 
+                  thin = 1)
+
+# Calculate model fit by summing over the log of means of the posterior distribution of 
+# the PPD and multiply by -2 (i.e. negative log likelihood).
+lppd <- -2*sum(log(summary(zj$pd, mean)$stat))
+
+# Calculate penalty (i.e. the number of parameters) as the variance of
+# the log of PPD. Do this by squaring the standard deviation.
+pd.WAIC <- sum((summary(zj$log_pd, sd)$stat)^2) # Penalty
+
+# WAIC = model fit + 2*penalty
+WAIC <- lppd + 2*pd.WAIC
+
+c(pd.WAIC, WAIC)
+waic_m5 <- WAIC
+
+
+
 #** COMPARE DIC & WAIC =============================================================
 # WAIC
 waic_m1
 waic_m2
-waic_m3
+waic_m3a
+waic_m3b
 waic_m4
+waic_m5
 
 # > waic_m1
-# [1] 805.1188
+# [1] 531.4119
 # > waic_m2
-# [1] 804.3673
-# > waic_m3
-# [1] 917.0235
+# [1] 529.0335
+# > waic_m3a
+# [1] 674.0834
+# > waic_m3b
+# [1] 587.8616
 # > waic_m4
-# [1] 963.835
+# [1] 710.8867
 
 # DIC
 dic_m1
 dic_m2
-dic_m3
+dic_m3a
+dic_m3b
 dic_m4
-
-# > dic_m1
-# > dic_m1
-# Mean deviance:  742.4 
-# penalty 52.34 
-# Penalized deviance: 794.8 
-
-# > dic_m2
-# Mean deviance:  745.3 
-# penalty 48.83 
-# Penalized deviance: 794.1 
-
-# > dic_m3
-# Mean deviance:  876 
-# penalty 34.09 
-# Penalized deviance: 910.1 
-
-# > dic_m4
-# Mean deviance:  935.5 
-# penalty 21.9 
-# Penalized deviance: 957.4 
 
 # Both waic and DIC suggest model 2 is most parsimonious
 
@@ -609,9 +745,9 @@ cs_df %>%
   theme(axis.text.x = element_text(size = 6)) +
   NULL
 
-# Plot posterior densities of random means and standard deviations
+# Plot posterior densities of random means, interaction and standard deviations
 cs_df %>% 
-  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2",
+  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", "b3",
                           "sigma_b0", "sigma_b1", "sigma_b2")) %>% 
   ggs_density(.) + 
   facet_wrap(~ Parameter, ncol = 3, scales = "free") +
@@ -625,7 +761,7 @@ cs_df %>%
 
 # Traceplot for evaluating chain convergence
 cs_df %>% 
-  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2",
+  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", "b3",
                           "sigma_b0", "sigma_b1", "sigma_b2")) %>% 
   ggs_traceplot(.) +
   facet_wrap(~ Parameter, ncol = 4, scales = "free") +
