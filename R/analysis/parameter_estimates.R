@@ -8,7 +8,7 @@
 #
 # B. Read data
 #
-# C. Plot species-varying coeff
+# C. Plot parameter estimates
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # A. LOAD LIBRARIES ================================================================
@@ -24,6 +24,7 @@ library(magrittr)
 library(viridis)
 library(patchwork)
 library(bayesplot)
+library(tidybayes)
 
 # other attached packages:
 # [1] bayesplot_1.7.1    patchwork_0.0.1    viridis_0.5.1      viridisLite_0.3.0  magrittr_1.5       readxl_1.3.1      
@@ -135,12 +136,13 @@ summary(cs_met)
 
 
 #** Plot species-predictions =======================================================
-summary(cs_con)
-
 # Maxiumum consumption
 con_df <- data.frame(summary(cs_con)[2])
 con_df$Parameter <- rownames(con_df)
 con_df$Parameter_sub <- factor(substring(con_df$Parameter, 1, 2))
+
+std_con <- data.frame(summary(cs_con)[1])
+std_con$Parameter <- rownames(std_con)
 
 #** Mass exponent
 con_b <- con_df %>% filter(Parameter_sub == "b1")
@@ -148,6 +150,7 @@ con_b$Species <- sort(unique(con$species_ab))
 con_b$Rate <- "Maximum Consumption"
 con_b$Parameter_mte <- "Mass-scaling exponent"
 con_b$pred <- filter(con_df, Parameter == "mu_b1")$quantiles.50.
+con_b$pred_sd <- filter(std_con, Parameter == "mu_b1")$statistics.SD
 
 #** Activation energy
 con_e <- con_df %>% filter(Parameter_sub == "b2")
@@ -155,11 +158,15 @@ con_e$Species <- sort(unique(con$species_ab))
 con_e$Rate <- "Maximum Consumption"
 con_e$Parameter_mte <- "Activation energy"
 con_e$pred <- filter(con_df, Parameter == "mu_b2")$quantiles.50.
+con_e$pred_sd <- filter(std_con, Parameter == "mu_b2")$statistics.SD
 
 # Metabolism
 met_df <- data.frame(summary(cs_met)[2])
 met_df$Parameter <- rownames(met_df)
 met_df$Parameter_sub <- factor(substring(met_df$Parameter, 1, 2))
+
+std_met <- data.frame(summary(cs_met)[1])
+std_met$Parameter <- rownames(std_met)
 
 #** Mass exponent
 met_b <- met_df %>% filter(Parameter_sub == "b1")
@@ -167,6 +174,8 @@ met_b$Species <- sort(unique(met$species_ab))
 met_b$Rate <- "Metabolic rate"
 met_b$Parameter_mte <- "Mass-scaling exponent"
 met_b$pred <- filter(met_df, Parameter == "mu_b1")$quantiles.50.
+met_b$pred_sd <- filter(std_met, Parameter == "mu_b1")$statistics.SD
+
 
 #** Activation energy
 met_e <- met_df %>% filter(Parameter_sub == "b2")
@@ -174,22 +183,42 @@ met_e$Species <- sort(unique(met$species_ab))
 met_e$Rate <- "Metabolic rate"
 met_e$Parameter_mte <- "Activation energy"
 met_e$pred <- filter(met_df, Parameter == "mu_b2")$quantiles.50.
+met_e$pred_sd <- filter(std_met, Parameter == "mu_b2")$statistics.SD
 
-head(con_b)
-head(con_e)
-head(met_b)
-head(met_e)
+#** M*T interaction
+met_c <- met_df %>% filter(Parameter_sub == "b3")
+met_c$Species <- NA
+met_c$Rate <- "Metabolic rate"
+met_c$Parameter_mte <- "M*T interaction"
+met_c$pred <- filter(met_df, Parameter == "b3")$quantiles.50.
+met_c$pred_sd <- NA
 
-df <- rbind(con_b, con_e, met_b, met_e)
+# Merge data frames
+df <- rbind(con_b, con_e, met_b, met_e, met_c)
 
-pal <- brewer.pal("Dark2", n = 5)
+# Define color palettes
+#pal <- brewer.pal("Dark2", n = 5)
+pal <- viridis(option = "magma", n = 10)[c(2, 6)]
 
+# Create data frame for rectangles
+df_std <- df[!duplicated(df$pred_sd), ]
+df_std$ymax <- df_std$pred + 2*df_std$pred_sd
+df_std$ymin <- df_std$pred - 2*df_std$pred_sd
+
+# Plot all species varying estimates and global mean
 df %>% 
-  ggplot(., aes(Species, quantiles.50., color = factor(Rate))) +
+  filter(Parameter_mte %in% c("Activation energy", "Mass-scaling exponent")) %>% 
+  ggplot(., aes(Species, quantiles.50., color = Rate, shape = Rate)) +
   facet_grid(~ Parameter_mte, scales = "free") +
   scale_color_manual(values = pal[1:2]) +
-  geom_hline(data = df, aes(yintercept = pred, color = Rate),
+  scale_fill_manual(values = pal[1:2]) +
+  scale_shape_manual(values = c(21, 24)) +
+  geom_hline(data = filter(df_std, Parameter_mte %in% c("Activation energy", "Mass-scaling exponent")), 
+             aes(yintercept = pred, color = Rate),
              size = 0.8, alpha = 0.8, linetype = "dashed") +
+  geom_rect(data = filter(df_std, Parameter_mte %in% c("Activation energy", "Mass-scaling exponent")), 
+            inherit.aes = FALSE, aes(ymin = ymin, ymax = ymax, fill = Rate), xmin = 0, xmax = 50, 
+            alpha = 0.15) +
   coord_flip() +
   geom_errorbar(aes(Species, quantiles.50., color = Rate, 
                     ymin = quantiles.2.5., ymax = quantiles.97.5.),
@@ -197,9 +226,8 @@ df %>%
   geom_errorbar(aes(Species, quantiles.50., color = Rate, 
                     ymin = quantiles.25., ymax = quantiles.75.), 
                 size = 1.5, width = 0, alpha = 0.6) +
-  geom_point(size = 1.5, fill = "white", shape = 21) +
-  xlab("Species") + 
-  ylab("Mass-scaling exponent") +
+  geom_point(size = 1.5, fill = "white") +
+  labs(x = "Species", y = "Prediction") + 
   theme_classic(base_size = 14) +
   theme(axis.text.y = element_text(size = 8, face = "italic")) +
   theme(aspect.ratio = 2/1,
@@ -208,7 +236,6 @@ df %>%
   NULL
 
 #ggsave("figures/species_b_ea.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm", dpi = 300)
-
 
 
 #** Plot global-predictions ========================================================
@@ -274,8 +301,25 @@ p4 <- cs_met %>%
              linetype = "dashed") +
   NULL
 
-(p1 + p2) / (p3 + p4)
+p5 <- cs_met %>% 
+  mcmc_dens(pars = "b3") +
+  theme_classic(base_size = 11) + 
+  scale_y_continuous(expand = c(0,0)) +
+  # annotate("text", -Inf, Inf, label = "C", size = 4, 
+  #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "M*T interaction" & Rate == "Metabolic rate")$pred, 2), 
+           size = 3, hjust = -0.5, vjust = 1.3) +
+  labs(x = "M*T interaction") +
+  ggtitle("Metabolic rate") +
+#  xlim(-0.95, -0.4) +
+  geom_vline(xintercept = filter(df, Parameter_mte == "M*T interaction" & Rate == "Metabolic rate")$pred, 
+             linetype = "dashed") +
+  geom_vline(xintercept = 0, 
+             linetype = "dashed", color = "red") +
+  NULL
+
+p3 + p4 + p5 + p1 + p2 + plot_layout(ncol = 3)
 
 
-#ggsave("figures/supp/posterior_mte_parameters.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm", dpi = 300)
+#ggsave("figures/supp/posterior_mte_parameters.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
 
