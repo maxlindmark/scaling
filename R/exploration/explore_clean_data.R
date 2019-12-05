@@ -179,15 +179,17 @@ ggplot(dat, aes(x = reorder(common_name, env_temp_mid),
   NULL 
 
 # Mid env. temperature (Fishbase) compared to experimental temperature range
-pal <- rev(brewer.pal("Dark2", n = 5))
+# pal <- rev(brewer.pal("Dark2", n = 5))
 # pal <- rev(viridis(n = 3))
-#pal <- brewer.pal("Dark2", n = 5)[c(1,3)]
-  
+# pal <- brewer.pal("Dark2", n = 5)[c(1,3)]
+# pal <- rev(viridis(n = 3, option = "magma")[1:2])
+pal <- brewer.pal("Dark2", n = 5)[c(1,3)]
+
 dat %>% 
   dplyr::group_by(common_name) %>% 
   ggplot(., aes(x = reorder(common_name, env_temp_mid), 
                 y = env_temp_mid, color = "blue")) +
-  geom_point(stat = 'identity', size = 1) +
+  geom_point(stat = 'identity', size = 1, shape = 21, color = "white") +
   geom_errorbar(aes(reorder(common_name, env_temp_mid), 
                     ymin = env_temp_min, 
                     ymax = env_temp_max, color = "blue"), 
@@ -195,9 +197,9 @@ dat %>%
                 width = 0) +
   geom_point(aes(x = reorder(common_name, env_temp_mid), 
                  y = temp_c, color = "gray"), size = 1) +
-  scale_color_manual(labels = c("Mid. Env. Temperature [C]", 
+  scale_color_manual(labels = c("Env. Temperature [C]", 
                                 "Experimental\ntemperature"), 
-                     values = c(rev(pal))) +
+                     values = rev(pal)) +
   scale_fill_manual(name = "env_temp_mid") + 
   theme_classic(base_size = 12) +
   guides(color = guide_legend(title = "")) +
@@ -206,7 +208,6 @@ dat %>%
   coord_flip() +
   facet_wrap(~ rate) +
   NULL 
-
 # ggsave("figures/supp/temperatures.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm")
 
 # Max. published weight
@@ -221,7 +222,6 @@ ggplot(dat, aes(x = reorder(common_name, w_max_published_g),
   coord_flip() +
   facet_wrap(~ rate) +
   NULL 
-
 # ggsave("figures/supp/max_weight.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm")
 
 # Phylogeny
@@ -261,7 +261,6 @@ dat %>%
   scale_fill_viridis(discrete = TRUE, option = "magma") +
   facet_wrap(~ rate) +
   NULL
-
 # ggsave("figures/supp/lifestyle.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm")
 
 
