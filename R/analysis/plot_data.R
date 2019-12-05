@@ -141,4 +141,4 @@ p4 <- ggplot(met, aes(temp_norm_arr_ct, log(y), fill = log_mass_norm_ct, color =
 
 (p1 + p2) / (p3 + p4)
 
-#ggsave("figures/model_data.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
+#ggsave("figures/supp/model_data.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)

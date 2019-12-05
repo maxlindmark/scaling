@@ -198,7 +198,8 @@ df <- rbind(con_b, con_e, met_b, met_e, met_c)
 
 # Define color palettes
 #pal <- brewer.pal("Dark2", n = 5)
-pal <- viridis(option = "magma", n = 10)[c(2, 6)]
+#pal <- viridis(option = "magma", n = 10)[c(2, 6)]
+pal <- brewer.pal("Dark2", n = 5)[c(1,3)]
 
 # Create data frame for rectangles
 df_std <- df[!duplicated(df$pred_sd), ]
@@ -215,17 +216,17 @@ df %>%
   scale_shape_manual(values = c(21, 24)) +
   geom_hline(data = filter(df_std, Parameter_mte %in% c("Activation energy", "Mass-scaling exponent")), 
              aes(yintercept = pred, color = Rate),
-             size = 0.8, alpha = 0.8, linetype = "dashed") +
+             size = 0.6, alpha = 1, linetype = "dashed") +
   geom_rect(data = filter(df_std, Parameter_mte %in% c("Activation energy", "Mass-scaling exponent")), 
             inherit.aes = FALSE, aes(ymin = ymin, ymax = ymax, fill = Rate), xmin = 0, xmax = 50, 
-            alpha = 0.15) +
+            alpha = 0.2) +
   coord_flip() +
   geom_errorbar(aes(Species, quantiles.50., color = Rate, 
                     ymin = quantiles.2.5., ymax = quantiles.97.5.),
                 size = 1, width = 0, alpha = 0.4) +
   geom_errorbar(aes(Species, quantiles.50., color = Rate, 
                     ymin = quantiles.25., ymax = quantiles.75.), 
-                size = 1.5, width = 0, alpha = 0.6) +
+                size = 1.5, width = 0, alpha = 0.7) +
   geom_point(size = 1.5, fill = "white") +
   labs(x = "Species", y = "Prediction") + 
   theme_classic(base_size = 14) +
@@ -241,37 +242,7 @@ df %>%
 #** Plot global-predictions ========================================================
 color_scheme_set("gray")
 
-p1 <- cs_con %>% 
-  mcmc_dens(pars = "mu_b1") +
-  theme_classic(base_size = 11) + 
-  scale_y_continuous(expand = c(0,0)) +
-  # annotate("text", -Inf, Inf, label = "C", size = 4, 
-  #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Mass-scaling exponent" & Rate == "Maximum Consumption")$pred, 2), 
-           size = 3, hjust = -0.5, vjust = 1.3) +
-  labs(x = "Mass-scaling exponent") +
-  ggtitle("Maximum consumption rate") +
-  xlim(0.48, 0.9) +
-  geom_vline(xintercept = filter(df, Parameter_mte == "Mass-scaling exponent" & Rate == "Maximum Consumption")$pred, 
-             linetype = "dashed") +
-  NULL
-
-p2 <- cs_con %>% 
-  mcmc_dens(pars = "mu_b2") +
-  theme_classic(base_size = 11) + 
-  scale_y_continuous(expand = c(0,0)) +
-  # annotate("text", -Inf, Inf, label = "C", size = 4, 
-  #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Activation energy" & Rate == "Maximum Consumption")$pred, 2), 
-           size = 3, hjust = -0.5, vjust = 1.3) +
-  labs(x = "Activation energy") +
-  ggtitle("Maximum consumption rate") +
-  xlim(-0.95, -0.4) +
-  geom_vline(xintercept = filter(df, Parameter_mte == "Activation energy" & Rate == "Maximum Consumption")$pred, 
-             linetype = "dashed") +
-  NULL
-
-p3 <- cs_met %>% 
+p1 <- cs_met %>% 
   mcmc_dens(pars = "mu_b1") +
   theme_classic(base_size = 11) + 
   scale_y_continuous(expand = c(0,0)) +
@@ -280,13 +251,13 @@ p3 <- cs_met %>%
   annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Mass-scaling exponent" & Rate == "Metabolic rate")$pred, 2), 
            size = 3, hjust = -0.5, vjust = 1.3) +
   labs(x = "Mass-scaling exponent") +
-  ggtitle("Metabolic rate") +
+  ggtitle("") +
   xlim(0.48, 0.9) +
   geom_vline(xintercept = filter(df, Parameter_mte == "Mass-scaling exponent" & Rate == "Metabolic rate")$pred, 
              linetype = "dashed") +
   NULL
 
-p4 <- cs_met %>% 
+p2 <- cs_met %>% 
   mcmc_dens(pars = "mu_b2") +
   theme_classic(base_size = 11) + 
   scale_y_continuous(expand = c(0,0)) +
@@ -301,7 +272,7 @@ p4 <- cs_met %>%
              linetype = "dashed") +
   NULL
 
-p5 <- cs_met %>% 
+p3 <- cs_met %>% 
   mcmc_dens(pars = "b3") +
   theme_classic(base_size = 11) + 
   scale_y_continuous(expand = c(0,0)) +
@@ -310,7 +281,7 @@ p5 <- cs_met %>%
   annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "M*T interaction" & Rate == "Metabolic rate")$pred, 2), 
            size = 3, hjust = -0.5, vjust = 1.3) +
   labs(x = "M*T interaction") +
-  ggtitle("Metabolic rate") +
+  ggtitle("") +
 #  xlim(-0.95, -0.4) +
   geom_vline(xintercept = filter(df, Parameter_mte == "M*T interaction" & Rate == "Metabolic rate")$pred, 
              linetype = "dashed") +
@@ -318,8 +289,53 @@ p5 <- cs_met %>%
              linetype = "dashed", color = "red") +
   NULL
 
-p3 + p4 + p5 + p1 + p2 + plot_layout(ncol = 3)
+p4 <- cs_con %>% 
+  mcmc_dens(pars = "mu_b1") +
+  theme_classic(base_size = 11) + 
+  scale_y_continuous(expand = c(0,0)) +
+  # annotate("text", -Inf, Inf, label = "C", size = 4, 
+  #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Mass-scaling exponent" & Rate == "Maximum Consumption")$pred, 2), 
+           size = 3, hjust = -0.5, vjust = 1.3) +
+  labs(x = "Mass-scaling exponent") +
+  ggtitle("") +
+  xlim(0.48, 0.9) +
+  geom_vline(xintercept = filter(df, Parameter_mte == "Mass-scaling exponent" & Rate == "Maximum Consumption")$pred, 
+             linetype = "dashed") +
+  NULL
+
+p5 <- cs_con %>% 
+  mcmc_dens(pars = "mu_b2") +
+  theme_classic(base_size = 11) + 
+  scale_y_continuous(expand = c(0,0)) +
+  # annotate("text", -Inf, Inf, label = "C", size = 4, 
+  #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Activation energy" & Rate == "Maximum Consumption")$pred, 2), 
+           size = 3, hjust = -0.5, vjust = 1.3) +
+  labs(x = "Activation energy") +
+  ggtitle("Maximum consumption rate") +
+  xlim(-0.95, -0.4) +
+  geom_vline(xintercept = filter(df, Parameter_mte == "Activation energy" & Rate == "Maximum Consumption")$pred, 
+             linetype = "dashed") +
+  NULL
+
+p1 + p2 + p3 + p4 + p5 + plot_layout(ncol = 3)
+
+#ggsave("figures/posterior_mte_parameters.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
 
 
-#ggsave("figures/supp/posterior_mte_parameters.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
+# How big is a a c of 0.01 on celcius scale?
+b <- 0.75
+cc <- 0.01
 
+test <- con
+
+test$b_pred <- b + cc * test$temp_norm_arr_ct
+
+par(mfrow = c(2,1))
+plot(test$b_pred ~ test$temp_norm_arr_ct)
+plot(test$b_pred ~ test$temp_norm, col = "red")
+
+summary(lm(test$b_pred ~ test$temp_norm))$coefficients[2]
+
+# Not that big of a difference in the exponents.

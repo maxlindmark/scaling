@@ -180,7 +180,8 @@ ggplot(dat, aes(x = reorder(common_name, env_temp_mid),
 
 # Mid env. temperature (Fishbase) compared to experimental temperature range
 pal <- rev(brewer.pal("Dark2", n = 5))
-pal <- rev(viridis(n = 3))
+# pal <- rev(viridis(n = 3))
+#pal <- brewer.pal("Dark2", n = 5)[c(1,3)]
   
 dat %>% 
   dplyr::group_by(common_name) %>% 
@@ -196,7 +197,7 @@ dat %>%
                  y = temp_c, color = "gray"), size = 1) +
   scale_color_manual(labels = c("Mid. Env. Temperature [C]", 
                                 "Experimental\ntemperature"), 
-                     values = c(pal[2:3])) +
+                     values = c(rev(pal))) +
   scale_fill_manual(name = "env_temp_mid") + 
   theme_classic(base_size = 12) +
   guides(color = guide_legend(title = "")) +
@@ -230,11 +231,10 @@ dat %>% dplyr::distinct(common_name, .keep_all = TRUE) %>%
   theme_classic(base_size = 12) +
   theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
   #scale_fill_manual(values = pal) +  
-  scale_fill_viridis(discrete = TRUE) +
+  scale_fill_viridis(discrete = TRUE, option = "magma") +
   facet_wrap(~ rate) +
   NULL
 # Doesn't seem like we can do much about phyologey here..
-
 # ggsave("figures/supp/phylogeny.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm")
 
 # Biogeography
@@ -244,11 +244,10 @@ dat %>% dplyr::distinct(common_name, .keep_all = TRUE) %>%
   theme_classic(base_size = 15) +
   theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
   #scale_fill_manual(values = mycolors) + 
-  scale_fill_viridis(discrete = TRUE) +
+  scale_fill_viridis(discrete = TRUE, option = "magma") +
   facet_wrap(~ rate) +
   guides(fill = FALSE) +
   NULL
-
 # ggsave("figures/supp/biogeography.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm")
 
 # Lifestyle
@@ -259,7 +258,7 @@ dat %>%
   theme_classic(base_size = 15) +
   theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
   #scale_fill_manual(values = mycolors) + 
-  scale_fill_viridis(discrete = TRUE) +
+  scale_fill_viridis(discrete = TRUE, option = "magma") +
   facet_wrap(~ rate) +
   NULL
 
@@ -346,7 +345,7 @@ p1 <- s_datc %>%
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.8) +
   #guides(color = FALSE) +
-  scale_color_viridis() +
+  scale_color_viridis(option = "magma") +
   labs(x = "Normalized temperature", y = "Normalized consumption") +
   stat_smooth(span = 1.0, se = F, size = 1, alpha = 0.4, geom = "line", color = "red") +
   stat_smooth(span = 1.2, se = F, size = 1, alpha = 0.4, geom = "line", color = "red") +
@@ -362,7 +361,7 @@ p2 <- s_datm %>%
   ggplot(., aes(temp_norm_ct, y_norm, color = log_mass_norm)) + 
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.8) +
-  scale_color_viridis() +
+  scale_color_viridis(option = "magma") +
   #guides(color = FALSE) +
   labs(x = "Normalized temperature", y = "Normalized metabolic rate") +
   stat_smooth(span = 1.0, se = F, size = 1, alpha = 0.4, geom = "line", color = "red") +
@@ -372,7 +371,6 @@ p2 <- s_datm %>%
   NULL
 
 p1 / p2
-
 # ggsave("figures/supp/rates_temperature.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm")
 
 # Now plot slope log(rate)~temp(arr), where the slope is the activation energy, 
@@ -384,7 +382,7 @@ p3 <- s_datc %>%
   ggplot(., aes(temp_norm_arr_ct, log(y), color = log_mass_norm_ct)) + 
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.8) +
-  scale_color_viridis() +
+  scale_color_viridis(option = "magma") +
   labs(x = "Inverse temperature [1/kT]", y = "ln(consumption [g/day])") +
   stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = "red") +
   NULL
@@ -394,13 +392,12 @@ p4 <- s_datm %>%
   ggplot(., aes(temp_norm_arr_ct, log(y), color = log_mass_norm_ct)) + 
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.8) +
-  scale_color_viridis() +
+  scale_color_viridis(option = "magma") +
   labs(x = "Inverse temperature [1/kT]", y = "ln(metabolic rate [mg O2/h])") +
   stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = "red") +
   NULL
 
 p3 / p4
-
 # ggsave("figures/supp/rates_arr_temperature.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm")
 
 # Now plot slope log(rate)~MASS, where the slope is the mass-exponent, 
@@ -413,7 +410,7 @@ p5 <- s_datc %>%
   ggplot(., aes(log_mass_norm_ct, log(y), color = temp_norm_ct)) + 
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.6) +
-  scale_color_viridis() +
+  scale_color_viridis(option = "magma") +
   labs(x = "Normalized mass", y = "ln(consumption [g/day])", color = "Inverse temperature [1/kT]") +
   stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = "red") +
   NULL
@@ -423,23 +420,23 @@ p6 <- s_datm %>%
   ggplot(., aes(log_mass_norm_ct, log(y), color = temp_norm_ct)) + 
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.6) +
-  scale_color_viridis() +
+  scale_color_viridis(option = "magma") +
   labs(y = "ln(metabolic rate [mg O2/h])", x = "Normalized mass", color = "Inverse temperature [1/kT]") +
   stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = "red") +
   NULL
 
 p5 / p6
-
 # ggsave("figures/supp/rates_mass.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm")
 # SERIOUSLY clustered data! color by species instead
 # Consumption
+
 p7 <- s_datc %>% 
   dplyr::filter(temp_norm_ct < 12) %>% 
   ggplot(., aes(log_mass_norm_ct, log(y), color = species)) + 
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.6) +
   guides(color = FALSE) +
-  scale_color_viridis(discrete = TRUE) +
+  scale_color_viridis(discrete = TRUE, option = "magma") +
   labs(x = "Normalized mass", y = "ln(consumption [g/day])", color = "Inverse temperature [1/kT]") +
   stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = "red") +
   NULL
@@ -450,13 +447,12 @@ p8 <- s_datm %>%
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.6) +
   guides(color = FALSE) +
-  scale_color_viridis(discrete = TRUE) +
+  scale_color_viridis(discrete = TRUE, option = "magma") +
   labs(y = "ln(metabolic rate [mg O2/h])", x = "Normalized mass", color = "Inverse temperature [1/kT]") +
   stat_smooth(method = "lm", size = 1, alpha = 0.8, geom = "line", color = "red") +
   NULL
 
 p7 / p8
-
 # ggsave("figures/supp/rates_species.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm")
 
 # Split the plot into discrete size classes. We normalize by ranking all normalized masses (which describes mass relative to max mass of that species) by splitting up the data in 8 classes, 8 being largest. We then normalize consumption within species, so that all consumption rates are relative to the maximum consumption rate within species, across all sizes and temperatures. We do this because the feeding rates differ across species (likely due to ecology and experimental setup).
@@ -486,7 +482,7 @@ p9 <- s_datc %>%
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.8) +
   labs(x = "Normalized temperature", y = "Normalized consumption") +
-  scale_color_viridis(discrete = TRUE) +
+  scale_color_viridis(discrete = TRUE, option = "magma") +
   stat_smooth(span = 1.0, se = FALSE, size = 1, alpha = 0.8, geom = "line") +
   NULL
 
@@ -502,12 +498,11 @@ p10 <- s_datm %>%
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.8) +
   labs(x = "Normalized temperature", y = "Normalized metabolism") +
-  scale_color_viridis(discrete = TRUE) +
+  scale_color_viridis(discrete = TRUE, option = "magma") +
   stat_smooth(span = 1.0, se = F, size = 1, alpha = 0.8, geom = "line") +
   NULL
 
 p9 / p10
-
 # ggsave("figures/supp/rates_temp_discretemass.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm")
 
 #**** Summary ======================================================================
