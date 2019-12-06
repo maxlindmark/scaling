@@ -176,7 +176,6 @@ met_b$Parameter_mte <- "Mass-scaling exponent"
 met_b$pred <- filter(met_df, Parameter == "mu_b1")$quantiles.50.
 met_b$pred_sd <- filter(std_met, Parameter == "mu_b1")$statistics.SD
 
-
 #** Activation energy
 met_e <- met_df %>% filter(Parameter_sub == "b2")
 met_e$Species <- sort(unique(met$species_ab))

@@ -464,11 +464,10 @@ p7 / p8
 #   dplyr::mutate(quartile = ntile(value, 4)) %>% 
 #   arrange(species, quartile, value)
 
-# Here I use only intra-specific data:
 # Set number of ranks
-nranks <- 5
+nranks <- 10
 
-# Group by normalized mass
+# Plot normalized rate (divided by max within specieS), group by normalized mass
 # Consumption
 p9 <- s_datc %>% 
   dplyr::mutate(quartile = ntile(mass_g, nranks)) %>%
@@ -503,6 +502,42 @@ p10 <- s_datm %>%
 
 p9 / p10
 # ggsave("figures/supp/rates_temp_discretemass.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm")
+
+# Same, but log y
+p10 <- s_datc %>% 
+  dplyr::mutate(quartile = ntile(mass_g, nranks)) %>%
+  dplyr::group_by(quartile) %>% 
+  dplyr::mutate(mean_mass_q = round(mean(mass_norm), digits = 2)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::group_by(species) %>% 
+  dplyr::mutate(y_norm = y/max(y)) %>% 
+  ggplot(., aes(temp_norm_ct, log(y_norm), color = factor(mean_mass_q))) + 
+  theme_classic(base_size = 12) +
+  geom_point(size = 1, alpha = 0.8) +
+  labs(x = "Normalized temperature", y = "Normalized consumption") +
+  scale_color_viridis(discrete = TRUE, option = "magma") +
+  stat_smooth(span = 1.0, se = FALSE, size = 1, alpha = 0.8, geom = "line") +
+  NULL
+
+# Metabolism
+p11 <- s_datm %>% 
+  dplyr::mutate(quartile = ntile(mass_g, nranks)) %>%
+  dplyr::group_by(quartile) %>% 
+  dplyr::mutate(mean_mass_q = round(mean(mass_norm), digits = 2)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::group_by(species) %>% 
+  dplyr::mutate(y_norm = y/max(y)) %>% 
+  ggplot(., aes(temp_norm_ct, log(y_norm), color = factor(mean_mass_q))) + 
+  theme_classic(base_size = 12) +
+  geom_point(size = 1, alpha = 0.8) +
+  labs(x = "Normalized temperature", y = "Normalized metabolism") +
+  scale_color_viridis(discrete = TRUE, option = "magma") +
+  stat_smooth(span = 1.0, se = F, size = 1, alpha = 0.8, geom = "line") +
+  NULL
+
+p10 / p11
+
+
 
 #**** Summary ======================================================================
 # Looks ok so far. I can show that there is a tendency in the data to have declining 

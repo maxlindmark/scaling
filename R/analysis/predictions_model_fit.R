@@ -10,6 +10,8 @@
 #
 # C. Fit models
 # 
+# E. Evaluate model fit
+#
 # D. Plot predicted mass-scaling slopes in different temperatures
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -89,6 +91,9 @@ cat(
   "model{
   
   for(i in 1:n_obs){
+    # Simulate for comparison with data
+    y_sim[i] ~ dnorm(mu[i], tau)
+    
     y[i] ~ dnorm(mu[i], tau)
     mu[i] <- 
       b0[species_n[i]] +           # varying intercept 
@@ -116,6 +121,15 @@ cat(
     pred_cold[k] <- mu_b0 + mu_b1*mass_pred_met[k] + mu_b2*1.5 + b3*mass_pred_met[k]*1.5
     
   } 
+
+  # Model fit
+  mean_y <- mean(y[])
+  mean_y_sim <- mean(y_sim[])
+  p_mean <- step(mean_y_sim - mean_y) # Proportion of data above and below 
+  
+  cv_y <- sd(y[])/mean(y[])
+  cv_y_sim <- sd(y_sim[])/max(0.0000001, mean(y_sim[])) # Not to divide by 0
+  p_cv <- step(cv_y_sim - cv_y)
 
   #-- Priors	
   b3 ~ dnorm(0, 0.5)         # global interaction
@@ -147,6 +161,9 @@ cat(
   "model{
   
     for(i in 1:n_obs){
+    # Simulate for comparison with data
+    y_sim[i] ~ dnorm(mu[i], tau)
+    
     y[i] ~ dnorm(mu[i], tau)
     mu[i] <- 
       b0[species_n[i]] +           # varying intercept 
@@ -174,6 +191,15 @@ cat(
   
   } 
 
+  # Model fit
+  mean_y <- mean(y[])
+  mean_y_sim <- mean(y_sim[])
+  p_mean <- step(mean_y_sim - mean_y) # Proportion of data above and below 
+  
+  cv_y <- sd(y[])/mean(y[])
+  cv_y_sim <- sd(y_sim[])/max(0.0000001, mean(y_sim[])) # Not to divide by 0
+  p_cv <- step(cv_y_sim - cv_y)
+
   #-- Priors	
   mu_b0 ~ dnorm(0, 0.5)      # varying intercept
   mu_b1 ~ dnorm(-0.25, 0.5)  # varying mass-exponent
@@ -197,7 +223,105 @@ jm_con = jags.model(model_con,
                 n.chains = 3)
 
 
-# D. PLOT PREDICTIONS ==============================================================
+# D. EVALUATE MODEL FIT ============================================================
+# Plot mean of simulated data vs mean of observed data
+samples = 10000 # How many samples to take from the posterior
+n.thin = 5 # Thinning?
+
+# First convert your matrix 
+cs_fit_met = coda.samples(jm_met,
+                          variable.names = c("mean_y",
+                                             "mean_y_sim", 
+                                             "p_mean",
+                                             "cv_y",
+                                             "cv_y_sim",
+                                             "p_cv"), 
+                          n.iter = samples, 
+                          thin = n.thin)
+
+cs_fit_con = coda.samples(jm_con,
+                          variable.names = c("mean_y",
+                                             "mean_y_sim", 
+                                             "p_mean",
+                                             "cv_y",
+                                             "cv_y_sim",
+                                             "p_cv"), 
+                          n.iter = samples, 
+                          thin = n.thin)
+
+# Convert to data frame
+cs_fit_df_met <- data.frame(as.matrix(cs_fit_met))
+cs_fit_df_con <- data.frame(as.matrix(cs_fit_con))
+
+# Plot mean y and mean cv at each iteration and compare to data
+# General formula for number of bins..
+n_bins <- round(1 + 3.2*log(nrow(cs_fit_df_met)))
+
+# Metabolism
+p3 <- ggplot(cs_fit_df_met, aes(mean_y_sim)) + 
+  geom_histogram(bins = n_bins) +
+  geom_vline(xintercept = cs_fit_df_met$mean_y, color = "white", 
+             linetype = 2, size = 0.4) +
+  theme_classic(base_size = 11) +
+  annotate("text", -Inf, Inf, label = "A", size = 4, 
+           fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  annotate("text", -Inf, Inf, size = 4, hjust = -0.2, vjust = 3.3,
+           label = paste("P =", round(mean(cs_fit_df_met$p_mean), digits = 3))) +
+  labs(x = "Mean simulated metabolism", y = "count") +
+  theme(aspect.ratio = 1) +
+  coord_cartesian(expand = 0) + 
+  ggtitle("Metabolism") +
+  NULL
+
+p4 <- ggplot(cs_fit_df_met, aes(cv_y_sim)) + 
+  geom_histogram(bins = n_bins) +
+  geom_vline(xintercept = cs_fit_df_met$cv_y, color = "white", 
+             linetype = 2, size = 0.4) +
+  theme_classic(base_size = 11) +
+  annotate("text", -Inf, Inf, label = "B", size = 4, 
+           fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  annotate("text", -Inf, Inf, size = 4, hjust = -0.2, vjust = 3.3, 
+           label = paste("P =", round(mean(cs_fit_df_met$p_cv), digits = 3))) +
+  labs(x = "cv simulated metabolism", y = "") +
+  theme(aspect.ratio = 1) +
+  coord_cartesian(expand = 0) +
+  NULL
+
+# Consumption
+p5 <- ggplot(cs_fit_df_con, aes(mean_y_sim)) + 
+  geom_histogram(bins = n_bins) +
+  geom_vline(xintercept = cs_fit_df_con$mean_y, color = "white", 
+             linetype = 2, size = 0.4) +
+  theme_classic(base_size = 11) +
+  annotate("text", -Inf, Inf, label = "C", size = 4, 
+           fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  annotate("text", -Inf, Inf, size = 4, hjust = -0.2, vjust = 3.3,
+           label = paste("P =", round(mean(cs_fit_df_con$p_mean), digits = 3))) +
+  labs(x = "Mean simulated consumption", y = "count") +
+  theme(aspect.ratio = 1) +
+  coord_cartesian(expand = 0) + 
+  ggtitle("Consumption") +
+  NULL
+
+p6 <- ggplot(cs_fit_df_con, aes(cv_y_sim)) + 
+  geom_histogram(bins = n_bins) +
+  geom_vline(xintercept = cs_fit_df_con$cv_y, color = "white", 
+             linetype = 2, size = 0.4) +
+  theme_classic(base_size = 11) +
+  annotate("text", -Inf, Inf, label = "D", size = 4, 
+           fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  annotate("text", -Inf, Inf, size = 4, hjust = -2, vjust = 3.3, 
+           label = paste("P =", round(mean(cs_fit_df_con$p_cv), digits = 3))) +
+  labs(x = "cv simulated consumption", y = "") +
+  theme(aspect.ratio = 1) +
+  coord_cartesian(expand = 0) +
+  NULL
+
+(p3 + p4) / (p5 + p6)
+#ggsave("figures/supp/cv_mean_fit.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm", dpi = 300)
+
+
+# E. PLOT PREDICTIONS ==============================================================
 # JAGS - Nice for summaries and predictions
 # Extract the prediction at each x including credible interaval
 samples = 10000 # How many samples to take from the posterior
@@ -233,7 +357,6 @@ m_pred_cold_df <- data.frame(lwr_95 = m_pred_cold[1, ],
                            upr_95 = m_pred_cold[5, ],
                            mass = mass_pred_met,
                            temp = 1.5)
-
 
 # Consumption
 js_con = jags.samples(jm_con, 
@@ -283,7 +406,6 @@ p1 <- ggplot(m_pdat, aes(mass, median, color = factor(temp))) +
   scale_color_manual(values = pal) +
   scale_fill_manual(values = pal) +
   geom_line(size = 0.6, alpha = 1) +
-  geom_line(size = 0.6, alpha = 1) +
   theme_classic(base_size = 13) + 
   labs(x = "ln(standardized mass)",
        y = "ln(metabolic rate)") +
@@ -305,7 +427,6 @@ p2 <- ggplot(c_pdat, aes(mass, median, color = factor(temp))) +
   scale_color_manual(values = pal) +
   scale_fill_manual(values = pal) +
   geom_line(size = 0.6, alpha = 1) +
-  geom_line(size = 0.6, alpha = 1) +
   theme_classic(base_size = 13) + 
   labs(x = "ln(standardized mass)",
        y = "ln(maximum consumption rate)",
@@ -320,10 +441,10 @@ p2 <- ggplot(c_pdat, aes(mass, median, color = factor(temp))) +
 p2
 
 p1 / p2
+#ggsave("figures/pred_warm_cold.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
 
-ggsave("figures/pred_warm_cold.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
 
-## Working
+# Working
 # pal <- viridis(option = "magma", n = 10)[c(2, 6)]
 # pal <- brewer.pal("Dark2", n = 5)[c(1,3)]
 # 
@@ -349,4 +470,7 @@ ggsave("figures/pred_warm_cold.pdf", plot = last_plot(), scale = 1, width = 18, 
 #   guides(color = FALSE) +
 #   scale_color_viridis(option = "magma", discrete = T) +
 #   NULL
+
+
+
 
