@@ -61,7 +61,7 @@ dat$species_n <- as.numeric(as.factor(dat$species))
 ggplot(dat, aes(log_mass_norm_ct, log(y), color = temp_norm_arr_ct)) + 
   geom_point(size = 2, alpha = 0.7) +
   theme_classic(base_size = 11) +
-  scale_color_viridis(discrete = FALSE, option = "plasma") +
+  scale_color_viridis(discrete = FALSE, option = "magma") +
   theme(aspect.ratio = 1) +
   labs(x = "ln(standardized mass)",
        y = "ln(maximum consumption rate)",
@@ -74,7 +74,7 @@ ggplot(dat, aes(log_mass_norm_ct, log(y), color = species)) +
   geom_point(size = 2, alpha = 0.7) +
 #  stat_smooth(method = "lm", size = 2, alpha = 0.4, color = "black") +
   theme_classic(base_size = 11) +
-  scale_color_viridis(discrete = TRUE, option = "plasma") +
+  scale_color_viridis(discrete = TRUE, option = "magma") +
   theme(aspect.ratio = 1) +
   labs(x = "ln(standardized mass)",
        y = "ln(maximum consumption rate)",
@@ -179,7 +179,7 @@ cat(
   
 }", fill = TRUE, file = "R/analysis/model_selection/m1_consumption.txt")
 
-model = "R/analysis/model_selection/m1_consumption.txt"
+model = "R/analysis/model_selection_validation/m1_consumption.txt"
 
 jm = jags.model(model,
                 data = data, 
@@ -254,9 +254,9 @@ cat(
   tau_b1 <- 1/sigma_b1^2
   tau_b2 <- 1/sigma_b2^2
   
-  }", fill = TRUE, file = "R/analysis/model_selection/m2_consumption.txt")
+  }", fill = TRUE, file = "R/analysis/model_selection_validation/m2_consumption.txt")
 
-model = "R/analysis/model_selection/m2_consumption.txt"
+model = "R/analysis/model_selection_validation/m2_consumption.txt"
 
 jm = jags.model(model,
                 data = data, 
@@ -328,9 +328,9 @@ cat(
   tau_b0 <- 1/sigma_b0^2
   tau_b1 <- 1/sigma_b1^2
   
-  }", fill = TRUE, file = "R/analysis/model_selection/m3a_consumption.txt")
+  }", fill = TRUE, file = "R/analysis/model_selection_validation/m3a_consumption.txt")
 
-model = "R/analysis/model_selection/m3a_consumption.txt"
+model = "R/analysis/model_selection_validation/m3a_consumption.txt"
 
 jm = jags.model(model,
                 data = data, 
@@ -401,9 +401,9 @@ cat(
   tau_b0 <- 1/sigma_b0^2
   tau_b2 <- 1/sigma_b2^2
   
-  }", fill = TRUE, file = "R/analysis/model_selection/m3b_consumption.txt")
+  }", fill = TRUE, file = "R/analysis/model_selection_validation/m3b_consumption.txt")
 
-model = "R/analysis/model_selection/m3b_consumption.txt"
+model = "R/analysis/model_selection_validation/m3b_consumption.txt"
 
 jm = jags.model(model,
                 data = data, 
@@ -471,9 +471,9 @@ cat(
   tau <- 1/sigma^2
   tau_b0 <- 1/sigma_b0^2
   
-  }", fill = TRUE, file = "R/analysis/model_selection/m4_consumption.txt")
+  }", fill = TRUE, file = "R/analysis/model_selection_validation/m4_consumption.txt")
 
-model = "R/analysis/model_selection/m4_consumption.txt"
+model = "R/analysis/model_selection_validation/m4_consumption.txt"
 
 jm = jags.model(model,
                 data = data, 
@@ -546,9 +546,9 @@ cat(
   tau_b1 <- 1/sigma_b1^2
   tau_b2 <- 1/sigma_b2^2
   
-  }", fill = TRUE, file = "R/analysis/model_selection/m5_consumption.txt")
+  }", fill = TRUE, file = "R/analysis/model_selection_validation/m5_consumption.txt")
 
-model = "R/analysis/model_selection/m5_consumption.txt"
+model = "R/analysis/model_selection_validation/m5_consumption.txt"
 
 jm = jags.model(model,
                 data = data, 
@@ -594,15 +594,17 @@ waic_m4
 waic_m5
 
 # > waic_m1
-# [1] 531.4119
+# [1] 289.8854
 # > waic_m2
-# [1] 529.0335
+# [1] 289.3613
 # > waic_m3a
-# [1] 674.0834
+# [1] 606.3787
 # > waic_m3b
-# [1] 587.8616
+# [1] 680.9115
 # > waic_m4
-# [1] 710.8867
+# [1] 957.017
+# > waic_m5
+# [1] 294.7805
 
 # DIC
 dic_m1
@@ -615,7 +617,7 @@ dic_m4
 
 
 # D. MODEL VALIDATION ==============================================================
-model = "R/analysis/model_selection/m2_consumption.txt"
+model = "R/analysis/model_selection_validation/m2_consumption.txt"
 
 jm = jags.model(model,
                 data = data, 

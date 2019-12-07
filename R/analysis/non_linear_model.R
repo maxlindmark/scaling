@@ -489,7 +489,7 @@ p7 <- ggplot(cs_fit_df_met, aes(mean_y_sim)) +
   labs(x = "Mean simulated metabolism", y = "count") +
   theme(aspect.ratio = 1) +
   coord_cartesian(expand = 0) + 
-  ggtitle("Metabolism") +
+  #ggtitle("Metabolism") +
   NULL
 
 p8 <- ggplot(cs_fit_df_met, aes(cv_y_sim)) + 
@@ -512,14 +512,16 @@ p9 <- ggplot(cs_fit_df_con, aes(mean_y_sim)) +
   geom_vline(xintercept = cs_fit_df_con$mean_y, color = "white", 
              linetype = 2, size = 0.4) +
   theme_classic(base_size = 11) +
-  annotate("text", -Inf, Inf, label = "C", size = 4, 
+  annotate("text", -Inf, Inf, label = "B", size = 4, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  # annotate("text", -Inf, Inf, label = "C", size = 4, 
+  #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
   annotate("text", -Inf, Inf, size = 4, hjust = -0.2, vjust = 3.3,
            label = paste("P =", round(mean(cs_fit_df_con$p_mean), digits = 3))) +
   labs(x = "Mean simulated consumption", y = "count") +
   theme(aspect.ratio = 1) +
   coord_cartesian(expand = 0) + 
-  ggtitle("Consumption") +
+  #ggtitle("Consumption") +
   NULL
 
 p10 <- ggplot(cs_fit_df_con, aes(cv_y_sim)) + 
@@ -538,18 +540,8 @@ p10 <- ggplot(cs_fit_df_con, aes(cv_y_sim)) +
 
 (p7 + p8) / (p9 + p10)
 
-### TEST
-ggplot(cs_fit_df_con, aes(cv_y_sim)) + 
-  geom_histogram(bins = n_bins) +
-  theme_classic(base_size = 11) +
-  annotate("text", -Inf, Inf, label = "D", size = 4, 
-           fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", -Inf, Inf, size = 4, hjust = -2, vjust = 3.3, 
-           label = paste("P =", round(mean(cs_fit_df_con$p_cv), digits = 3))) +
-  labs(x = "cv simulated consumption", y = "") +
-  theme(aspect.ratio = 1) +
-  coord_cartesian(expand = 0) +
-  NULL
+p7 + p9
+#ggsave("figures/supp/nl_cv_mean_fit.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm", dpi = 300)
 
 
 # G. PLOT PREDICTIONS ==============================================================

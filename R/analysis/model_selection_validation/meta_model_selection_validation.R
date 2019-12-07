@@ -74,7 +74,7 @@ ggplot(dat, aes(log_mass_norm_ct, log(y), color = species)) +
   geom_point(size = 2, alpha = 0.7) +
   #  stat_smooth(method = "lm", size = 2, alpha = 0.4, color = "black") +
   theme_classic(base_size = 11) +
-  scale_color_viridis(discrete = TRUE, option = "plasma") +
+  scale_color_viridis(discrete = TRUE, option = "magma") +
   guides(color = FALSE) +
   theme(aspect.ratio = 1) +
   labs(x = "ln(standardized mass)",
@@ -87,7 +87,7 @@ ggplot(dat, aes(temp_norm_arr_ct, log(y), color = log_mass_norm_ct)) +
   geom_point(size = 2, alpha = 0.7) +
   #  stat_smooth(method = "lm", size = 2, alpha = 0.4, color = "black") +
   theme_classic(base_size = 11) +
-  scale_color_viridis(discrete = FALSE, option = "plasma") +
+  scale_color_viridis(discrete = FALSE, option = "magma") +
   theme(aspect.ratio = 1) +
   labs(x = "Standardized Arrhenius temperature",
        y = "ln(metabolic rate)",
@@ -99,7 +99,7 @@ ggplot(dat, aes(temp_norm_arr_ct, log(y), color = log_mass_norm_ct)) +
 ggplot(dat, aes(species_ab)) + 
   geom_bar(size = 5) +
   theme_classic(base_size = 15) +
-  scale_fill_viridis(discrete = TRUE, option = "plasma") +  
+  scale_fill_viridis(discrete = TRUE, option = "magma") +  
   theme(axis.text.x = element_text(angle = 90)) +
   NULL
 
@@ -177,9 +177,9 @@ cat(
   tau_b2 <- 1/sigma_b2^2
   tau_b3 <- 1/sigma_b3^2
   
-}", fill = TRUE, file = "R/analysis/model_selection/m1_metabolism.txt")
+}", fill = TRUE, file = "R/analysis/model_selection_validation/m1_metabolism.txt")
 
-model = "R/analysis/model_selection/m1_metabolism.txt"
+model = "R/analysis/model_selection_validation/m1_metabolism.txt"
 
 jm = jags.model(model,
                 data = data, 
@@ -254,9 +254,9 @@ cat(
   tau_b1 <- 1/sigma_b1^2
   tau_b2 <- 1/sigma_b2^2
   
-  }", fill = TRUE, file = "R/analysis/model_selection/m2_metabolism.txt")
+  }", fill = TRUE, file = "R/analysis/model_selection_validation/m2_metabolism.txt")
 
-model = "R/analysis/model_selection/m2_metabolism.txt"
+model = "R/analysis/model_selection_validation/m2_metabolism.txt"
 
 jm = jags.model(model,
                 data = data, 
@@ -328,9 +328,9 @@ cat(
   tau_b0 <- 1/sigma_b0^2
   tau_b1 <- 1/sigma_b1^2
   
-  }", fill = TRUE, file = "R/analysis/model_selection/m3a_metabolism.txt")
+  }", fill = TRUE, file = "R/analysis/model_selection_validation/m3a_metabolism.txt")
 
-model = "R/analysis/model_selection/m3a_metabolism.txt"
+model = "R/analysis/model_selection_validation/m3a_metabolism.txt"
 
 jm = jags.model(model,
                 data = data, 
@@ -401,9 +401,9 @@ cat(
   tau_b0 <- 1/sigma_b0^2
   tau_b2 <- 1/sigma_b2^2
   
-  }", fill = TRUE, file = "R/analysis/model_selection/m3b_metabolism.txt")
+  }", fill = TRUE, file = "R/analysis/model_selection_validation/m3b_metabolism.txt")
 
-model = "R/analysis/model_selection/m3b_metabolism.txt"
+model = "R/analysis/model_selection_validation/m3b_metabolism.txt"
 
 jm = jags.model(model,
                 data = data, 
@@ -471,9 +471,9 @@ cat(
   tau <- 1/sigma^2
   tau_b0 <- 1/sigma_b0^2
   
-  }", fill = TRUE, file = "R/analysis/model_selection/m4_metabolism.txt")
+  }", fill = TRUE, file = "R/analysis/model_selection_validation/m4_metabolism.txt")
 
-model = "R/analysis/model_selection/m4_metabolism.txt"
+model = "R/analysis/model_selection_validation/m4_metabolism.txt"
 
 jm = jags.model(model,
                 data = data, 
@@ -546,9 +546,9 @@ cat(
   tau_b1 <- 1/sigma_b1^2
   tau_b2 <- 1/sigma_b2^2
   
-  }", fill = TRUE, file = "R/analysis/model_selection/m5_consumption.txt")
+  }", fill = TRUE, file = "R/analysis/model_selection_validation/m5_consumption.txt")
 
-model = "R/analysis/model_selection/m5_consumption.txt"
+model = "R/analysis/model_selection_validation/m5_consumption.txt"
 
 jm = jags.model(model,
                 data = data, 
@@ -592,16 +592,7 @@ waic_m3b
 waic_m4
 waic_m5
 
-# > waic_m1
-# [1] 531.4119
-# > waic_m2
-# [1] 529.0335
-# > waic_m3a
-# [1] 674.0834
-# > waic_m3b
-# [1] 587.8616
-# > waic_m4
-# [1] 710.8867
+
 
 # DIC
 dic_m1
@@ -614,7 +605,7 @@ dic_m4
 
 
 # D. MODEL VALIDATION ==============================================================
-model = "R/analysis/model_selection/m2_metabolism.txt"
+model = "R/analysis/model_selection_validation/m2_metabolism.txt"
 
 jm = jags.model(model,
                 data = data, 
