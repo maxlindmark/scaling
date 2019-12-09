@@ -448,7 +448,7 @@ n.thin = 5 # Thinning?
 
 # Plot mean of simulated data vs mean of observed data
 # First convert your matrix 
-cs_fit_met = coda.samples(jm_met,
+cs_fit_met = coda.samples(jm_met_inter,
                           variable.names = c("mean_y",
                                              "mean_y_sim", 
                                              "p_mean",
@@ -546,7 +546,7 @@ p7 + p9
 
 # G. PLOT PREDICTIONS ==============================================================
 #** Metabolism =====================================================================
-js_met = jags.samples(jm_met, 
+js_met = jags.samples(jm_met_inter, 
                       variable.names = c("pred_large", "pred_medium", "pred_small"), 
                       n.iter = samples, 
                       thin = n.thin)
@@ -641,6 +641,9 @@ plot(c_pred_large_df$median ~ c_pred_large_df$temp)
 # Plot data and predictions with 95% credible interval (at each x, plot as ribbon)
 pal <- brewer.pal("Dark2", n = 5)
 
+x_min <- min(met$temp_norm_ct, con$temp_norm_ct)
+x_max <- max(met$temp_norm_ct, con$temp_norm_ct)
+
 #**** Metabolism ===================================================================
 m_pdat <- rbind(m_pred_large_df, m_pred_medium_df, m_pred_small_df)
 
@@ -672,9 +675,10 @@ p11 <- ggplot(m_pdat, aes(temp, median, color = factor(mass))) +
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
   theme(aspect.ratio = 3/4) +
   guides(fill = FALSE, color = FALSE) +
-  geom_segment(aes(x = x_s_met, xend = x_s_met, y = -5, yend = y_end), arrow = arrow(length = unit(0.3, "cm")), col = pal[1], linetype = 1) +
-  geom_segment(aes(x = x_m_met, xend = x_m_met, y = -5, yend = y_end), arrow = arrow(length = unit(0.3, "cm")), col = pal[2], linetype = 2) +
-  geom_segment(aes(x = x_l_met, xend = x_l_met, y = -5, yend = y_end), arrow = arrow(length = unit(0.3, "cm")), col = pal[3], linetype = 3) +
+  xlim(x_min, x_max) +
+  geom_segment(aes(x = x_s_met, xend = x_s_met, y = -5, yend = y_end), arrow = arrow(length = unit(0.3, "cm")), col = pal[1]) +
+  geom_segment(aes(x = x_m_met, xend = x_m_met, y = -5, yend = y_end), arrow = arrow(length = unit(0.3, "cm")), col = pal[2]) +
+  geom_segment(aes(x = x_l_met, xend = x_l_met, y = -5, yend = y_end), arrow = arrow(length = unit(0.3, "cm")), col = pal[3]) +
   NULL
 
 
@@ -711,6 +715,7 @@ p12 <- ggplot(c_pdat, aes(temp, median, color = factor(mass))) +
   theme(aspect.ratio = 3/4,
         legend.position = "bottom") +
   guides(fill = FALSE) +
+  xlim(x_min, x_max) +
   geom_segment(aes(x = x_s_con, xend = x_s_con, y = -5, yend = y_end), arrow = arrow(length = unit(0.3, "cm")), col = pal[1]) +
   geom_segment(aes(x = x_m_con, xend = x_m_con, y = -5, yend = y_end), arrow = arrow(length = unit(0.3, "cm")), col = pal[2]) +
   geom_segment(aes(x = x_l_con, xend = x_l_con, y = -5, yend = y_end), arrow = arrow(length = unit(0.3, "cm")), col = pal[3]) +
