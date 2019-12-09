@@ -646,27 +646,27 @@ cs_df %>% filter(Parameter == "mu_b1") %>% select(statistics.Mean)
 cs_df <- ggs(cs)
 
 # Plot posterior densities of species intercepts
-cs_df %>% 
+p1 <- cs_df %>% 
   filter(Parameter %in% c("b0[1]", "b0[2]", "b0[3]", "b0[4]", "b0[5]", "b0[6]", "b0[7]", 
                           "b0[8]", "b0[9]", "b0[10]", "b0[11]", "b0[12]", "b0[13]",  "b0[14]",
                           "b0[15]", "b0[16]", "b0[17]", "b0[18]")) %>% 
   ggs_density(.) + 
-  facet_wrap(~ Parameter, ncol = 2, scales = "free_y") +
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   theme_classic(base_size = 11) + 
   geom_density(alpha = 0.05) +
   scale_color_brewer(palette = "Dark2") + 
   scale_fill_brewer(palette = "Dark2") +
   labs(x = "Value", y = "Density", fill = "Chain #") +
-  guides(color = FALSE) +
+  guides(color = FALSE, fill = FALSE) +
   NULL
 
 # Traceplot for evaluating chain convergence
-cs_df %>% 
+p2 <- cs_df %>% 
   filter(Parameter %in% c("b0[1]", "b0[2]", "b0[3]", "b0[4]", "b0[5]", "b0[6]", "b0[7]", 
                           "b0[8]", "b0[9]", "b0[10]", "b0[11]", "b0[12]", "b0[13]",  "b0[14]",
                           "b0[15]", "b0[16]", "b0[17]", "b0[18]")) %>% 
   ggs_traceplot(.) +
-  facet_wrap(~ Parameter, ncol = 4, scales = "free") +
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   theme_classic(base_size = 11) + 
   geom_line(alpha = 0.3) +
   scale_color_brewer(palette = "Dark2") + 
@@ -674,29 +674,32 @@ cs_df %>%
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
   theme(axis.text.x = element_text(size = 6)) +
   NULL
+p1+p2
+#ggsave("figures/supp/model_validation_met_intercepts.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm", dpi = 300)
+
 
 # Plot posterior densities of species mass-effects
-cs_df %>% 
+p3 <- cs_df %>% 
   filter(Parameter %in% c("b1[1]", "b1[2]", "b1[3]", "b1[4]", "b1[5]", "b1[6]", "b1[7]", 
                           "b1[8]", "b1[9]", "b1[10]", "b1[11]", "b1[12]", "b1[13]",  "b1[14]",
                           "b1[15]", "b1[16]", "b1[17]", "b1[18]")) %>% 
   ggs_density(.) + 
-  facet_wrap(~ Parameter, ncol = 2) +
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   theme_classic(base_size = 11) + 
   geom_density(alpha = 0.05) +
   scale_color_brewer(palette = "Dark2") + 
   scale_fill_brewer(palette = "Dark2") +
   labs(x = "Value", y = "Density", fill = "Chain #") +
-  guides(color = FALSE) +
+  guides(color = FALSE, fill = FALSE) +
   NULL
 
 # Traceplot for evaluating chain convergence
-cs_df %>% 
+p4 <- cs_df %>% 
   filter(Parameter %in% c("b1[1]", "b1[2]", "b1[3]", "b1[4]", "b1[5]", "b1[6]", "b1[7]", 
                           "b1[8]", "b1[9]", "b1[10]", "b1[11]", "b1[12]", "b1[13]",  "b1[14]",
                           "b1[15]", "b1[16]", "b1[17]", "b1[18]")) %>% 
   ggs_traceplot(.) +
-  facet_wrap(~ Parameter, ncol = 4, scales = "free") +
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   theme_classic(base_size = 11) + 
   geom_line(alpha = 0.3) +
   scale_color_brewer(palette = "Dark2") + 
@@ -704,29 +707,31 @@ cs_df %>%
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
   theme(axis.text.x = element_text(size = 6)) +
   NULL
+p3+p4
+#ggsave("figures/supp/model_validation_met_mass.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm", dpi = 300)
 
 # Plot posterior densities of temperature-effects
-cs_df %>% 
+p5 <- cs_df %>% 
   filter(Parameter %in% c("b2[1]", "b2[2]", "b2[3]", "b2[4]", "b2[5]", "b2[6]", "b2[7]", 
                           "b2[8]", "b2[9]", "b2[10]", "b2[11]", "b2[12]", "b2[13]", "b2[14]",
                           "b2[15]", "b2[16]", "b2[17]", "b2[18]")) %>% 
   ggs_density(.) + 
-  facet_wrap(~ Parameter, ncol = 2) +
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   theme_classic(base_size = 11) + 
   geom_density(alpha = 0.05) +
   scale_color_brewer(palette = "Dark2") + 
   scale_fill_brewer(palette = "Dark2") +
   labs(x = "Value", y = "Density", fill = "Chain #") +
-  guides(color = FALSE) +
+  guides(color = FALSE, fill = FALSE) +
   NULL
 
 # Traceplot for evaluating chain convergence
-cs_df %>% 
+p6 <- cs_df %>% 
   filter(Parameter %in% c("b2[1]", "b2[2]", "b2[3]", "b2[4]", "b2[5]", "b2[6]", "b2[7]", 
                           "b2[8]", "b2[9]", "b2[10]", "b2[11]", "b2[12]", "b2[13]", "b2[14]",
                           "b2[15]", "b2[16]", "b2[17]", "b2[18]")) %>% 
   ggs_traceplot(.) +
-  facet_wrap(~ Parameter, ncol = 4, scales = "free") +
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   theme_classic(base_size = 11) + 
   geom_line(alpha = 0.3) +
   scale_color_brewer(palette = "Dark2") + 
@@ -734,27 +739,30 @@ cs_df %>%
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
   theme(axis.text.x = element_text(size = 6)) +
   NULL
+p5+p6
+#ggsave("figures/supp/model_validation_met_temp.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm", dpi = 300)
+
 
 # Plot posterior densities of random means, interaction and standard deviations
-cs_df %>% 
+p7 <- cs_df %>% 
   filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", "b3",
                           "sigma_b0", "sigma_b1", "sigma_b2")) %>% 
   ggs_density(.) + 
-  facet_wrap(~ Parameter, ncol = 3, scales = "free") +
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   theme_classic(base_size = 11) + 
   geom_density(alpha = 0.05) +
   scale_color_brewer(palette = "Dark2") + 
   scale_fill_brewer(palette = "Dark2") +
   labs(x = "Value", y = "Density", fill = "Chain #") +
-  guides(color = FALSE) +
+  guides(color = FALSE, fill = FALSE) +
   NULL
 
 # Traceplot for evaluating chain convergence
-cs_df %>% 
+p8 <- cs_df %>% 
   filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", "b3",
                           "sigma_b0", "sigma_b1", "sigma_b2")) %>% 
   ggs_traceplot(.) +
-  facet_wrap(~ Parameter, ncol = 4, scales = "free") +
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   theme_classic(base_size = 11) + 
   geom_line(alpha = 0.3) +
   scale_color_brewer(palette = "Dark2") + 
@@ -762,6 +770,8 @@ cs_df %>%
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
   theme(axis.text.x = element_text(size = 6)) +
   NULL
+p7+p8
+#ggsave("figures/supp/model_validation_met.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm", dpi = 300)
 
 # Time series of running means
 # cs_df %>% 
@@ -780,12 +790,12 @@ cs_df %>%
 cs_df %>% 
   ggs_Rhat(.) + 
   xlab("R_hat") +
-  xlim(0.999, 1.002) +
+  xlim(0.999, 1.01) +
   theme_classic(base_size = 11) +
   geom_point(size = 2) +
-  theme(aspect.ratio = 1)+
+  theme(aspect.ratio = 1,
+        axis.text = element_text(size = 6))+
   NULL
-
-#ggsave("figs/supplement/growth_rhat.pdf", plot = last_plot(), scale = 1, width = 14, height = 14, units = "cm", dpi = 300)
+#ggsave("figures/supp/rhat_met.pdf", plot = last_plot(), scale = 1, width = 14, height = 14, units = "cm", dpi = 300)
 
 
