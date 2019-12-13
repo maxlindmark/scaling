@@ -49,13 +49,15 @@ con <- read.csv("data/con_analysis.csv")
 # of relative rates, i.e. relative to max for that species
 met <- met %>% 
   dplyr::group_by(species) %>% 
-  dplyr::mutate(y_norm = y/max(y)) %>% 
+  #dplyr::mutate(y_norm = y/max(y)) %>%
+  dplyr::mutate(y_norm = y/mean(y)) %>% 
   dplyr::ungroup() %>% 
   dplyr::mutate(temp_norm_ct = temp_norm - mean(temp_norm))
 
 con <- con %>% 
   dplyr::group_by(species) %>% 
-  dplyr::mutate(y_norm = y/max(y)) %>% 
+  #dplyr::mutate(y_norm = y/max(y)) %>% 
+  dplyr::mutate(y_norm = y/mean(y)) %>% 
   dplyr::ungroup() %>% 
   dplyr::mutate(temp_norm_ct = temp_norm - mean(temp_norm))
 
@@ -68,6 +70,7 @@ p1 <- met %>%
   scale_color_viridis(discrete = TRUE, option = "magma") +
   guides(color = FALSE) +
   NULL
+
 
 p2 <- con %>% 
   ggplot(., aes(temp_norm_ct, y_norm, color = species)) + 
@@ -91,7 +94,10 @@ temp_pred_met = seq(from = min(met$temp_norm_ct),
 
 # Data list for metabolism model
 met_data = list(
+  # y = met$y_norm,
+  # y = met$y,
   y = log(met$y_norm), 
+  #y = log(met$y), 
   n_obs = length(met$y_norm), 
   mass = met$log_mass_norm_ct,
   temp = met$temp_norm_ct,
@@ -103,7 +109,7 @@ con_data = list(
   # y = con$y_norm,
   # y = con$y,
   y = log(con$y_norm), 
-  # y = log(con$y), 
+  #y = log(con$y), 
   n_obs = length(con$y_norm), 
   mass = con$log_mass_norm_ct,
   temp = con$temp_norm_ct,
@@ -248,9 +254,13 @@ pd.WAIC_met_inter <- sum((summary(zj_met_inter$log_pd, sd)$stat)^2) # Penalty
 
 # WAIC = model fit + 2*penalty
 WAIC_met_inter <- lppd_met_inter + 2*pd.WAIC_met_inter
+
 # > WAIC_met_inter
 # [1] 7465.851
 
+# MEAN-standardizing instead of MAX
+# > WAIC_met_inter
+# [1] 6850.653
 
 #**** Without interaction =============================================================
 jm_met = jags.model(model,
@@ -280,8 +290,13 @@ pd.WAIC_met <- sum((summary(zj_met$log_pd, sd)$stat)^2) # Penalty
 
 # WAIC = model fit + 2*penalty
 WAIC_met <- lppd_met + 2*pd.WAIC_met
+
 # > WAIC_met
 # [1] 7513.53
+
+# MEAN-standardizing instead of MAX
+# > WAIC_met
+# [1] 6882.178
 
 
 #** Consumption ====================================================================
@@ -316,6 +331,10 @@ WAIC_con_inter <- lppd_con_inter + 2*pd.WAIC_con_inter
 # > WAIC_con_inter
 # [1] 1465.439
 
+# MEAN-standardizing instead of MAX
+# > WAIC_con_inter
+# [1] 1399.706
+
 
 #**** Without interaction =============================================================
 jm_con = jags.model(model,
@@ -348,6 +367,10 @@ WAIC_con <- lppd_con + 2*pd.WAIC_con
 # > WAIC_con
 # [1] 1466.829
 
+# MEAN-standardizing instead of MAX
+# > WAIC_con
+# [1] 1399.519
+
 
 # E. MODEL VALIDATION ==============================================================
 #** Metabolism =====================================================================
@@ -357,9 +380,12 @@ n.thin = 5 # Thinning?
 
 # CODA - Nice for getting the raw posteriors
 cs_met <- coda.samples(jm_met,
+                       #jm_met_inter,
                        variable.names = c("b0", "b1", "b2", "b3", "sigma"), 
                        n.iter = samples, 
                        thin = n.thin)
+
+summary(cs_met)
 
 # Evaluate convergence =============================================================
 # Convert to ggplottable data frame
@@ -407,7 +433,9 @@ cs_con <- coda.samples(jm_con_inter,
                        n.iter = samples, 
                        thin = n.thin)
 
-# Evaluate convergence ===========================================================
+summary(cs_con)
+
+# Evaluate convergence =============================================================
 # Convert to ggplottable data frame
 cs_con_df <- ggs(cs_con)
 
@@ -545,8 +573,12 @@ p7 + p9
 
 
 # G. PLOT PREDICTIONS ==============================================================
+samples = 10000 # How many samples to take from the posterior
+n.thin = 5 # Thinning?
+
 #** Metabolism =====================================================================
-js_met = jags.samples(jm_met_inter, 
+js_met = jags.samples(jm_met_inter,
+                      #jm_met, 
                       variable.names = c("pred_large", "pred_medium", "pred_small"), 
                       n.iter = samples, 
                       thin = n.thin)
@@ -592,7 +624,8 @@ plot(m_pred_large_df$median ~ m_pred_large_df$temp)
 
 
 #** Consumption ====================================================================
-js_con = jags.samples(jm_con_inter, 
+js_con = jags.samples(#jm_con_inter,
+                      jm_con, 
                       variable.names = c("pred_large", "pred_medium", "pred_small"), 
                       n.iter = samples, 
                       thin = n.thin)
@@ -659,8 +692,10 @@ x_m_met <- max_rates_met$temp[2]
 x_l_met <- max_rates_met$temp[3]
 
 p11 <- ggplot(m_pdat, aes(temp, median, color = factor(mass))) +
-  geom_point(data = met, aes(temp_norm_ct, log(y_norm)), size = 2.8, shape = 21, 
+  geom_point(data = met, aes(temp_norm_ct, log(y_norm)), size = 2.8, shape = 21,
              alpha = 0.2, color = "white", fill = "grey40") +
+  # geom_point(data = met, aes(temp_norm_ct, log(y)), size = 2.8, shape = 21, 
+  #            alpha = 0.2, color = "white", fill = "grey40") +
   geom_ribbon(data = m_pdat, aes(x = temp, ymin = lwr_95, ymax = upr_95, fill = factor(mass)), 
               size = 0.6, alpha = 0.25, inherit.aes = FALSE) +
   geom_ribbon(data = m_pdat, aes(x = temp, ymin = lwr_80, ymax = upr_80, fill = factor(mass)), 
@@ -697,8 +732,10 @@ x_m_con <- max_rates_con$temp[2]
 x_l_con <- max_rates_con$temp[3]
 
 p12 <- ggplot(c_pdat, aes(temp, median, color = factor(mass))) +
-  geom_point(data = con, aes(temp_norm_ct, log(y_norm)), size = 2.8, shape = 21, 
-             alpha = 0.2, color = "white", fill = "grey40") +
+  geom_point(data = con, aes(temp_norm_ct, log(y_norm)), size = 2.8, shape = 21,
+            alpha = 0.2, color = "white", fill = "grey40") +
+  # geom_point(data = con, aes(temp_norm_ct, log(y)), size = 2.8, shape = 21, 
+  #            alpha = 0.2, color = "white", fill = "grey40") +
   geom_ribbon(data = c_pdat, aes(x = temp, ymin = lwr_95, ymax = upr_95, fill = factor(mass)), 
               size = 0.6, alpha = 0.25, inherit.aes = FALSE) +
   geom_ribbon(data = c_pdat, aes(x = temp, ymin = lwr_80, ymax = upr_80, fill = factor(mass)), 
@@ -722,7 +759,6 @@ p12 <- ggplot(c_pdat, aes(temp, median, color = factor(mass))) +
   NULL
 
 #**** Together ==================================================================
-
 p11 / p12
 #ggsave("figures/nl_model.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm", dpi = 300)
 
@@ -733,7 +769,10 @@ p11 / p12
 # LOG Y: ALL HAVE THE SAME OPTIMUM (OR ACTUALLY NO OPTIMUM EVIDENT)
 
 
+test <- filter(con, temp_norm_ct > 12) 
+data.frame(test)
 
-
+test <- filter(met, temp_norm_ct > 16) 
+data.frame(test)
 
 

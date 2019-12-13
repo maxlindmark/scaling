@@ -80,7 +80,7 @@ met_data = list(
 # Refit chosen models from the model selection part
 
 # Maximum consumption rate
-con_model = "R/analysis/model_selection/m5_consumption.txt"
+con_model = "R/analysis/log-linear model/models/m5.txt"
 
 jm_con = jags.model(con_model,
                     data = con_data, 
@@ -93,7 +93,7 @@ update(jm_con, n.iter = burn.in)
 
 
 # Metabolic rate
-met_model = "R/analysis/model_selection/m2_metabolism.txt"
+met_model = "R/analysis/log-linear model/models/m2.txt"
 
 jm_met = jags.model(met_model,
                     data = met_data, 
@@ -323,7 +323,7 @@ p1 + p2 + p3 + p4 + p5 + plot_layout(ncol = 3)
 #ggsave("figures/posterior_mte_parameters.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
 
 
-# How big is a a c of 0.01 on celcius scale?
+# How big is a c of 0.01 on celcius scale?
 b <- 0.75
 cc <- 0.01
 
