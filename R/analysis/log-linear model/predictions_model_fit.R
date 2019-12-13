@@ -396,7 +396,7 @@ pal <- brewer.pal("Dark2", n = 5)[c(1,3)]
 m_pdat <- rbind(m_pred_cold_df, m_pred_warm_df)
 c_pdat <- rbind(c_pred_cold_df, c_pred_warm_df)
 
-p1 <- ggplot(m_pdat, aes(mass, median, color = factor(temp))) +
+p7 <- ggplot(m_pdat, aes(mass, median, color = factor(temp))) +
   geom_point(data = met, aes(log_mass_norm_ct, log(y)), size = 2.8, shape = 21, 
              alpha = 0.2, color = "white", fill = "grey40") +
   geom_ribbon(data = m_pdat, aes(x = mass, ymin = lwr_95, ymax = upr_95, fill = factor(temp)), 
@@ -415,9 +415,9 @@ p1 <- ggplot(m_pdat, aes(mass, median, color = factor(temp))) +
   guides(fill = FALSE, color = FALSE) +
   NULL
 
-p1
+p7
 
-p2 <- ggplot(c_pdat, aes(mass, median, color = factor(temp))) +
+p8 <- ggplot(c_pdat, aes(mass, median, color = factor(temp))) +
   geom_point(data = con, aes(log_mass_norm_ct, log(y)), size = 2.8, shape = 21, 
              alpha = 0.2, color = "white", fill = "grey40") +
   geom_ribbon(data = c_pdat, aes(x = mass, ymin = lwr_95, ymax = upr_95, fill = factor(temp)), 
@@ -438,9 +438,9 @@ p2 <- ggplot(c_pdat, aes(mass, median, color = factor(temp))) +
         legend.position = "bottom") +
   NULL
 
-p2
+p8
 
-p1 / p2
+p7 / p8
 #ggsave("figures/pred_warm_cold.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
 
 
