@@ -178,6 +178,7 @@ p4 <- cs_df %>%
 p3+p4
 #ggsave("figures/supp/model_validation_con_mass.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm", dpi = 300)
 
+
 # Plot posterior densities of temperature-effects
 p5 <- cs_df %>% 
   filter(Parameter %in% c("b2[1]", "b2[2]", "b2[3]", "b2[4]", "b2[5]", "b2[6]", "b2[7]", 
