@@ -72,7 +72,6 @@ data = list(
   temp = dat$temp_norm_arr_ct
 )
 
-
 # C. MODEL SELECTION ===============================================================
 # Here we fit models with different hierarcial structures
 # Specifically, we consider:
@@ -82,7 +81,10 @@ data = list(
 # M3a - intercept and mass vary by species
 # M3b - intercept and temperature vary by species
 # M4 - intercept vary by species
-# M5 no interaction
+# M5 no interaction, full random
+# M6 no interaction, intercept random
+# M7 no interaction, mass random
+# M8 no interaction, temperature random
 
 #**** M1 ===========================================================================
 model = "R/analysis/log-linear model/models/m1.txt"
@@ -282,6 +284,104 @@ c(pd.WAIC, WAIC)
 waic_m5 <- WAIC
 
 
+#**** M6 ===========================================================================
+model = "R/analysis/log-linear model/models/m6.txt"
+
+jm = jags.model(model,
+                data = data, 
+                n.adapt = 5000, 
+                n.chains = 3)
+
+burn.in = 10000 # Length of burn-in
+
+update(jm, n.iter = burn.in) 
+
+# Monitor the likelihood to calculate WAIC
+zj = jags.samples(jm, 
+                  variable.names = c("pd", "log_pd"), 
+                  n.iter = 10000, 
+                  thin = 1)
+
+# Calculate model fit by summing over the log of means of the posterior distribution of 
+# the PPD and multiply by -2 (i.e. negative log likelihood).
+lppd <- -2*sum(log(summary(zj$pd, mean)$stat))
+
+# Calculate penalty (i.e. the number of parameters) as the variance of
+# the log of PPD. Do this by squaring the standard deviation.
+pd.WAIC <- sum((summary(zj$log_pd, sd)$stat)^2) # Penalty
+
+# WAIC = model fit + 2*penalty
+WAIC <- lppd + 2*pd.WAIC
+
+c(pd.WAIC, WAIC)
+waic_m6 <- WAIC
+
+
+#**** M7 ===========================================================================
+model = "R/analysis/log-linear model/models/m7.txt"
+
+jm = jags.model(model,
+                data = data, 
+                n.adapt = 5000, 
+                n.chains = 3)
+
+burn.in = 10000 # Length of burn-in
+
+update(jm, n.iter = burn.in) 
+
+# Monitor the likelihood to calculate WAIC
+zj = jags.samples(jm, 
+                  variable.names = c("pd", "log_pd"), 
+                  n.iter = 10000, 
+                  thin = 1)
+
+# Calculate model fit by summing over the log of means of the posterior distribution of 
+# the PPD and multiply by -2 (i.e. negative log likelihood).
+lppd <- -2*sum(log(summary(zj$pd, mean)$stat))
+
+# Calculate penalty (i.e. the number of parameters) as the variance of
+# the log of PPD. Do this by squaring the standard deviation.
+pd.WAIC <- sum((summary(zj$log_pd, sd)$stat)^2) # Penalty
+
+# WAIC = model fit + 2*penalty
+WAIC <- lppd + 2*pd.WAIC
+
+c(pd.WAIC, WAIC)
+waic_m7 <- WAIC
+
+
+#**** M8 ===========================================================================
+model = "R/analysis/log-linear model/models/m8.txt"
+
+jm = jags.model(model,
+                data = data, 
+                n.adapt = 5000, 
+                n.chains = 3)
+
+burn.in = 10000 # Length of burn-in
+
+update(jm, n.iter = burn.in) 
+
+# Monitor the likelihood to calculate WAIC
+zj = jags.samples(jm, 
+                  variable.names = c("pd", "log_pd"), 
+                  n.iter = 10000, 
+                  thin = 1)
+
+# Calculate model fit by summing over the log of means of the posterior distribution of 
+# the PPD and multiply by -2 (i.e. negative log likelihood).
+lppd <- -2*sum(log(summary(zj$pd, mean)$stat))
+
+# Calculate penalty (i.e. the number of parameters) as the variance of
+# the log of PPD. Do this by squaring the standard deviation.
+pd.WAIC <- sum((summary(zj$log_pd, sd)$stat)^2) # Penalty
+
+# WAIC = model fit + 2*penalty
+WAIC <- lppd + 2*pd.WAIC
+
+c(pd.WAIC, WAIC)
+waic_m8 <- WAIC
+
 #** COMPARE WAIC ===================================================================
 # WAIC
 waic_m1
@@ -290,18 +390,49 @@ waic_m3a
 waic_m3b
 waic_m4
 waic_m5
+waic_m6
+waic_m7
+waic_m8
 
-# > waic_m1
-# [1] 290.5041
+# WAIC suggests model 1 is most parsimonious
+
+#-- With interaction
+# waic_m1
+# [1] 290.0021
+
 # > waic_m2
-# [1] 289.6338
-# > waic_m3a
-# [1] 605.8902
-# > waic_m3b
-# [1] 681.8658
-# > waic_m4
-# [1] 956.8922
-# > waic_m5
-# [1] 295.5767
+# [1] 290.254
 
-# WAIC suggesta model 2 is most parsimonious
+# > waic_m3a
+# [1] 626.9541
+
+# > waic_m3b
+# [1] 681.2805
+
+# > waic_m4
+# [1] 973.359
+
+#-- No interaction
+# > waic_m5
+# [1] 294.2837
+
+# > waic_m6
+# [1] 971.1992
+
+# > waic_m7
+# [1] 7988.258
+
+# > waic_m8
+# [1] 9523.091
+
+# M1 - all coefficients vary by species
+# M2 - intercept, mass, temperature vary by species
+# M3a - intercept and mass vary by species
+# M3b - intercept and temperature vary by species
+# M4 - intercept vary by species
+
+# M5 no interaction, full random
+# M6 no interaction, intercept random
+# M7 no interaction, mass random
+# M8 no interaction, temperature random
+

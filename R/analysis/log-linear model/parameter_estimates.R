@@ -93,7 +93,7 @@ update(jm_con, n.iter = burn.in)
 
 
 # Metabolic rate
-met_model = "R/analysis/log-linear model/models/m2.txt"
+met_model = "R/analysis/log-linear model/models/m1.txt"
 
 jm_met = jags.model(met_model,
                     data = met_data, 
@@ -124,9 +124,9 @@ summary(cs_con) # Get the mean estimate and SE and 95% CIs
 # Metabolic rate
 cs_met <- coda.samples(jm_met,
                        variable.names = c("b0", "b1", "b2", 
-                                          "mu_b0", "mu_b1", "mu_b2", 
+                                          "mu_b0", "mu_b1", "mu_b2", "mu_b3", 
                                           "sigma_b0", "sigma_b1", "sigma_b2",
-                                          "sigma", "b3"),
+                                          "sigma"),
                        n.iter = samples, 
                        thin = n.thin)
 
@@ -185,11 +185,11 @@ met_e$pred <- filter(met_df, Parameter == "mu_b2")$quantiles.50.
 met_e$pred_sd <- filter(std_met, Parameter == "mu_b2")$statistics.SD
 
 #** M*T interaction
-met_c <- met_df %>% filter(Parameter_sub == "b3")
+met_c <- met_df %>% filter(Parameter == "mu_b3")
 met_c$Species <- NA
 met_c$Rate <- "Metabolic rate"
 met_c$Parameter_mte <- "M*T interaction"
-met_c$pred <- filter(met_df, Parameter == "b3")$quantiles.50.
+met_c$pred <- filter(met_df, Parameter == "mu_b3")$quantiles.50.
 met_c$pred_sd <- NA
 
 # Merge data frames
@@ -272,7 +272,7 @@ p2 <- cs_met %>%
   NULL
 
 p3 <- cs_met %>% 
-  mcmc_dens(pars = "b3") +
+  mcmc_dens(pars = "mu_b3") +
   theme_classic(base_size = 11) + 
   scale_y_continuous(expand = c(0,0)) +
   # annotate("text", -Inf, Inf, label = "C", size = 4, 

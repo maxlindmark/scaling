@@ -16,7 +16,10 @@
 # M3a - intercept and mass vary by species
 # M3b - intercept and temperature vary by species
 # M4 - intercept vary by species
-# M5 no interaction
+# M5 no interaction, full random
+# M6 no interaction, intercept random
+# M7 no interaction, mass random
+# M8 no interaction, temperature random
 
 #**** M1 ===========================================================================
 cat(
@@ -63,7 +66,7 @@ cat(
 }", fill = TRUE, file = "R/analysis/log-linear model/models/m1.txt")
 
 
-#**** M2 =============================================================================
+#**** M2 ===========================================================================
 cat(
   "model{
   
@@ -105,7 +108,7 @@ cat(
   }", fill = TRUE, file = "R/analysis/log-linear model/models/m2.txt")
 
 
-#**** M3a =============================================================================
+#**** M3a ==========================================================================
 cat(
   "model{
   
@@ -144,7 +147,7 @@ cat(
   }", fill = TRUE, file = "R/analysis/log-linear model/models/m3a.txt")
 
 
-#**** M3b =============================================================================
+#**** M3b ==========================================================================
 cat(
   "model{
   
@@ -183,7 +186,7 @@ cat(
   }", fill = TRUE, file = "R/analysis/log-linear model/models/m3b.txt")
 
 
-#**** M4 =============================================================================
+#**** M4 ===========================================================================
 cat(
   "model{
   
@@ -219,7 +222,7 @@ cat(
   }", fill = TRUE, file = "R/analysis/log-linear model/models/m4.txt")
 
 
-#**** M5 =============================================================================
+#**** M5 ===========================================================================
 cat(
   "model{
   
@@ -259,4 +262,110 @@ cat(
   
   }", fill = TRUE, file = "R/analysis/log-linear model/models/m5.txt")
 
-model = "R/analysis/model_selection_validation/m5_consumption.txt"
+
+#**** M6 ===========================================================================
+cat(
+  "model{
+  
+  for(i in 1:n_obs){
+    y[i] ~ dnorm(mu[i], tau)
+    mu[i] <- 
+      b0[species_n[i]] +           # varying intercept 
+      b1*mass[i] +                 # non-varying mass effect
+      b2*temp[i]                   # non-varying activation energy
+  
+  # Add log likelihood computation for each observation
+  pd[i] <- dnorm(y[i], mu[i], tau)
+  
+  # Calculates the log PPD
+  log_pd[i] <- log(dnorm(y[i], mu[i], tau))
+  }
+  
+  # Second level (species-level effects)
+  for(j in 1:max(species_n)){
+    b0[j] ~ dnorm(mu_b0, tau_b0)
+    
+    }
+  
+  #-- Priors	
+  mu_b0 ~ dnorm(0, 0.5)      # varying intercept
+  b1 ~ dnorm(-0.25, 0.5)
+  b2 ~ dnorm(-0.6, 0.5)
+  sigma ~ dunif(0, 10) 
+  sigma_b0 ~ dunif(0, 10)
+  tau <- 1/sigma^2
+  tau_b0 <- 1/sigma_b0^2
+  
+  }", fill = TRUE, file = "R/analysis/log-linear model/models/m6.txt")
+
+
+#**** M7 ===========================================================================
+cat(
+  "model{
+  
+  for(i in 1:n_obs){
+    y[i] ~ dnorm(mu[i], tau)
+    mu[i] <- 
+      b0 +                         # non-varying intercept 
+      b1[species_n[i]]*mass[i] +   # species-varying mass effect
+      b2*temp[i]                   # non-varying activation energy
+  
+  # Add log likelihood computation for each observation
+  pd[i] <- dnorm(y[i], mu[i], tau)
+  
+  # Calculates the log PPD
+  log_pd[i] <- log(dnorm(y[i], mu[i], tau))
+  }
+  
+  # Second level (species-level effects)
+  for(j in 1:max(species_n)){
+    b1[j] ~ dnorm(mu_b1, tau_b1)
+    
+    }
+  
+  #-- Priors	
+  b0 ~ dnorm(0, 0.5)      
+  mu_b1 ~ dnorm(-0.25, 0.5) # varying mass-effect
+  b2 ~ dnorm(-0.6, 0.5)
+  sigma ~ dunif(0, 10) 
+  sigma_b1 ~ dunif(0, 10)
+  tau <- 1/sigma^2
+  tau_b1 <- 1/sigma_b1^2
+  
+  }", fill = TRUE, file = "R/analysis/log-linear model/models/m7.txt")
+
+
+#**** M8 ===========================================================================
+cat(
+  "model{
+  
+  for(i in 1:n_obs){
+    y[i] ~ dnorm(mu[i], tau)
+    mu[i] <- 
+      b0 +                         # non-varying intercept 
+      b1*mass[i] +                 # non-varying mass effect
+      b2[species_n[i]]*temp[i]     # species-varying activation energy
+  
+  # Add log likelihood computation for each observation
+  pd[i] <- dnorm(y[i], mu[i], tau)
+  
+  # Calculates the log PPD
+  log_pd[i] <- log(dnorm(y[i], mu[i], tau))
+  }
+  
+  # Second level (species-level effects)
+  for(j in 1:max(species_n)){
+    b2[j] ~ dnorm(mu_b2, tau_b2)
+    
+    }
+  
+  #-- Priors	
+  b0 ~ dnorm(0, 0.5)      
+  b1 ~ dnorm(-0.25, 0.5) 
+  mu_b2 ~ dnorm(-0.6, 0.5) # varying activation-energy
+  sigma ~ dunif(0, 10) 
+  sigma_b2 ~ dunif(0, 10)
+  tau <- 1/sigma^2
+  tau_b2<- 1/sigma_b2^2
+  
+  }", fill = TRUE, file = "R/analysis/log-linear model/models/m8.txt")

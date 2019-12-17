@@ -101,7 +101,8 @@ met_data = list(
   n_obs = length(met$y_norm), 
   mass = met$log_mass_norm_ct,
   temp = met$temp_norm_ct,
-  temp_pred = temp_pred_met
+  temp_pred = temp_pred_met,
+  species_n = as.numeric(met$species)
 )
 
 # Data list for consumption model
@@ -113,7 +114,8 @@ con_data = list(
   n_obs = length(con$y_norm), 
   mass = con$log_mass_norm_ct,
   temp = con$temp_norm_ct,
-  temp_pred = temp_pred_con
+  temp_pred = temp_pred_con,
+  species_n = as.numeric(con$species)
 )
 
 
@@ -133,7 +135,7 @@ cat(
     
     y[i] ~ dnorm(mu[i], tau)
     
-    mu[i] <- b0 + b1*mass[i] + b2*temp[i] + b3*temp[i]*temp[i] + b4*temp[i]*mass[i]
+    mu[i] <- b0[species_n[i]] + b1*mass[i] + b2*temp[i] + b3*temp[i]*temp[i] + b4*temp[i]*mass[i]
   
     # Add log likelihood computation for each observation
     pd[i] <- dnorm(y[i], mu[i], tau)
@@ -142,12 +144,17 @@ cat(
     log_pd[i] <- log(dnorm(y[i], mu[i], tau))
   }
   
+  # Second level (species-level effects)
+  for(j in 1:max(species_n)){
+    b0[j] ~ dnorm(mu_b0, tau_b0)
+  }
+  
   # Predictions
   for(k in 1:length(temp_pred)){
       
-    pred_large[k] <- b0 + b1*4 + b2*temp_pred[k] + b3*temp_pred[k]*temp_pred[k] + b4*temp_pred[k]*4
-    pred_medium[k] <- b0 + b1*0 + b2*temp_pred[k] + b3*temp_pred[k]*temp_pred[k] + b4*temp_pred[k]*0
-    pred_small[k] <- b0 + b1*-4 + b2*temp_pred[k] + b3*temp_pred[k]*temp_pred[k] + b4*temp_pred[k]*-4
+    pred_large[k] <- mu_b0 + b1*4 + b2*temp_pred[k] + b3*temp_pred[k]*temp_pred[k] + b4*temp_pred[k]*4
+    pred_medium[k] <- mu_b0 + b1*0 + b2*temp_pred[k] + b3*temp_pred[k]*temp_pred[k] + b4*temp_pred[k]*0
+    pred_small[k] <- mu_b0 + b1*-4 + b2*temp_pred[k] + b3*temp_pred[k]*temp_pred[k] + b4*temp_pred[k]*-4
     
   } 
 
@@ -161,17 +168,19 @@ cat(
   p_cv <- step(cv_y_sim - cv_y)
 
   #-- Priors	
-  b0 ~ dnorm(0, 5)
   b1 ~ dnorm(0, 5)
   b2 ~ dnorm(0, 5)
   b3 ~ dnorm(0, 5)
   b4 ~ dnorm(0, 5)
+  mu_b0 ~ dnorm(0, 5)
+  sigma_b0 ~ dunif(0, 10)
   sigma ~ dunif(0, 10) 
   tau <- 1/sigma^2
+  tau_b0 <- 1/sigma_b0^2
   
-  }", fill = TRUE, file = "R/analysis/models/polynomial_inter.txt")
+  }", fill = TRUE, file = "R/analysis/TEST.txt")
 
-model_inter = "R/analysis/models/polynomial_inter.txt"
+model_inter = "R/analysis/TEST.txt"
 
 
 #** No Mass-Temperature Interaction ================================================
@@ -379,8 +388,8 @@ samples = 10000 # How many samples to take from the posterior
 n.thin = 5 # Thinning?
 
 # CODA - Nice for getting the raw posteriors
-cs_met <- coda.samples(jm_met,
-                       #jm_met_inter,
+cs_met <- coda.samples(#jm_met,
+                       jm_met_inter,
                        variable.names = c("b0", "b1", "b2", "b3", "sigma"), 
                        n.iter = samples, 
                        thin = n.thin)
@@ -429,7 +438,7 @@ n.thin = 5 # Thinning?
 
 # CODA - Nice for getting the raw posteriors
 cs_con <- coda.samples(jm_con_inter,
-                       variable.names = c("b0", "b1", "b2", "b3", "b4", "sigma"), 
+                       variable.names = c("b0", "b1", "b2", "b3", "b4", "sigma", "mu_b0"), 
                        n.iter = samples, 
                        thin = n.thin)
 

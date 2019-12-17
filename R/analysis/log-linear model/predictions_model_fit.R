@@ -86,7 +86,7 @@ ggplot(met, aes(temp_norm_arr_ct, temp_norm)) +
 
 # C. FIT MODELS ====================================================================
 # Refit chosen models from the model selection part
-#**** Metabolism (M2) ==============================================================
+#**** Metabolism (M1) ==============================================================
 cat(
   "model{
   
@@ -96,10 +96,10 @@ cat(
     
     y[i] ~ dnorm(mu[i], tau)
     mu[i] <- 
-      b0[species_n[i]] +           # varying intercept 
-      b1[species_n[i]]*mass[i] +   # varying mass-exponent
-      b2[species_n[i]]*temp[i] +   # varying activation energy
-      b3*mass[i]*temp[i]           # non-varying M*T interaction
+      b0[species_n[i]] +                # varying intercept 
+      b1[species_n[i]]*mass[i] +        # varying mass-exponent
+      b2[species_n[i]]*temp[i] +        # varying activation energy
+      b3[species_n[i]]*mass[i]*temp[i]  # varying M*T interaction
   # Add log likelihood computation for each observation
   pd[i] <- dnorm(y[i], mu[i], tau)
   
@@ -112,13 +112,14 @@ cat(
     b0[j] ~ dnorm(mu_b0, tau_b0)
     b1[j] ~ dnorm(mu_b1, tau_b1)
     b2[j] ~ dnorm(mu_b2, tau_b2)
+    b3[j] ~ dnorm(mu_b3, tau_b3)
   }
   
   # Predictions
   for(k in 1:length(mass_pred_met)){
       
-    pred_warm[k] <- mu_b0 + mu_b1*mass_pred_met[k] + mu_b2*-1.5 + b3*mass_pred_met[k]*-1.5
-    pred_cold[k] <- mu_b0 + mu_b1*mass_pred_met[k] + mu_b2*1.5 + b3*mass_pred_met[k]*1.5
+    pred_warm[k] <- mu_b0 + mu_b1*mass_pred_met[k] + mu_b2*-1.5 + mu_b3*mass_pred_met[k]*-1.5
+    pred_cold[k] <- mu_b0 + mu_b1*mass_pred_met[k] + mu_b2*1.5 + mu_b3*mass_pred_met[k]*1.5
     
   } 
 
@@ -132,22 +133,24 @@ cat(
   p_cv <- step(cv_y_sim - cv_y)
 
   #-- Priors	
-  b3 ~ dnorm(0, 0.5)         # global interaction
   mu_b0 ~ dnorm(0, 0.5)      # varying intercept
   mu_b1 ~ dnorm(-0.25, 0.5)  # varying mass-exponent
   mu_b2 ~ dnorm(-0.6, 0.5)   # varying activation energy
+  mu_b3 ~ dnorm(0, 0.5)      # varying interaction
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   sigma_b1 ~ dunif(0, 10)
   sigma_b2 ~ dunif(0, 10)
+  sigma_b3 ~ dunif(0, 10)
   tau <- 1/sigma^2
   tau_b0 <- 1/sigma_b0^2
   tau_b1 <- 1/sigma_b1^2
   tau_b2 <- 1/sigma_b2^2
+  tau_b3 <- 1/sigma_b3^2
   
-  }", fill = TRUE, file = "R/analysis/m2_metabolism_pred.txt")
+  }", fill = TRUE, file = "R/analysis/m1_metabolism_pred.txt")
 
-met_model = "R/analysis/m2_metabolism_pred.txt"
+met_model = "R/analysis/m1_metabolism_pred.txt"
 
 jm_met = jags.model(met_model,
                     data = met_data, 
@@ -403,8 +406,10 @@ p7 <- ggplot(m_pdat, aes(mass, median, color = factor(temp))) +
               size = 0.6, alpha = 0.25, inherit.aes = FALSE)+
   geom_ribbon(data = m_pdat, aes(x = mass, ymin = lwr_80, ymax = upr_80, fill = factor(temp)), 
               size = 0.6, alpha = 0.4, inherit.aes = FALSE) +
-  scale_color_manual(values = pal) +
-  scale_fill_manual(values = pal) +
+  # scale_color_manual(values = pal) +
+  # scale_fill_manual(values = pal) +
+  scale_color_brewer(palette = "Set1") +
+  scale_fill_brewer(palette = "Set1") +
   geom_line(size = 0.6, alpha = 1) +
   theme_classic(base_size = 13) + 
   labs(x = "ln(standardized mass)",
@@ -424,13 +429,15 @@ p8 <- ggplot(c_pdat, aes(mass, median, color = factor(temp))) +
               size = 0.6, alpha = 0.25, inherit.aes = FALSE)+
   geom_ribbon(data = c_pdat, aes(x = mass, ymin = lwr_80, ymax = upr_80, fill = factor(temp)), 
               size = 0.6, alpha = 0.4, inherit.aes = FALSE) +
-  scale_color_manual(values = pal) +
-  scale_fill_manual(values = pal) +
+  # scale_color_manual(values = pal) +
+  # scale_fill_manual(values = pal) +
+  scale_color_brewer(palette = "Set1") +
+  scale_fill_brewer(palette = "Set1") +
   geom_line(size = 0.6, alpha = 1) +
   theme_classic(base_size = 13) + 
   labs(x = "ln(standardized mass)",
        y = "ln(maximum consumption rate)",
-       color = "Temperature") +
+       color = "Standardized Arrhenius Temperature") +
   guides(fill = FALSE) +
   annotate("text", -Inf, Inf, label = "B", size = 4, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
@@ -470,7 +477,3 @@ p7 / p8
 #   guides(color = FALSE) +
 #   scale_color_viridis(option = "magma", discrete = T) +
 #   NULL
-
-
-
-
