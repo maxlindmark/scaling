@@ -82,7 +82,8 @@ allom <- dat %>%
        x = "Mass [g]",
        color =  "Temperature [C]") +
   #scale_color_brewer(palette = "RdYlBu") +
-  scale_color_manual(values = rev(pal)) +
+  #scale_color_manual(values = rev(pal)) +
+  scale_color_manual(values = rev(pal[c(1, 9)])) +
   scale_linetype_manual(values = c("twodash", "solid"), name = "c") + 
   guides(linetype = guide_legend(override.aes = list(size = 1.3))) +
   theme(aspect.ratio = 4/5,
@@ -93,7 +94,7 @@ allom
 #ggsave("figures/growth_rate.pdf", plot = last_plot(), scale = 1, width = 23, height = 23, units = "cm")
 
 # ==================================================================================
-## Mass instead on X
+## Temp instead on X
 dat <- data.frame(expand.grid(mass = seq(0, 500, 50),
                               temp = seq(273.15 + 8, 273.15 + 16, 0.1)))
 tref <- 273.15 + 12
