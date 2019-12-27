@@ -221,9 +221,9 @@ cat(
 model_con = "R/analysis/m5_consumption_pred.txt"
 
 jm_con = jags.model(model_con,
-                data = con_data, 
-                n.adapt = 5000, 
-                n.chains = 3)
+                    data = con_data, 
+                    n.adapt = 5000, 
+                    n.chains = 3)
 
 
 # D. EVALUATE MODEL FIT ============================================================
@@ -251,6 +251,29 @@ cs_fit_con = coda.samples(jm_con,
                                              "p_cv"), 
                           n.iter = samples, 
                           thin = n.thin)
+
+#--- Get random activation energies (for mizer model!)
+cs_fit_met_ei = coda.samples(jm_met,
+                             variable.names = c("b2"), 
+                             n.iter = samples, 
+                             thin = n.thin)
+
+unique(met$species)
+unique(as.numeric(met$species))
+unique(met$species)[35]
+unique(met_data$species_n)[35]
+summary(cs_fit_met_ei) # mean = -0.6566, sd = 0.10654
+
+
+# For Cmax I don't have cod. So I will use the main effect
+cs_fit_con_ei = coda.samples(jm_con,
+                             variable.names = c("b2", "mu_b2"), 
+                             n.iter = samples, 
+                             thin = n.thin)
+
+unique(con$species)
+summary(cs_fit_con_ei)
+#---
 
 # Convert to data frames
 cs_fit_df_met <- data.frame(as.matrix(cs_fit_met))

@@ -58,6 +58,8 @@ con$species_n <- as.numeric(as.factor(con$species))
 met$species_n <- as.numeric(as.factor(met$species))
 
 # Data in list-format for JAGS
+con <- con %>% arrange(species_n)
+
 con_data = list(
   y = log(con$y), 
   n_obs = length(con$y), 
@@ -66,6 +68,7 @@ con_data = list(
   temp = con$temp_norm_arr_ct
 )
 
+met <- met %>% arrange(species_n)
 
 met_data = list(
   y = log(met$y), 
@@ -75,6 +78,10 @@ met_data = list(
   temp = met$temp_norm_arr_ct
 )
 
+# met_data$species_n
+# met %>% filter(species == "Gadus morhua") # Cod is species no. 16
+# ggplot(met, aes(species_n, species)) + geom_point()
+# sort(unique(met_data$species_n))
 
 # C. PLOT SPECIES VARYING COEFFICIENTS =============================================
 # Refit chosen models from the model selection part
@@ -103,7 +110,6 @@ jm_met = jags.model(met_model,
 burn.in = 10000 # Length of burn-in
 
 update(jm_met, n.iter = burn.in) 
-
 
 # Sample from the posteriors =======================================================
 samples = 10000 # How many samples to take from the posterior
@@ -146,7 +152,8 @@ std_con$Parameter <- rownames(std_con)
 
 #** Mass exponent
 con_b <- con_df %>% filter(Parameter_sub == "b1")
-con_b$Species <- sort(unique(con$species_ab))
+con_b$Species <- unique(con$species_ab)
+#con_b$Species <- unique(con_data$species)
 con_b$Rate <- "Maximum Consumption"
 con_b$Parameter_mte <- "Mass-scaling exponent"
 con_b$pred <- filter(con_df, Parameter == "mu_b1")$quantiles.50.
@@ -154,7 +161,8 @@ con_b$pred_sd <- filter(std_con, Parameter == "mu_b1")$statistics.SD
 
 #** Activation energy
 con_e <- con_df %>% filter(Parameter_sub == "b2")
-con_e$Species <- sort(unique(con$species_ab))
+con_e$Species <- unique(con$species_ab)
+#con_e$Species <- unique(con_data$species)
 con_e$Rate <- "Maximum Consumption"
 con_e$Parameter_mte <- "Activation energy"
 con_e$pred <- filter(con_df, Parameter == "mu_b2")$quantiles.50.
@@ -170,7 +178,8 @@ std_met$Parameter <- rownames(std_met)
 
 #** Mass exponent
 met_b <- met_df %>% filter(Parameter_sub == "b1")
-met_b$Species <- sort(unique(met$species_ab))
+met_b$Species <- unique(met$species_ab)
+#met_b$Species <- unique(met_data$species)
 met_b$Rate <- "Metabolic rate"
 met_b$Parameter_mte <- "Mass-scaling exponent"
 met_b$pred <- filter(met_df, Parameter == "mu_b1")$quantiles.50.
@@ -178,7 +187,8 @@ met_b$pred_sd <- filter(std_met, Parameter == "mu_b1")$statistics.SD
 
 #** Activation energy
 met_e <- met_df %>% filter(Parameter_sub == "b2")
-met_e$Species <- sort(unique(met$species_ab))
+met_e$Species <- unique(met$species_ab)
+#met_e$Species <- unique(met_data$species)
 met_e$Rate <- "Metabolic rate"
 met_e$Parameter_mte <- "Activation energy"
 met_e$pred <- filter(met_df, Parameter == "mu_b2")$quantiles.50.
