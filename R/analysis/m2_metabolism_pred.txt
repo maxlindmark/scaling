@@ -25,10 +25,10 @@ model{
   }
   
   # Predictions
-  for(k in 1:length(mass_pred_met)){
+  for(k in 1:length(mass_pred)){
       
-    pred_warm[k] <- mu_b0 + mu_b1*mass_pred_met[k] + mu_b2*-1.5 + b3*mass_pred_met[k]*-1.5
-    pred_cold[k] <- mu_b0 + mu_b1*mass_pred_met[k] + mu_b2*1.5 + b3*mass_pred_met[k]*1.5
+    pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-1.5 + b3*mass_pred[k]*-1.5
+    pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*1.5 + b3*mass_pred[k]*1.5
     
   } 
 
@@ -42,10 +42,10 @@ model{
   p_cv <- step(cv_y_sim - cv_y)
 
   #-- Priors	
-  b3 ~ dnorm(0, 0.5)         # global interaction
-  mu_b0 ~ dnorm(0, 0.5)      # varying intercept
-  mu_b1 ~ dnorm(-0.25, 0.5)  # varying mass-exponent
-  mu_b2 ~ dnorm(-0.6, 0.5)   # varying activation energy
+  b3 ~ dnorm(0, 0.5)         # non-varying interaction
+  mu_b0 ~ dnorm(0, 0.5)      # global intercept
+  mu_b1 ~ dnorm(-0.25, 0.5)  # global mass-exponent
+  mu_b2 ~ dnorm(-0.6, 0.5)   # global activation energy
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   sigma_b1 ~ dunif(0, 10)

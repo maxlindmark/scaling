@@ -1,8 +1,8 @@
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # 2019.12.02: Max Lindmark
 #
-# - Code to fit hierarchical model of maximum consumption rate as a function of 
-# temperature with different group-effects and assess model fit
+# - Code to fit hierarchical model of maximum consumption and metabolic rate as a function of 
+# temperature with group-effects and assess model fit
 # 
 # A. Load libraries
 #
@@ -44,39 +44,49 @@ met <- met %>% filter(above_optimum == "N")
 con <- con %>% filter(above_optimum == "N")
 
 # Create abbreviated species name for plotting. Get first part of name
-sp1 <- substring(con$species, 1, 1)
-sp2 <- gsub( ".*\\s", "", con$species )
-con$species_ab <- paste(sp1, sp2, sep = ".")
-
 sp1 <- substring(met$species, 1, 1)
 sp2 <- gsub( ".*\\s", "", met$species )
 met$species_ab <- paste(sp1, sp2, sep = ".")
+
+sp1 <- substring(con$species, 1, 1)
+sp2 <- gsub( ".*\\s", "", con$species )
+con$species_ab <- paste(sp1, sp2, sep = ".")
 
 # Prepare data for JAGS
 data = NULL # Clear any old data lists that might confuse things
 
 # Rename species factor for JAGS (must be numbered 1:n)
-con$species_n <- as.numeric(as.factor(con$species))
 met$species_n <- as.numeric(as.factor(met$species))
+con$species_n <- as.numeric(as.factor(con$species))
+
+# Mass-range used for prediction
+mass_pred_met = seq(from = min(met$log_mass_norm_ct), 
+                    to = max(met$log_mass_norm_ct),
+                    length.out = 100)
+
+mass_pred_con = seq(from = min(con$log_mass_norm_ct), 
+                    to = max(con$log_mass_norm_ct),
+                    length.out = 100)
+
 
 # Data in list-format for JAGS
-con_data = list(
-  y = log(con$y), 
-  n_obs = length(con$y), 
-  species_n = con$species_n,
-  mass = con$log_mass_norm_ct,
-  temp = con$temp_norm_arr_ct
-)
-
-
 met_data = list(
   y = log(met$y), 
   n_obs = length(met$y), 
   species_n = met$species_n,
   mass = met$log_mass_norm_ct,
-  temp = met$temp_norm_arr_ct
+  temp = met$temp_norm_arr_ct,
+  mass_pred = mass_pred_met
 )
 
+con_data = list(
+  y = log(con$y), 
+  n_obs = length(con$y), 
+  species_n = con$species_n,
+  mass = con$log_mass_norm_ct,
+  temp = con$temp_norm_arr_ct,
+  mass_pred = mass_pred_con
+)
 
 
 # C. FIT MODELS ====================================================================
@@ -111,10 +121,10 @@ cat(
   }
   
   # Predictions
-  for(k in 1:length(mass_pred_met)){
+  for(k in 1:length(mass_pred)){
       
-    pred_warm[k] <- mu_b0 + mu_b1*mass_pred_met[k] + mu_b2*-1.5 + b3*mass_pred_met[k]*-1.5
-    pred_cold[k] <- mu_b0 + mu_b1*mass_pred_met[k] + mu_b2*1.5 + b3*mass_pred_met[k]*1.5
+    pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-1.5 + b3*mass_pred[k]*-1.5
+    pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*1.5 + b3*mass_pred[k]*1.5
     
   } 
 
@@ -128,10 +138,10 @@ cat(
   p_cv <- step(cv_y_sim - cv_y)
 
   #-- Priors	
-  b3 ~ dnorm(0, 0.5)         # global interaction
-  mu_b0 ~ dnorm(0, 0.5)      # varying intercept
-  mu_b1 ~ dnorm(-0.25, 0.5)  # varying mass-exponent
-  mu_b2 ~ dnorm(-0.6, 0.5)   # varying activation energy
+  b3 ~ dnorm(0, 0.5)         # non-varying interaction
+  mu_b0 ~ dnorm(0, 0.5)      # global intercept
+  mu_b1 ~ dnorm(-0.25, 0.5)  # global mass-exponent
+  mu_b2 ~ dnorm(-0.6, 0.5)   # global activation energy
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   sigma_b1 ~ dunif(0, 10)
@@ -180,10 +190,10 @@ cat(
     b2[j] ~ dnorm(mu_b2, tau_b2)
   }
 
-    for(k in 1:length(mass_pred_con)){
+    for(k in 1:length(mass_pred)){
   
-        pred_warm[k] <- mu_b0 + mu_b1*mass_pred_con[k] + mu_b2*-1.5
-        pred_cold[k] <- mu_b0 + mu_b1*mass_pred_con[k] + mu_b2*1.5
+        pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-1.5
+        pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*1.5
   
   } 
 
@@ -197,9 +207,9 @@ cat(
   p_cv <- step(cv_y_sim - cv_y)
 
   #-- Priors	
-  mu_b0 ~ dnorm(0, 0.5)      # varying intercept
-  mu_b1 ~ dnorm(-0.25, 0.5)  # varying mass-exponent
-  mu_b2 ~ dnorm(-0.6, 0.5)   # varying activation energy
+  mu_b0 ~ dnorm(0, 0.5)      # global intercept
+  mu_b1 ~ dnorm(-0.25, 0.5)  # global mass-exponent
+  mu_b2 ~ dnorm(-0.6, 0.5)   # global activation energy
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   sigma_b1 ~ dunif(0, 10)

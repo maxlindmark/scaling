@@ -2,7 +2,7 @@
 # 2019.12.02: Max Lindmark
 #
 # - Code to fit hierarchical model of maximum consumption rate as a function of 
-# temperature with different group-effects and compare DIC and WAIC
+# temperature with group-effects and evaluate convergence
 # 
 # A. Load libraries
 #
