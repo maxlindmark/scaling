@@ -148,9 +148,9 @@ cat(
   tau_b2 <- 1/sigma_b2^2
   tau_b3 <- 1/sigma_b3^2
   
-  }", fill = TRUE, file = "R/analysis/m1_metabolism_pred.txt")
+  }", fill = TRUE, file = "R/analysis/log-linear model/models/m1_metabolism_pred.txt")
 
-met_model = "R/analysis/m1_metabolism_pred.txt"
+met_model = "R/analysis/log-linear model/models/m1_metabolism_pred.txt"
 
 jm_met = jags.model(met_model,
                     data = met_data, 
@@ -216,9 +216,9 @@ cat(
   tau_b1 <- 1/sigma_b1^2
   tau_b2 <- 1/sigma_b2^2
   
-  }", fill = TRUE, file = "R/analysis/m5_consumption_pred.txt")
+  }", fill = TRUE, file = "R/analysis/log-linear model/models/m5_consumption_pred.txt")
 
-model_con = "R/analysis/m5_consumption_pred.txt"
+model_con = "R/analysis/log-linear model/models/m5_consumption_pred.txt"
 
 jm_con = jags.model(model_con,
                     data = con_data, 

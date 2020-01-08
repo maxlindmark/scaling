@@ -152,6 +152,21 @@ s_datm <-  data.frame(
 
 
 #** Plot general data ==============================================================
+# Test which sizes I use
+ggplot(dat, aes(mass_norm, fill = species)) + 
+  geom_histogram() + 
+  facet_wrap(~ rate, scales = "free_y") +
+  scale_fill_viridis(discrete = TRUE) +
+  coord_cartesian(expand = 0) + 
+  ggtitle("Consumption") +
+  labs(x = "Mass/Asymptotic mass") +
+  theme_classic(base_size = 18) +
+  theme(aspect.ratio = 1) +
+  guides(fill = FALSE) +
+  NULL
+# ggsave("figures/supp/size_range.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm")
+
+
 # Trophic level
 ggplot(dat, aes(x = reorder(common_name, trophic_level), y = trophic_level)) +
   geom_point(stat = 'identity', size = 4) +

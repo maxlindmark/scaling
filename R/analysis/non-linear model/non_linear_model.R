@@ -1,8 +1,7 @@
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # 2019.12.06: Max Lindmark
 #
-# - Code to fit non-linear (polynomial) models to consumption and metabolism, 
-#   and to do WAIC model selection
+# - Code to fit non-linear (polynomial) models to consumption 
 # 
 # A. Load libraries
 #
@@ -41,82 +40,72 @@ library(bayesplot)
 
 # B. READ IN DATA ==================================================================
 # Read in your data file(s)
-met <- read.csv("data/met_analysis.csv")
 con <- read.csv("data/con_analysis.csv")
 
 # There is a lot of variation in rates between species (see exploratory script. 
 # Instead of fitting an hierarchial model here (for now at least), we will fit models
 # of relative rates, i.e. relative to max for that species
-met <- met %>% 
-  dplyr::group_by(species) %>% 
-  #dplyr::mutate(y_norm = y/max(y)) %>%
-  dplyr::mutate(y_norm = y/mean(y)) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(temp_norm_ct = temp_norm - mean(temp_norm))
+
+# Create abbreviated species name for plotting. Get first part of name
+sp1 <- substring(con$species, 1, 1)
+
+# Get species name
+sp2 <- gsub( ".*\\s", "", con$species )
+
+con$species_ab <- paste(sp1, sp2, sep = ".")
 
 con <- con %>% 
   dplyr::group_by(species) %>% 
-  #dplyr::mutate(y_norm = y/max(y)) %>% 
   dplyr::mutate(y_norm = y/mean(y)) %>% 
   dplyr::ungroup() %>% 
   dplyr::mutate(temp_norm_ct = temp_norm - mean(temp_norm))
 
-# Plot data
-p1 <- met %>% 
-  ggplot(., aes(temp_norm_ct, y_norm, color = species)) + 
+# Which species have data above optimum?
+spec <- unique(filter(con, above_optimum == "Y"))$species
+  
+con %>% 
+  filter(species %in% spec) %>% 
+  #ggplot(., aes(temp_norm_ct, y_norm, color = species)) +
+  ggplot(., aes(temp_norm_ct, y, color = species)) + 
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.8) +
-  labs(x = "Standardized temperature", y = "Standardized metabolism") +
-  scale_color_viridis(discrete = TRUE, option = "magma") +
-  guides(color = FALSE) +
-  NULL
-
-
-p2 <- con %>% 
-  ggplot(., aes(temp_norm_ct, y_norm, color = species)) + 
-  theme_classic(base_size = 12) +
-  geom_point(size = 1, alpha = 0.8) +
+  stat_smooth(se = FALSE) +
   labs(x = "Standardized temperature", y = "Standardized consumption") +
   scale_color_viridis(discrete = TRUE, option = "magma") +
-  guides(color = FALSE) +
   NULL
 
-p1 / p2
+con %>% 
+  filter(species %in% spec) %>% 
+  #ggplot(., aes(temp_norm_ct, y_norm, color = log_mass_norm)) +
+  ggplot(., aes(temp_norm_ct, y, color = log_mass_norm)) + 
+  theme_classic(base_size = 12) +
+  geom_point(size = 1, alpha = 0.8) +
+  stat_smooth(se = FALSE) +
+  labs(x = "Standardized temperature", y = "Standardized consumption") +
+  scale_color_viridis(option = "magma") +
+  facet_wrap(~ species, scales = "free") +
+  NULL
+
+con <- con %>% filter(species %in% spec)
 
 # Temp-range used for prediction
-temp_pred_con = seq(from = min(con$temp_norm_ct), 
-                    to = max(con$temp_norm_ct),
-                    length.out = 50)
+temp_pred = seq(from = min(con$temp_norm_ct), 
+                to = max(con$temp_norm_ct),
+                length.out = 50)
 
-temp_pred_met = seq(from = min(met$temp_norm_ct), 
-                    to = max(met$temp_norm_ct),
-                    length.out = 50)
 
-# Data list for metabolism model
-met_data = list(
-  # y = met$y_norm,
-  # y = met$y,
-  y = log(met$y_norm), 
-  #y = log(met$y), 
-  n_obs = length(met$y_norm), 
-  mass = met$log_mass_norm_ct,
-  temp = met$temp_norm_ct,
-  temp_pred = temp_pred_met,
-  species_n = as.numeric(met$species)
-)
-
-# Data list for consumption model
-con_data = list(
-  # y = con$y_norm,
-  # y = con$y,
-  y = log(con$y_norm), 
-  #y = log(con$y), 
-  n_obs = length(con$y_norm), 
-  mass = con$log_mass_norm_ct,
-  temp = con$temp_norm_ct,
-  temp_pred = temp_pred_con,
-  species_n = as.numeric(con$species)
-)
+# # Data list for JAGS model
+# con_data = list(
+#   # y = con$y_norm,
+#   # y = con$y,
+#   y = log(con$y_norm), 
+#   #y = log(con$y), 
+#   n_obs = length(con$y_norm), 
+#   mass = con$log_mass_norm_ct,
+#   temp = con$temp_norm_ct,
+#   temp_pred = temp_pred,
+#   species_n = as.numeric(con$species)
+# )
 
 
 # Plotting is the easiest way to see which masses on normal scale correspond to which 
@@ -135,7 +124,7 @@ cat(
     
     y[i] ~ dnorm(mu[i], tau)
     
-    mu[i] <- b0[species_n[i]] + b1*mass[i] + b2*temp[i] + b3*temp[i]*temp[i] + b4*temp[i]*mass[i]
+    mu[i] <- b0 + b1*mass[i] + b2*temp[i] + b3*temp[i]*temp[i] + b4*temp[i]*mass[i]
   
     # Add log likelihood computation for each observation
     pd[i] <- dnorm(y[i], mu[i], tau)
@@ -144,17 +133,10 @@ cat(
     log_pd[i] <- log(dnorm(y[i], mu[i], tau))
   }
   
-  # Second level (species-level effects)
-  for(j in 1:max(species_n)){
-    b0[j] ~ dnorm(mu_b0, tau_b0)
-  }
-  
   # Predictions
   for(k in 1:length(temp_pred)){
       
-    pred_large[k] <- mu_b0 + b1*4 + b2*temp_pred[k] + b3*temp_pred[k]*temp_pred[k] + b4*temp_pred[k]*4
-    pred_medium[k] <- mu_b0 + b1*0 + b2*temp_pred[k] + b3*temp_pred[k]*temp_pred[k] + b4*temp_pred[k]*0
-    pred_small[k] <- mu_b0 + b1*-4 + b2*temp_pred[k] + b3*temp_pred[k]*temp_pred[k] + b4*temp_pred[k]*-4
+    pred[k] <- b0 + b1*0 + b2*temp_pred[k] + b3*temp_pred[k]*temp_pred[k] + b4*temp_pred[k]*0
     
   } 
 
@@ -168,19 +150,17 @@ cat(
   p_cv <- step(cv_y_sim - cv_y)
 
   #-- Priors	
+  b0 ~ dnorm(0, 5)
   b1 ~ dnorm(0, 5)
   b2 ~ dnorm(0, 5)
   b3 ~ dnorm(0, 5)
   b4 ~ dnorm(0, 5)
-  mu_b0 ~ dnorm(0, 5)
-  sigma_b0 ~ dunif(0, 10)
   sigma ~ dunif(0, 10) 
   tau <- 1/sigma^2
-  tau_b0 <- 1/sigma_b0^2
   
-  }", fill = TRUE, file = "R/analysis/TEST.txt")
+  }", fill = TRUE, file = "R/analysis/non-linear model/interaction.txt")
 
-model_inter = "R/analysis/TEST.txt"
+model_inter = "R/analysis/non-linear model/interaction.txt"
 
 
 #** No Mass-Temperature Interaction ================================================
@@ -193,7 +173,7 @@ cat(
     
     y[i] ~ dnorm(mu[i], tau)
     
-    mu[i] <- b0 + b1*mass[i] + b2*temp[i] + b3*temp[i]*temp[i]
+    mu[i] <- b0 + b1*mass[i] + b2*temp[i] + b3*temp[i]*temp[i] + b4*temp[i]*mass[i]
   
     # Add log likelihood computation for each observation
     pd[i] <- dnorm(y[i], mu[i], tau)
@@ -205,9 +185,7 @@ cat(
   # Predictions
   for(k in 1:length(temp_pred)){
       
-    pred_large[k] <- b0 + b1*4 + b2*temp_pred[k] + b3*temp_pred[k]*temp_pred[k]
-    pred_medium[k] <- b0 + b1*0 + b2*temp_pred[k] + b3*temp_pred[k]*temp_pred[k]
-    pred_small[k] <- b0 + b1*-4 + b2*temp_pred[k] + b3*temp_pred[k]*temp_pred[k]
+    pred[k] <- b0 + b1*0 + b2*temp_pred[k] + b3*temp_pred[k]*temp_pred[k] + b4*temp_pred[k]*0
     
   } 
 
@@ -217,7 +195,7 @@ cat(
   p_mean <- step(mean_y_sim - mean_y) # Proportion of data above and below 
   
   cv_y <- sd(y[])/mean(y[])
-  cv_y_sim <- sd(y_sim[])/max(0.001, mean(y_sim[])) # Not to divide by 0
+  cv_y_sim <- sd(y_sim[])/max(0.00001, mean(y_sim[])) # Not to divide by 0
   p_cv <- step(cv_y_sim - cv_y)
 
   #-- Priors	
@@ -225,12 +203,211 @@ cat(
   b1 ~ dnorm(0, 5)
   b2 ~ dnorm(0, 5)
   b3 ~ dnorm(0, 5)
+  b4 ~ dnorm(0, 5)
   sigma ~ dunif(0, 10) 
   tau <- 1/sigma^2
   
-  }", fill = TRUE, file = "R/analysis/models/polynomial.txt")
+  }", fill = TRUE, file = "R/analysis/non-linear model/no_interaction.txt")
 
-model = "R/analysis/models/polynomial.txt"
+model_no_inter = "R/analysis/non-linear model/no_interaction.txt"
+
+
+# D. FIT MODELS ====================================================================
+
+
+t <- data.frame()
+tt <- data.frame()
+df <- data.frame()
+jdat <- list()
+pred_dat <- list()
+
+for(i in unique(con$species_ab)){
+
+  df <- filter(con, species_ab == i)
+  
+  jdat = list(
+    #y = log(df$y_norm), 
+    y = df$y_norm,
+    #y = df$y - mean(df$y), 
+    n_obs = length(df$y), 
+    mass = df$log_mass_norm_ct,
+    #temp = df$temp_norm_ct,
+    temp = df$temp_norm,
+    #temp = df$temp_c,
+    #temp_pred = temp_pred,
+    #temp_pred = seq(min(con$temp_c), max(con$temp_c), 1),
+    temp_pred = seq(min(con$temp_norm), max(con$temp_norm), 1))
+  
+  jm = jags.model(model_no_inter,
+                  data = jdat, 
+                  n.adapt = 5000, # 5000, 
+                  n.chains = 3) #3)
+  
+  burn.in = 10000
+  
+  update(jm, n.iter = burn.in) 
+  
+  cs <- coda.samples(jm,
+                     variable.names = c("b0", "b1", "b2", "b3", "b4"), 
+                     n.iter = 10000, 
+                     thin = 5)
+  
+  p1 <- ggs(cs) %>% 
+    ggs_density(.) + 
+    facet_wrap(~ Parameter, ncol = 1, scales = "free") +
+    theme_classic(base_size = 11) + 
+    geom_density(alpha = 0.05) +
+    scale_color_brewer(palette = "Dark2") + 
+    scale_fill_brewer(palette = "Dark2") +
+    labs(x = "Value", y = "Density") +
+    guides(fill = FALSE, color = FALSE) +
+    ggtitle(i) +
+    NULL
+  
+  p2 <- ggs(cs) %>% 
+    ggs_traceplot(.) +
+    facet_wrap(~ Parameter, ncol = 1, scales = "free") +
+    theme_classic(base_size = 11) + 
+    geom_line(alpha = 0.3) +
+    scale_color_brewer(palette = "Dark2") + 
+    labs(x = "Iteration", y = "Value", color = "Chain #") +
+    guides(color = guide_legend(override.aes = list(alpha = 1))) +
+    theme(axis.text.x = element_text(size = 6)) +
+    NULL
+  
+  p3 <- p1 + p2
+  
+  name <- paste("figures/supp/non-linear/", i, sep = "", ".pdf")
+  ggsave(name, plot = p3, scale = 1, width = 20, height = 20, units = "cm", dpi = 300)
+  
+  js = jags.samples(jm,
+                    variable.names = "pred", 
+                    n.iter = 10000, 
+                    thin = 5)
+  
+  t <- summary(js$pred, quantile, c(0.025, 0.1, .5, 0.9, 0.975))$stat
+  
+  # Create data frame for the predictions
+  pred_dat[[i]] <- data.frame(lwr_95 = t[1, ],
+                              #lwr_80 = t[2, ],
+                              median = t[3, ],
+                              #upr_80 = t[4, ],
+                              upr_95 = t[5, ],
+                              mass = 0,
+                              #temp = temp_pred,
+                              #temp = seq(min(con$temp_c), max(con$temp_c), 1),
+                              temp = seq(min(con$temp_norm), max(con$temp_norm), 1),
+                              species = i)  
+}
+
+# Create list from data-frame
+pred_dat_df <- dplyr::bind_rows(pred_dat)
+
+str(pred_dat_df)
+
+# Standardize predictions, as in Englund et al 2011
+pred_dat_df <- pred_dat_df %>% 
+  group_by(species) %>% 
+  mutate(median_stand = median/max(median))
+
+# Plot "raw" predictions
+pred_dat_df %>% 
+  filter(median > 0) %>% 
+  ggplot(., aes(temp, median, color = factor(species))) +
+  geom_line() +
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic(base_size = 14) + 
+  labs(x = "Standardized temperature",
+       y = "Standardized consumption rate",
+       color = "Species") +
+  theme(aspect.ratio = 3/4) +
+  NULL
+
+# Plot standardized predictions
+pred_dat_df %>% 
+  filter(median > 0) %>% # try with and without this...
+  ggplot(., aes(temp, median_stand, color = factor(species))) +
+  geom_line() +
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic(base_size = 14) + 
+  labs(x = "Standardized temperature",
+       y = "Standardized consumption rate",
+       color = "Species") +
+  theme(aspect.ratio = 3/4) +
+  NULL
+
+
+# Plot standardized predictions with standardized data
+sub <- con %>% 
+  select(species_ab, y_norm, temp_norm) %>% 
+  rename("species" = "species_ab",
+         "temp_dat" = "temp_norm")
+
+# First, summarize max rate within species
+sum <- pred_dat_df %>% 
+  group_by(species) %>% 
+  summarise(max_y_pred = max(median))
+
+sum
+
+sub2 <- left_join(sub, sum)
+
+# Now standardize y wtr max predicted
+sub2 <- sub2 %>% mutate(y_stand = y_norm / max_y_pred)
+
+pred_dat_df %>% 
+  filter(median > 0) %>% 
+  ggplot(., aes(temp, median_stand, color = factor(species))) +
+  geom_line() +
+  geom_line() +
+  geom_point(data = filter(sub2, y_stand > 0),  aes(temp_dat, y_stand, color = factor(species))) +
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic(base_size = 14) + 
+  labs(x = "Standardized temperature",
+       y = "Standardized consumption rate",
+       color = "Species") +
+  theme(aspect.ratio = 3/4) +
+  NULL
+
+
+##------ CONTINUE HERE.... DID I REALLY STANDARDIZE PREDICTIONS CORRECTLY?
+
+
+
+
+
+
+
+# pred_dat_df %>% filter(median > 0) %>% ggplot(., aes(temp, median, color = factor(species))) +
+#   facet_wrap(~ species) +
+#   scale_color_brewer(palette = "Set1") +
+#   geom_line() +
+#   NULL
+
+  # geom_point(data = met, aes(temp_norm_ct, log(y_norm)), size = 2.8, shape = 21,
+  #            alpha = 0.2, color = "white", fill = "grey40") +
+  # geom_ribbon(data = m_pdat, aes(x = temp, ymin = lwr_95, ymax = upr_95, fill = factor(mass)), 
+  #             size = 0.6, alpha = 0.25, inherit.aes = FALSE) +
+  # geom_ribbon(data = m_pdat, aes(x = temp, ymin = lwr_80, ymax = upr_80, fill = factor(mass)), 
+  #             size = 0.6, alpha = 0.4, inherit.aes = FALSE) +
+  scale_color_manual(values = pal) +
+  scale_fill_manual(values = pal) +
+  geom_line(size = 0.6, alpha = 1) +
+  theme_classic(base_size = 14) + 
+  labs(x = "",
+       y = "ln(standardized\nmetabolic rate)") +
+  annotate("text", -Inf, Inf, label = "A", size = 4, 
+           fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  theme(aspect.ratio = 3/4) +
+  guides(fill = FALSE, color = FALSE) +
+  xlim(x_min, x_max) +
+  geom_segment(aes(x = x_s_met, xend = x_s_met, y = -5, yend = y_end), arrow = arrow(length = unit(0.3, "cm")), col = pal[1]) +
+  geom_segment(aes(x = x_m_met, xend = x_m_met, y = -5, yend = y_end), arrow = arrow(length = unit(0.3, "cm")), col = pal[2]) +
+  geom_segment(aes(x = x_l_met, xend = x_l_met, y = -5, yend = y_end), arrow = arrow(length = unit(0.3, "cm")), col = pal[3]) +
+  NULL
+
+
+
 
 
 # D. MODEL SELECTION ===============================================================

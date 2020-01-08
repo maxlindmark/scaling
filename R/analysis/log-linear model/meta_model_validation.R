@@ -78,7 +78,7 @@ data = list(
 
 
 # C. MODEL VALIDATION ==============================================================
-model = "R/analysis/log-linear model/models/m2.txt"
+model = "R/analysis/log-linear model/models/m1.txt"
 
 jm = jags.model(model,
                 data = data, 
@@ -210,9 +210,41 @@ p6 <- cs_df %>%
 p5+p6
 #ggsave("figures/supp/model_validation_met_temp.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm", dpi = 300)
 
+# Plot posterior densities of interaction-effects
+p7 <- cs_df %>% 
+  filter(Parameter %in% c("b3[1]", "b3[2]", "b3[3]", "b3[4]", "b3[5]", "b3[6]", "b3[7]", 
+                          "b3[8]", "b3[9]", "b3[10]", "b3[11]", "b3[12]", "b3[13]", "b3[14]",
+                          "b3[15]", "b3[16]", "b3[17]", "b3[18]")) %>% 
+  ggs_density(.) + 
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+  theme_classic(base_size = 11) + 
+  geom_density(alpha = 0.05) +
+  scale_color_brewer(palette = "Dark2") + 
+  scale_fill_brewer(palette = "Dark2") +
+  labs(x = "Value", y = "Density", fill = "Chain #") +
+  guides(color = FALSE, fill = FALSE) +
+  NULL
+
+# Traceplot for evaluating chain convergence
+p8 <- cs_df %>% 
+  filter(Parameter %in% c("b3[1]", "b3[2]", "b3[3]", "b3[4]", "b3[5]", "b3[6]", "b3[7]", 
+                          "b3[8]", "b3[9]", "b3[10]", "b3[11]", "b3[12]", "b3[13]", "b3[14]",
+                          "b3[15]", "b3[16]", "b3[17]", "b3[18]")) %>% 
+  ggs_traceplot(.) +
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+  theme_classic(base_size = 11) + 
+  geom_line(alpha = 0.3) +
+  scale_color_brewer(palette = "Dark2") + 
+  labs(x = "Iteration", y = "Value", color = "Chain #") +
+  guides(color = guide_legend(override.aes = list(alpha = 1))) +
+  theme(axis.text.x = element_text(size = 6)) +
+  NULL
+p7+p8
+#ggsave("figures/supp/model_validation_met_inter.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm", dpi = 300)
+
 
 # Plot posterior densities of group-level means and standard deviations
-p7 <- cs_df %>% 
+p9 <- cs_df %>% 
   filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2",
                           "sigma_b0", "sigma_b1", "sigma_b2")) %>% 
   ggs_density(.) + 
@@ -226,7 +258,7 @@ p7 <- cs_df %>%
   NULL
 
 # Traceplot for evaluating chain convergence
-p8 <- cs_df %>% 
+p10 <- cs_df %>% 
   filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", "b3",
                           "sigma_b0", "sigma_b1", "sigma_b2")) %>% 
   ggs_traceplot(.) +
@@ -238,7 +270,7 @@ p8 <- cs_df %>%
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
   theme(axis.text.x = element_text(size = 6)) +
   NULL
-p7+p8
+p9+p10
 #ggsave("figures/supp/model_validation_met.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm", dpi = 300)
 
 # cs_df %>% 
