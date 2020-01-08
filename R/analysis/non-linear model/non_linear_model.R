@@ -289,9 +289,9 @@ for(i in unique(con$species_ab)){
   
   # Create data frame for the predictions
   pred_dat[[i]] <- data.frame(lwr_95 = t[1, ],
-                              #lwr_80 = t[2, ],
+                              lwr_80 = t[2, ],
                               median = t[3, ],
-                              #upr_80 = t[4, ],
+                              upr_80 = t[4, ],
                               upr_95 = t[5, ],
                               mass = 0,
                               #temp = temp_pred,
@@ -307,8 +307,8 @@ str(pred_dat_df)
 
 # Standardize predictions, as in Englund et al 2011
 pred_dat_df <- pred_dat_df %>% 
-  group_by(species) %>% 
-  mutate(median_stand = median/max(median))
+  dplyr::group_by(species) %>% 
+  dplyr::mutate(median_stand = median/max(median))
 
 # Plot "raw" predictions
 pred_dat_df %>% 
@@ -345,8 +345,8 @@ sub <- con %>%
 
 # First, summarize max rate within species
 sum <- pred_dat_df %>% 
-  group_by(species) %>% 
-  summarise(max_y_pred = max(median))
+  dplyr::group_by(species) %>% 
+  dplyr::summarise(max_y_pred = max(median))
 
 sum
 
@@ -355,22 +355,78 @@ sub2 <- left_join(sub, sum)
 # Now standardize y wtr max predicted
 sub2 <- sub2 %>% mutate(y_stand = y_norm / max_y_pred)
 
+# Now get overall mean T_opt
+sum_tot <- pred_dat_df %>% 
+  dplyr::filter(median_stand == 1) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::summarise(mean_temp = mean(temp),
+                   stdev_temp = sd(temp))
+
+
+# Plot normalized data, prediction and credible intervals
 pred_dat_df %>% 
   filter(median > 0) %>% 
   ggplot(., aes(temp, median_stand, color = factor(species))) +
-  geom_line() +
-  geom_line() +
-  geom_point(data = filter(sub2, y_stand > 0),  aes(temp_dat, y_stand, color = factor(species))) +
+  geom_ribbon(data = filter(pred_dat_df, median > 0), inherit.aes = FALSE,
+              aes(x = temp, fill = factor(species), ymax = upr_80, ymin = lwr_80), 
+              size = 1, alpha = 0.15) +
+  geom_vline(xintercept = sum_tot$mean_temp, linetype = 2, color = "gray20", size = 0.7) + 
+  geom_point(data = filter(sub2, y_stand > 0),  aes(temp_dat, y_stand, color = factor(species)),
+             size = 3, alpha = 0.8, shape = 21) +
+  geom_line(size = 1, alpha = 0.6) +
   scale_color_brewer(palette = "Dark2") +
+  scale_fill_brewer(palette = "Dark2") +
+  guides(fill = FALSE) +
   theme_classic(base_size = 14) + 
   labs(x = "Standardized temperature",
        y = "Standardized consumption rate",
        color = "Species") +
-  theme(aspect.ratio = 3/4) +
+  coord_cartesian(ylim = c(0, 6)) +
+  theme(aspect.ratio = 3/4,
+        legend.position = c(0.13, 0.75),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 12)) +
   NULL
+#ggsave("figures/nl_model.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm", dpi = 300)
+
+# Plot normalized data, prediction : NO credible intervals
+pred_dat_df %>% 
+  filter(median > 0) %>% 
+  ggplot(., aes(temp, median_stand, color = factor(species))) +
+  geom_vline(xintercept = sum_tot$mean_temp, linetype = 2, color = "gray20", size = 0.7) + 
+  geom_point(data = filter(sub2, y_stand > 0),  aes(temp_dat, y_stand, color = factor(species)),
+             size = 3, alpha = 0.8, shape = 21) +
+  geom_line(size = 1, alpha = 0.6) +
+  scale_color_brewer(palette = "Dark2") +
+  scale_fill_brewer(palette = "Dark2") +
+  guides(fill = FALSE) +
+  theme_classic(base_size = 14) + 
+  labs(x = "Standardized temperature",
+       y = "Standardized consumption rate",
+       color = "Species") +
+  theme(aspect.ratio = 3/4,
+        legend.position = c(0.13, 0.75),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 12)) +
+  NULL
+#ggsave("figures/nl_model.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm", dpi = 300)
 
 
-##------ CONTINUE HERE.... DID I REALLY STANDARDIZE PREDICTIONS CORRECTLY?
+
+# Think it could be correct and that the "problem" is that I simply predict for a given 
+# body mass of 0
+
+
+##------ CONTINUE HERE.... DID I REALLY STANDARDIZE PREDICTIONS CORRECTLY? check left 
+# join with miniale example
+
+
+# Then do model fit and within loop
+# then repeat for T_opt model. Look at the posterior of the interaction term.
+
+
+
+
 
 
 
