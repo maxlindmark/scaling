@@ -1,0 +1,32 @@
+model{
+  
+  for(i in 1:n_obs){
+    y[i] ~ dnorm(mu[i], tau)
+    mu[i] <- 
+      b0 +                         # non-varying intercept 
+      b1*mass[i] +                 # non-varying mass effect
+      b2[species_n[i]]*temp[i]     # species-varying activation energy
+  
+  # Add log likelihood computation for each observation
+  pd[i] <- dnorm(y[i], mu[i], tau)
+  
+  # Calculates the log PPD
+  log_pd[i] <- log(dnorm(y[i], mu[i], tau))
+  }
+  
+  # Second level (species-level effects)
+  for(j in 1:max(species_n)){
+    b2[j] ~ dnorm(mu_b2, tau_b2)
+    
+    }
+  
+  #-- Priors	
+  b0 ~ dnorm(0, 0.5)      
+  b1 ~ dnorm(-0.25, 0.5) 
+  mu_b2 ~ dnorm(-0.6, 0.5) # varying activation-energy
+  sigma ~ dunif(0, 10) 
+  sigma_b2 ~ dunif(0, 10)
+  tau <- 1/sigma^2
+  tau_b2<- 1/sigma_b2^2
+  
+  }

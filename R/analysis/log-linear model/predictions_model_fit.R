@@ -118,8 +118,8 @@ cat(
   # Predictions
   for(k in 1:length(mass_pred_met)){
       
-    pred_warm[k] <- mu_b0 + mu_b1*mass_pred_met[k] + mu_b2*-1.5 + mu_b3*mass_pred_met[k]*-1.5
-    pred_cold[k] <- mu_b0 + mu_b1*mass_pred_met[k] + mu_b2*1.5 + mu_b3*mass_pred_met[k]*1.5
+    pred_warm[k] <- mu_b0 + mu_b1*mass_pred_met[k] + mu_b2*-1 + mu_b3*mass_pred_met[k]*-1
+    pred_cold[k] <- mu_b0 + mu_b1*mass_pred_met[k] + mu_b2*1 + mu_b3*mass_pred_met[k]*1
     
   } 
 
@@ -189,8 +189,8 @@ cat(
 
     for(k in 1:length(mass_pred_con)){
   
-        pred_warm[k] <- mu_b0 + mu_b1*mass_pred_con[k] + mu_b2*-1.5
-        pred_cold[k] <- mu_b0 + mu_b1*mass_pred_con[k] + mu_b2*1.5
+        pred_warm[k] <- mu_b0 + mu_b1*mass_pred_con[k] + mu_b2*-1
+        pred_cold[k] <- mu_b0 + mu_b1*mass_pred_con[k] + mu_b2*1
   
   } 
 
@@ -252,29 +252,6 @@ cs_fit_con = coda.samples(jm_con,
                           n.iter = samples, 
                           thin = n.thin)
 
-#--- Get random activation energies (for mizer model!)
-cs_fit_met_ei = coda.samples(jm_met,
-                             variable.names = c("b2"), 
-                             n.iter = samples, 
-                             thin = n.thin)
-
-unique(met$species)
-unique(as.numeric(met$species))
-unique(met$species)[35]
-unique(met_data$species_n)[35]
-summary(cs_fit_met_ei) # mean = -0.6566, sd = 0.10654
-
-
-# For Cmax I don't have cod. So I will use the main effect
-cs_fit_con_ei = coda.samples(jm_con,
-                             variable.names = c("b2", "mu_b2"), 
-                             n.iter = samples, 
-                             thin = n.thin)
-
-unique(con$species)
-summary(cs_fit_con_ei)
-#---
-
 # Convert to data frames
 cs_fit_df_met <- data.frame(as.matrix(cs_fit_met))
 cs_fit_df_con <- data.frame(as.matrix(cs_fit_con))
@@ -284,7 +261,7 @@ cs_fit_df_con <- data.frame(as.matrix(cs_fit_con))
 n_bins <- round(1 + 3.2*log(nrow(cs_fit_df_met)))
 
 # Metabolism
-p3 <- ggplot(cs_fit_df_met, aes(mean_y_sim)) + 
+p1 <- ggplot(cs_fit_df_met, aes(mean_y_sim)) + 
   geom_histogram(bins = n_bins) +
   geom_vline(xintercept = cs_fit_df_met$mean_y, color = "white", 
              linetype = 2, size = 0.4) +
@@ -299,7 +276,7 @@ p3 <- ggplot(cs_fit_df_met, aes(mean_y_sim)) +
   ggtitle("Metabolism") +
   NULL
 
-p4 <- ggplot(cs_fit_df_met, aes(cv_y_sim)) + 
+p2 <- ggplot(cs_fit_df_met, aes(cv_y_sim)) + 
   geom_histogram(bins = n_bins) +
   geom_vline(xintercept = cs_fit_df_met$cv_y, color = "white", 
              linetype = 2, size = 0.4) +
@@ -314,7 +291,7 @@ p4 <- ggplot(cs_fit_df_met, aes(cv_y_sim)) +
   NULL
 
 # Consumption
-p5 <- ggplot(cs_fit_df_con, aes(mean_y_sim)) + 
+p3 <- ggplot(cs_fit_df_con, aes(mean_y_sim)) + 
   geom_histogram(bins = n_bins) +
   geom_vline(xintercept = cs_fit_df_con$mean_y, color = "white", 
              linetype = 2, size = 0.4) +
@@ -329,7 +306,7 @@ p5 <- ggplot(cs_fit_df_con, aes(mean_y_sim)) +
   ggtitle("Consumption") +
   NULL
 
-p6 <- ggplot(cs_fit_df_con, aes(cv_y_sim)) + 
+p4 <- ggplot(cs_fit_df_con, aes(cv_y_sim)) + 
   geom_histogram(bins = n_bins) +
   geom_vline(xintercept = cs_fit_df_con$cv_y, color = "white", 
              linetype = 2, size = 0.4) +
@@ -343,8 +320,8 @@ p6 <- ggplot(cs_fit_df_con, aes(cv_y_sim)) +
   coord_cartesian(expand = 0) +
   NULL
 
-(p3 + p4) / (p5 + p6)
-#ggsave("figures/supp/cv_mean_fit.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm", dpi = 300)
+(p1 + p2) / (p3 + p4)
+#ggsave("figures/supp/cv_mean_fit_met_con.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm", dpi = 300)
 
 
 # E. PLOT PREDICTIONS ==============================================================
@@ -401,7 +378,7 @@ c_pred_warm_df <- data.frame(lwr_95 = c_pred_warm[1, ],
                              upr_80 = c_pred_warm[4, ],
                              upr_95 = c_pred_warm[5, ],
                              mass = mass_pred_con,
-                             temp = -1.5)
+                             temp = -1)
 
 # Cold temp:
 c_pred_cold <- summary(js_con$pred_cold, quantile, c(0.025, 0.1, .5, 0.9, 0.975))$stat
@@ -413,7 +390,7 @@ c_pred_cold_df <- data.frame(lwr_95 = c_pred_cold[1, ],
                              upr_80 = c_pred_cold[4, ],
                              upr_95 = c_pred_cold[5, ],
                              mass = mass_pred_con,
-                             temp = 1.5)
+                             temp = 1)
 
 # Plot data and predictions with 95% credible interval (at each x, plot as ribbon)
 #pal <- viridis(option = "magma", n = 10)[c(2, 6)]
@@ -422,7 +399,7 @@ pal <- brewer.pal("Dark2", n = 5)[c(1,3)]
 m_pdat <- rbind(m_pred_cold_df, m_pred_warm_df)
 c_pdat <- rbind(c_pred_cold_df, c_pred_warm_df)
 
-p7 <- ggplot(m_pdat, aes(mass, median, color = factor(temp))) +
+p5 <- ggplot(m_pdat, aes(mass, median, color = factor(temp))) +
   geom_point(data = met, aes(log_mass_norm_ct, log(y)), size = 2.8, shape = 21, 
              alpha = 0.2, color = "white", fill = "grey40") +
   geom_ribbon(data = m_pdat, aes(x = mass, ymin = lwr_95, ymax = upr_95, fill = factor(temp)), 
@@ -443,9 +420,9 @@ p7 <- ggplot(m_pdat, aes(mass, median, color = factor(temp))) +
   guides(fill = FALSE, color = FALSE) +
   NULL
 
-p7
+p5
 
-p8 <- ggplot(c_pdat, aes(mass, median, color = factor(temp))) +
+p6 <- ggplot(c_pdat, aes(mass, median, color = factor(temp))) +
   geom_point(data = con, aes(log_mass_norm_ct, log(y)), size = 2.8, shape = 21, 
              alpha = 0.2, color = "white", fill = "grey40") +
   geom_ribbon(data = c_pdat, aes(x = mass, ymin = lwr_95, ymax = upr_95, fill = factor(temp)), 
@@ -468,35 +445,8 @@ p8 <- ggplot(c_pdat, aes(mass, median, color = factor(temp))) +
         legend.position = "bottom") +
   NULL
 
-p8
+p6
 
-p7 / p8
-#ggsave("figures/pred_warm_cold.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
+p5 / p6
+#ggsave("figures/pred_warm_cold_metcon.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
 
-
-# Working
-# pal <- viridis(option = "magma", n = 10)[c(2, 6)]
-# pal <- brewer.pal("Dark2", n = 5)[c(1,3)]
-# 
-# ggplot(met, aes(log_mass_norm_ct, log(y), color = species)) +
-#   geom_point(size = 2.8, alpha = 0.1) +
-#   geom_ribbon(data = m_pred_warm_df, aes(x = mass, ymin = lwr_95, ymax = upr_95),
-#               size = 2, alpha = 0.2, inherit.aes = FALSE, fill = pal[1]) +
-#   geom_ribbon(data = m_pred_warm_df, aes(x = mass, ymin = lwr_80, ymax = upr_80),
-#               size = 2, alpha = 0.6, inherit.aes = FALSE, fill = pal[1]) +
-#   geom_line(data = m_pred_warm_df, aes(mass, median),
-#             size = 1, alpha = 1, color = pal[1]) +
-#   geom_ribbon(data = m_pred_cold_df, aes(x = mass, ymin = lwr_95, ymax = upr_95),
-#               size = 2, alpha = 0.2, inherit.aes = FALSE, fill = pal[2]) +
-#   geom_ribbon(data = m_pred_cold_df, aes(x = mass, ymin = lwr_80, ymax = upr_80),
-#               size = 2, alpha = 0.6, inherit.aes = FALSE, fill = pal[2]) +
-#   geom_line(data = m_pred_cold_df, aes(mass, median),
-#             size = 1, alpha = 1, color = pal[2]) +
-#   theme_classic(base_size = 11) +
-#   labs(x = "ln(standardized mass)",
-#        y = "ln(metabolic rate)") +
-#   annotate("text", -Inf, Inf, label = "A", size = 4,
-#            fontface = "bold", hjust = -0.5, vjust = 1.3) +
-#   guides(color = FALSE) +
-#   scale_color_viridis(option = "magma", discrete = T) +
-#   NULL

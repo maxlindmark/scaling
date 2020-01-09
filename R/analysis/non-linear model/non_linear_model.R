@@ -79,7 +79,7 @@ con %>%
   filter(species %in% spec) %>% 
   #ggplot(., aes(temp_norm_ct, y_norm, color = log_mass_norm)) +
   #ggplot(., aes(temp_norm_ct, y, color = log_mass_norm)) + 
-  ggplot(., aes(temp_norm, y, color = log_mass_norm)) + 
+  ggplot(., aes(temp_norm, y_norm, color = log_mass_norm)) + 
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.8) +
   stat_smooth(se = FALSE) +
@@ -94,21 +94,6 @@ con <- con %>% filter(species %in% spec)
 temp_pred = seq(from = min(con$temp_norm_ct), 
                 to = max(con$temp_norm_ct),
                 length.out = 50)
-
-
-# # Data list for JAGS model
-# con_data = list(
-#   # y = con$y_norm,
-#   # y = con$y,
-#   y = log(con$y_norm), 
-#   #y = log(con$y), 
-#   n_obs = length(con$y_norm), 
-#   mass = con$log_mass_norm_ct,
-#   temp = con$temp_norm_ct,
-#   temp_pred = temp_pred,
-#   species_n = as.numeric(con$species)
-# )
-
 
 # Plotting is the easiest way to see which masses on normal scale correspond to which 
 # standardized and mean centered masses. For prediction, I will use -2, 0 and 2
@@ -295,7 +280,6 @@ pal <- getPalette(colourCount)
 
 # Plot "raw" predictions
 pred_dat_df %>% 
-  #filter(median > 0) %>% 
   ggplot(., aes(temp, median, color = factor(species_ab))) +
   geom_line() +
   scale_color_brewer(palette = "Dark2") +
@@ -326,7 +310,7 @@ pred_dat_df %>%
         legend.text = element_text(size = 8),
         legend.title = element_text(size = 12)) +
   NULL
-#ggsave("figures/supp/nl_model_species_fit.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm", dpi = 300)
+#ggsave("figures/supp/non-linear/nl_model_species_fit.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm", dpi = 300)
 
 
 # ** Plot standardized predictions, similar to Englund et al 2011 ==================
@@ -412,13 +396,12 @@ pred_dat_df %>%
   labs(x = "Standardized temperature",
        y = "Standardized consumption rate",
        color = "Species") +
-  #coord_cartesian(ylim = c(0,max(sub2$y_stand))) +
   theme(aspect.ratio = 3/4,
         legend.position = c(0.13, 0.75),
         legend.text = element_text(size = 8),
         legend.title = element_text(size = 12)) +
   NULL
-#ggsave("figures/supp/nl_model_stand.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm", dpi = 300)
+#ggsave("figures/supp/non-linear/nl_model_stand.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm", dpi = 300)
 
 
 # Plot standardized data but not temperature
@@ -435,6 +418,8 @@ pred_dat_df %>%
   geom_point(data = dat,  aes(temp_dat, y_stand, color = factor(species_ab)),
              size = 3, alpha = 0.6, shape = 21) +
   geom_line(size = 1, alpha = 0.8) +
+  geom_rug(data = T_opt_s, inherit.aes = FALSE, aes(opt_temp, color = species_ab), 
+           size = 2, alpha = 0.6, linetype = 1, length = unit(0.05, "npc")) +
   scale_color_manual(values = pal) +
   scale_fill_manual(values = pal) +
   guides(fill = FALSE) +

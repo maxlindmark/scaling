@@ -156,9 +156,8 @@ s_datm <-  data.frame(
 ggplot(dat, aes(mass_norm, fill = species)) + 
   geom_histogram() + 
   facet_wrap(~ rate, scales = "free_y") +
-  scale_fill_viridis(discrete = TRUE) +
+  scale_fill_viridis(discrete = TRUE, option = "magma") +
   coord_cartesian(expand = 0) + 
-  ggtitle("Consumption") +
   labs(x = "Mass/Asymptotic mass") +
   theme_classic(base_size = 18) +
   theme(aspect.ratio = 1) +
@@ -198,7 +197,7 @@ ggplot(dat, aes(x = reorder(common_name, env_temp_mid),
 # pal <- rev(viridis(n = 3))
 # pal <- brewer.pal("Dark2", n = 5)[c(1,3)]
 # pal <- rev(viridis(n = 3, option = "magma")[1:2])
-pal <- brewer.pal("Dark2", n = 5)[c(1,3)]
+pal <- brewer.pal("Dark2", n = 5)
 
 dat %>% 
   dplyr::group_by(common_name) %>% 
@@ -214,7 +213,7 @@ dat %>%
                  y = temp_c, color = "gray"), size = 1) +
   scale_color_manual(labels = c("Env. Temperature [C]", 
                                 "Experimental\ntemperature"), 
-                     values = rev(pal)) +
+                     values = pal) +
   scale_fill_manual(name = "env_temp_mid") + 
   theme_classic(base_size = 12) +
   guides(color = guide_legend(title = "")) +
@@ -223,7 +222,7 @@ dat %>%
   coord_flip() +
   facet_wrap(~ rate) +
   NULL 
-# ggsave("figures/supp/temperatures.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm")
+#ggsave("figures/supp/exp_env_temps_con_met.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
 
 # Max. published weight
 ggplot(dat, aes(x = reorder(common_name, w_max_published_g), 
