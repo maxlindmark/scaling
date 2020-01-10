@@ -155,7 +155,7 @@ con_b <- con_df %>% filter(Parameter_sub == "b1")
 con_b$Species <- unique(con$species_ab)
 #con_b$Species <- unique(con_data$species)
 con_b$Rate <- "Maximum Consumption"
-con_b$Parameter_mte <- "Mass-scaling exponent"
+con_b$Parameter_mte <- "Mass-coefficient"
 con_b$pred <- filter(con_df, Parameter == "mu_b1")$quantiles.50.
 con_b$pred_sd <- filter(std_con, Parameter == "mu_b1")$statistics.SD
 
@@ -181,7 +181,7 @@ met_b <- met_df %>% filter(Parameter_sub == "b1")
 met_b$Species <- unique(met$species_ab)
 #met_b$Species <- unique(met_data$species)
 met_b$Rate <- "Metabolic rate"
-met_b$Parameter_mte <- "Mass-scaling exponent"
+met_b$Parameter_mte <- "Mass-coefficient"
 met_b$pred <- filter(met_df, Parameter == "mu_b1")$quantiles.50.
 met_b$pred_sd <- filter(std_met, Parameter == "mu_b1")$statistics.SD
 
@@ -217,16 +217,16 @@ df_std$ymin <- df_std$pred - 2*df_std$pred_sd
 
 # Plot all species varying estimates and global mean
 df %>% 
-  filter(Parameter_mte %in% c("Activation energy", "Mass-scaling exponent")) %>% 
+  filter(Parameter_mte %in% c("Activation energy", "Mass-coefficient")) %>% 
   ggplot(., aes(Species, quantiles.50., color = Rate, shape = Rate)) +
   facet_grid(~ Parameter_mte, scales = "free") +
   scale_color_manual(values = pal[1:2]) +
   scale_fill_manual(values = pal[1:2]) +
   scale_shape_manual(values = c(21, 24)) +
-  geom_hline(data = filter(df_std, Parameter_mte %in% c("Activation energy", "Mass-scaling exponent")), 
+  geom_hline(data = filter(df_std, Parameter_mte %in% c("Activation energy", "Mass-coefficient")), 
              aes(yintercept = pred, color = Rate),
              size = 0.6, alpha = 1, linetype = "dashed") +
-  geom_rect(data = filter(df_std, Parameter_mte %in% c("Activation energy", "Mass-scaling exponent")), 
+  geom_rect(data = filter(df_std, Parameter_mte %in% c("Activation energy", "Mass-coefficient")), 
             inherit.aes = FALSE, aes(ymin = ymin, ymax = ymax, fill = Rate), xmin = 0, xmax = 50, 
             alpha = 0.2) +
   coord_flip() +
@@ -259,7 +259,7 @@ p1 <- cs_met %>%
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
   annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Mass-scaling exponent" & Rate == "Metabolic rate")$pred, 2), 
            size = 3, hjust = -0.5, vjust = 1.3) +
-  labs(x = "Mass-scaling exponent") +
+  labs(x = "Mass-coefficient") +
   ggtitle("") +
   xlim(0.48, 0.9) +
   geom_vline(xintercept = filter(df, Parameter_mte == "Mass-scaling exponent" & Rate == "Metabolic rate")$pred, 
@@ -306,7 +306,7 @@ p4 <- cs_con %>%
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
   annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Mass-scaling exponent" & Rate == "Maximum Consumption")$pred, 2), 
            size = 3, hjust = -0.5, vjust = 1.3) +
-  labs(x = "Mass-scaling exponent") +
+  labs(x = "Mass-coefficient") +
   ggtitle("") +
   xlim(0.48, 0.9) +
   geom_vline(xintercept = filter(df, Parameter_mte == "Mass-scaling exponent" & Rate == "Maximum Consumption")$pred, 

@@ -341,13 +341,13 @@ pal <- brewer.pal("Dark2", n = 5)
 
 p3 <- ggplot(pred_df, aes(mass, median)) +
   geom_ribbon(data = pred_df, aes(x = mass, ymin = lwr_95, ymax = upr_95), 
-              size = 2, alpha = 0.25, inherit.aes = FALSE, fill = pal[3]) +
+              size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
   geom_ribbon(data = pred_df, aes(x = mass, ymin = lwr_80, ymax = upr_80), 
-              size = 2, alpha = 0.35, inherit.aes = FALSE, fill = pal[3]) +
-  geom_line(size = 1, alpha = 1, col = pal[3]) +
+              size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
+  geom_line(size = 1, alpha = 1, col = "black") +
   geom_point(data = dat, aes(log_mass_norm_ct, opt_temp_c_ct),
-             size = 4, shape = 21, alpha = 0.8, color = "white", fill = "grey40") +
-  theme_classic(base_size = 16) + 
+             size = 3.5, shape = 21, alpha = 0.8, color = "white", fill = "grey40") +
+  theme_classic(base_size = 13) + 
   theme(aspect.ratio = 4/5) +
   labs(x = "ln(standardized mass)",
        y = "Standardized optimum growth temperature") +
@@ -357,7 +357,7 @@ p3 <- ggplot(pred_df, aes(mass, median)) +
 
 p3
 
-#ggsave("figures/topt_scatter.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
+#ggsave("figures/topt_scatter.pdf", plot = last_plot(), scale = 1, width = 12, height = 12, units = "cm", dpi = 300)
 
 
 # Add posterior distributions of parameters

@@ -83,6 +83,18 @@ met_data = list(
 ggplot(met, aes(temp_norm_arr_ct, temp_norm)) + 
   geom_point()
 
+ggplot(met, aes(temp_norm_arr_ct, temp_norm)) + 
+  geom_point() + 
+  xlim(-1, 1)
+
+ggplot(met, aes(temp_norm_arr_ct, temp_norm)) + 
+  geom_point() + 
+  geom_line() +
+  xlim(-1, 0.1) +
+  ylim(0, 10)
+
+# So, using -1 and 0 roughly corresponds to an increse in + 8
+
 
 # C. FIT MODELS ====================================================================
 # Refit chosen models from the model selection part
@@ -119,7 +131,7 @@ cat(
   for(k in 1:length(mass_pred_met)){
       
     pred_warm[k] <- mu_b0 + mu_b1*mass_pred_met[k] + mu_b2*-1 + mu_b3*mass_pred_met[k]*-1
-    pred_cold[k] <- mu_b0 + mu_b1*mass_pred_met[k] + mu_b2*1 + mu_b3*mass_pred_met[k]*1
+    pred_cold[k] <- mu_b0 + mu_b1*mass_pred_met[k] + mu_b2*0 + mu_b3*mass_pred_met[k]*0
     
   } 
 
@@ -190,7 +202,7 @@ cat(
     for(k in 1:length(mass_pred_con)){
   
         pred_warm[k] <- mu_b0 + mu_b1*mass_pred_con[k] + mu_b2*-1
-        pred_cold[k] <- mu_b0 + mu_b1*mass_pred_con[k] + mu_b2*1
+        pred_cold[k] <- mu_b0 + mu_b1*mass_pred_con[k] + mu_b2*0
   
   } 
 
@@ -347,7 +359,7 @@ m_pred_warm_df <- data.frame(lwr_95 = m_pred_warm[1, ],
                              upr_80 = m_pred_warm[4, ],
                              upr_95 = m_pred_warm[5, ],
                              mass = mass_pred_met,
-                             temp = -1.5)
+                             temp = -1)
 
 # Cold temp:
 m_pred_cold <- summary(js_met$pred_cold, quantile, c(0.025, 0.1, .5, 0.9, 0.975))$stat
@@ -359,7 +371,7 @@ m_pred_cold_df <- data.frame(lwr_95 = m_pred_cold[1, ],
                            upr_80 = m_pred_cold[4, ],
                            upr_95 = m_pred_cold[5, ],
                            mass = mass_pred_met,
-                           temp = 1.5)
+                           temp = 0)
 
 # Consumption
 js_con = jags.samples(jm_con, 
@@ -390,7 +402,7 @@ c_pred_cold_df <- data.frame(lwr_95 = c_pred_cold[1, ],
                              upr_80 = c_pred_cold[4, ],
                              upr_95 = c_pred_cold[5, ],
                              mass = mass_pred_con,
-                             temp = 1)
+                             temp = 0)
 
 # Plot data and predictions with 95% credible interval (at each x, plot as ribbon)
 #pal <- viridis(option = "magma", n = 10)[c(2, 6)]
@@ -403,9 +415,9 @@ p5 <- ggplot(m_pdat, aes(mass, median, color = factor(temp))) +
   geom_point(data = met, aes(log_mass_norm_ct, log(y)), size = 2.8, shape = 21, 
              alpha = 0.2, color = "white", fill = "grey40") +
   geom_ribbon(data = m_pdat, aes(x = mass, ymin = lwr_95, ymax = upr_95, fill = factor(temp)), 
-              size = 0.6, alpha = 0.25, inherit.aes = FALSE)+
+              size = 0.6, alpha = 0.2, inherit.aes = FALSE)+
   geom_ribbon(data = m_pdat, aes(x = mass, ymin = lwr_80, ymax = upr_80, fill = factor(temp)), 
-              size = 0.6, alpha = 0.4, inherit.aes = FALSE) +
+              size = 0.6, alpha = 0.25, inherit.aes = FALSE) +
   # scale_color_manual(values = pal) +
   # scale_fill_manual(values = pal) +
   scale_color_brewer(palette = "Set1") +
@@ -426,9 +438,9 @@ p6 <- ggplot(c_pdat, aes(mass, median, color = factor(temp))) +
   geom_point(data = con, aes(log_mass_norm_ct, log(y)), size = 2.8, shape = 21, 
              alpha = 0.2, color = "white", fill = "grey40") +
   geom_ribbon(data = c_pdat, aes(x = mass, ymin = lwr_95, ymax = upr_95, fill = factor(temp)), 
-              size = 0.6, alpha = 0.25, inherit.aes = FALSE)+
+              size = 0.6, alpha = 0.2, inherit.aes = FALSE)+
   geom_ribbon(data = c_pdat, aes(x = mass, ymin = lwr_80, ymax = upr_80, fill = factor(temp)), 
-              size = 0.6, alpha = 0.4, inherit.aes = FALSE) +
+              size = 0.6, alpha = 0.25, inherit.aes = FALSE) +
   # scale_color_manual(values = pal) +
   # scale_fill_manual(values = pal) +
   scale_color_brewer(palette = "Set1") +
@@ -448,5 +460,5 @@ p6 <- ggplot(c_pdat, aes(mass, median, color = factor(temp))) +
 p6
 
 p5 / p6
-#ggsave("figures/pred_warm_cold_metcon.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
+#ggsave("figures/pred_warm_cold_metcon.pdf", plot = last_plot(), scale = 1, width = 22, height = 22, units = "cm", dpi = 300)
 

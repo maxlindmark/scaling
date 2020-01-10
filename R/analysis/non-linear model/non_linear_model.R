@@ -406,7 +406,7 @@ pred_dat_df %>%
         legend.text = element_text(size = 8),
         legend.title = element_text(size = 12)) +
   NULL
-#ggsave("figures/supp/non-linear/nl_model_stand.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm", dpi = 300)
+#ggsave("figures/supp/non-linear/nl_model_stand.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
 
 
 # Plot non-standardized data and prediction (as it's already divided by the mean)
@@ -440,5 +440,5 @@ pred_dat_df %>%
         legend.text = element_text(size = 8),
         legend.title = element_text(size = 12)) +
   NULL
-#ggsave("figures/nl_model.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm", dpi = 300)
+#ggsave("figures/nl_model.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
 

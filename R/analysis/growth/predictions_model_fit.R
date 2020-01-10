@@ -83,6 +83,23 @@ data = list(
 
 summary(lm(log(G) ~ temp_norm_arr_ct * log_mass_norm_ct, data = dat))
 
+
+# Check which temperatures to use
+ggplot(dat, aes(temp_norm_arr_ct, temp_norm)) + 
+  geom_point()
+
+ggplot(dat, aes(temp_norm_arr_ct, temp_norm)) + 
+  geom_point() + 
+  xlim(-1, 1)
+
+ggplot(dat, aes(temp_norm_arr_ct, temp_norm)) + 
+  geom_point() + 
+  geom_line() +
+  xlim(-1, 0.1) +
+  ylim(0, 13)
+
+# So, using -0.75 and 0 roughly corresponds to an increse in + 5 here...
+
 # C. FIT MODELS ====================================================================
 # Refit chosen models from the model selection part
 # Need to modify them to track new variables for assessing model fit
@@ -118,8 +135,8 @@ cat(
   # Predictions
   for(k in 1:length(mass_pred)){
       
-    pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-1 + mu_b3*mass_pred[k]*-1
-    pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*1 + mu_b3*mass_pred[k]*1
+    pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-0.75 + mu_b3*mass_pred[k]*-0.75
+    pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*0 + mu_b3*mass_pred[k]*0
     
   } 
 
@@ -239,7 +256,7 @@ pred_warm_df <- data.frame(lwr_95 = pred_warm[1, ],
                            upr_80 = pred_warm[4, ],
                            upr_95 = pred_warm[5, ],
                            mass = mass_pred,
-                           temp = -1)
+                           temp = -0.75)
 
 # Cold temp:
 pred_cold <- summary(js_gro$pred_cold, quantile, c(0.025, 0.1, .5, 0.9, 0.975))$stat
@@ -251,7 +268,7 @@ pred_cold_df <- data.frame(lwr_95 = pred_cold[1, ],
                            upr_80 = pred_cold[4, ],
                            upr_95 = pred_cold[5, ],
                            mass = mass_pred,
-                           temp = 1)
+                           temp = 0)
 
 
 # Plot data and predictions with 95% credible interval (at each x, plot as ribbon)
@@ -261,13 +278,13 @@ pal <- brewer.pal("Set1", n = 5)
 pdat <- rbind(pred_cold_df, pred_warm_df)
 
 p3 <- ggplot(pdat, aes(mass, median, color = factor(temp), fill = factor(temp))) +
-  geom_ribbon(data = filter(pdat, temp == 1), aes(x = mass, ymin = lwr_95, ymax = upr_95), 
+  geom_ribbon(data = filter(pdat, temp == 0), aes(x = mass, ymin = lwr_95, ymax = upr_95), 
               size = 2, alpha = 0.2, inherit.aes = FALSE, fill = pal[2]) +
-  geom_ribbon(data = filter(pdat, temp == 1), aes(x = mass, ymin = lwr_80, ymax = upr_80), 
+  geom_ribbon(data = filter(pdat, temp == 0), aes(x = mass, ymin = lwr_80, ymax = upr_80), 
               size = 2, alpha = 0.25, inherit.aes = FALSE, fill = pal[2]) +
-  geom_ribbon(data = filter(pdat, temp == -1), aes(x = mass, ymin = lwr_95, ymax = upr_95), 
+  geom_ribbon(data = filter(pdat, temp == -0.75), aes(x = mass, ymin = lwr_95, ymax = upr_95), 
               size = 2, alpha = 0.2, inherit.aes = FALSE, fill = pal[1]) +
-  geom_ribbon(data = filter(pdat, temp == -1), aes(x = mass, ymin = lwr_80, ymax = upr_80), 
+  geom_ribbon(data = filter(pdat, temp == -0.75), aes(x = mass, ymin = lwr_80, ymax = upr_80), 
               size = 2, alpha = 0.25, inherit.aes = FALSE, fill = pal[1]) +
   geom_line(size = 1, alpha = 0.8) +
   geom_point(data = dat, aes(log_mass_norm_ct, log(G)),
@@ -286,12 +303,14 @@ p3
 # Add posterior distributions of parameters
 cs = coda.samples(jm_gro,
                    variable.names = c(
+                     "mu_b0",
                      "mu_b1",
                      "mu_b2",
                      "mu_b3"), 
                    n.iter = samples, 
                    thin = n.thin)
 
+summary(cs)
 
 cs_df <- ggs(cs)
 
@@ -307,7 +326,7 @@ p4 <- cs %>%
   scale_y_continuous(expand = c(0,0)) +
   annotate("text", -Inf, Inf, label = "B", size = 4, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  labs(x = "Mass-exponent") +
+  labs(x = "Mass-coefficient") +
   NULL
 
 # Temperature-coefficient
@@ -337,3 +356,70 @@ p6 <- cs %>%
 p3 / (p4 + p5 + p6) + plot_layout(ncol = 1, heights = c(2.5, 1, 1))
 
 #ggsave("figures/pred_warm_cold_gro.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
+
+# Calculate the proportion of the posterior that is less than zero
+js = jags.samples(jm_gro, 
+                  variable.names = c("b3"), 
+                  n.iter = samples, 
+                  thin = n.thin)
+
+ecdf(js$b3)(0) # We are 45% certain the slope is smaller than 0
+
+# How much does the mass exponent decline per change in unit T?
+summary(cs)
+
+# Coefficient is 0.016
+
+head(dat)
+dat$b_a <- 0.016 * dat$temp_norm_arr_ct
+
+summary(lm(b_a ~ temp_norm_arr_ct, data = dat))
+
+# Now fit the same exponents to C
+summary(lm(b_a ~ temp_norm, data = dat))
+
+# How much does growth increase with an increase in temperature?
+# We use mass=0 for now, as in prediction. 
+
+filter(pdat, mass < 0.04 & mass > -0.04)
+
+# now compare the medians
+# warm growth (temp = 0)
+1.3150356
+
+# warm growth normal scale (temp = 0)
+exp(1.3150356)
+
+# cold growth (temp = 0)
+0.7088826
+
+# cold growth normal scale (temp = -0.75)
+exp(0.7088826)
+
+# relative increase when going from cold to warm:
+exp(1.3150356) / exp(0.7088826)
+
+
+# what is the temp range here (0 and -0.75)?
+ggplot(dat, aes(temp_norm_arr_ct, temp_norm)) + 
+  geom_point() +
+  xlim(-0.8, 0.05) +
+  ylim(4, 12)
+
+# Roughly +5 to +10
+
+# Here's how mass norm relates to log_mass
+ggplot(dat, aes(log_mass_norm_ct, mass_norm)) + 
+  geom_point()
+
+# What is the mass_norm when log_mass_norm_ct is 0? since it's all calculated by columsn
+# I can just plot them...
+ggplot(dat, aes(log_mass_norm_ct, mass_norm)) + 
+  geom_point() + 
+  coord_cartesian(xlim = c(-1, 1), ylim = c(0, 0.015))
+
+# looks to be around 2% of max mass. assuming w_inf is 10000 g, this size would be 20g
+# 10000 * 0.002
+100*0.002
+
+
