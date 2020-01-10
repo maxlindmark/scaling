@@ -61,6 +61,10 @@ con <- con %>%
   dplyr::ungroup() %>% 
   dplyr::mutate(temp_norm_ct = temp_norm - mean(temp_norm))
 
+ggplot(con, aes(log_mass_ct)) + 
+  geom_histogram() + 
+  facet_wrap(~species)
+ 
 # Which species have data above optimum?
 spec <- unique(filter(con, above_optimum == "Y"))$species
   
@@ -170,12 +174,12 @@ for(i in unique(con$species_ab)){
     n_obs = length(df$y), 
     #mass = df$log_mass_norm_ct,
     mass = df$log_mass_ct,
-    #temp = df$temp_norm_ct,
-    temp = df$temp_norm,
+    temp = df$temp_norm_ct,
+    #temp = df$temp_norm,
     #temp = df$temp_c,
     #temp_pred = temp_pred,
     #temp_pred = seq(min(con$temp_c), max(con$temp_c), 1),
-    temp_pred = seq(min(df$temp_norm), max(df$temp_norm), 0.1))
+    temp_pred = seq(min(df$temp_norm_ct), max(df$temp_norm_ct), 0.1))
   
   jm = jags.model(nl_model,
                   data = jdat, 
@@ -261,7 +265,8 @@ for(i in unique(con$species_ab)){
                               mass = 0,
                               #temp = temp_pred,
                               #temp = seq(min(df$temp_c), max(df$temp_c), 0.1),
-                              temp = seq(min(df$temp_norm), max(df$temp_norm), 0.1),
+                              #temp = seq(min(df$temp_norm), max(df$temp_norm), 0.1),
+                              temp = seq(min(df$temp_norm_ct), max(df$temp_norm_ct), 0.1),
                               species_ab = i)  
 }
 
@@ -282,7 +287,7 @@ pal <- getPalette(colourCount)
 pred_dat_df %>% 
   ggplot(., aes(temp, median, color = factor(species_ab))) +
   geom_line() +
-  scale_color_brewer(palette = "Dark2") +
+  scale_color_manual(values = pal) +
   theme_classic(base_size = 14) + 
   labs(x = "Standardized temperature",
        y = "Predicted consumption rate",
@@ -375,11 +380,11 @@ pred_dat_df <- pred_dat_df %>%
                 upr_80_stand = upr_80/max(median),
                 t_stand = temp - opt_temp + T_opt$mean_temp)
 
-# Plot standardized data, prediction and credible intervals
+# Plot standardized data as in Englund, prediction and credible intervals
 pred_dat_df %>% 
-  ggplot(., aes(t_stand, pred_stand, color = factor(species_ab))) +
+  ggplot(., aes(t_stand, median_stand, color = factor(species_ab))) +
   geom_ribbon(data = pred_dat_df, inherit.aes = FALSE,
-              aes(x = t_stand, fill = factor(species_ab), ymax = upr_80_stand, ymin = lwr_80_stand), 
+              aes(x = t_stand, fill = factor(species_ab), ymax = upr_80_stand, ymin = lwr_80_stand),
               size = 1, alpha = 0.15) +
   geom_vline(xintercept = T_opt$mean_temp, linetype = 2, color = "gray20", size = 0.7) + 
   geom_vline(xintercept = T_opt$mean_temp - T_opt$stdev_temp, 
@@ -404,25 +409,28 @@ pred_dat_df %>%
 #ggsave("figures/supp/non-linear/nl_model_stand.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm", dpi = 300)
 
 
-# Plot standardized data but not temperature
+# Plot non-standardized data and prediction (as it's already divided by the mean)
 pred_dat_df %>% 
-  ggplot(., aes(temp, pred_stand, color = factor(species_ab))) +
+  ggplot(., aes(temp, median, color = factor(species_ab))) +
   geom_ribbon(data = pred_dat_df, inherit.aes = FALSE,
-              aes(x = t_stand, fill = factor(species_ab), ymax = upr_80_stand, ymin = lwr_80_stand), 
+              aes(x = temp, fill = factor(species_ab), ymax = upr_80, ymin = lwr_80), 
               size = 1, alpha = 0.15) +
   geom_vline(xintercept = T_opt$mean_temp, linetype = 2, color = "gray20", size = 0.7) + 
   geom_vline(xintercept = T_opt$mean_temp - T_opt$stdev_temp, 
              linetype = 3, color = "gray20", size = 0.7) + 
   geom_vline(xintercept = T_opt$mean_temp + T_opt$stdev_temp, 
              linetype = 3, color = "gray20", size = 0.7) + 
-  geom_point(data = dat,  aes(temp_dat, y_stand, color = factor(species_ab)),
+  geom_point(data = dat,  aes(temp_dat, y_norm, color = factor(species_ab)),
              size = 3, alpha = 0.6, shape = 21) +
   geom_line(size = 1, alpha = 0.8) +
-  geom_rug(data = T_opt_s, inherit.aes = FALSE, aes(opt_temp, color = species_ab), 
-           size = 2, alpha = 0.6, linetype = 1, length = unit(0.05, "npc")) +
+  geom_segment(data = T_opt_s, aes(x = opt_temp, xend = opt_temp, 
+                                   y = min(pred_dat_df$lwr_80), yend = -0.4),
+               size = 1, arrow = arrow(length = unit(0.35, "cm")), show.legend = FALSE) +
   scale_color_manual(values = pal) +
+  coord_cartesian(ylim = c(min(pred_dat_df$lwr_80), max(dat$y_norm)),
+                  expand = 0) +
   scale_fill_manual(values = pal) +
-  guides(fill = FALSE) +
+  guides(fill = FALSE)  +
   theme_classic(base_size = 14) + 
   labs(x = "Standardized temperature",
        y = "Standardized consumption rate",
