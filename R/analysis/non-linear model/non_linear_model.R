@@ -427,7 +427,8 @@ pred_dat_df %>%
                                    y = min(pred_dat_df$lwr_80), yend = -0.4),
                size = 1, arrow = arrow(length = unit(0.35, "cm")), show.legend = FALSE) +
   scale_color_manual(values = pal) +
-  coord_cartesian(ylim = c(min(pred_dat_df$lwr_80), max(dat$y_norm)),
+  coord_cartesian(ylim = c(min(pred_dat_df$lwr_80), max(dat$y_norm*1.03)),
+                  xlim = c(min(dat$temp_dat*1.03), max(dat$temp_dat*1.03)),
                   expand = 0) +
   scale_fill_manual(values = pal) +
   guides(fill = FALSE)  +

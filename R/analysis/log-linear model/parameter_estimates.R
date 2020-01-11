@@ -333,6 +333,18 @@ p1 + p2 + p3 + p4 + p5 + plot_layout(ncol = 3)
 #ggsave("figures/posterior_mte_parameters.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
 
 
+
+# How much of the interaction coefficient overlaps 0?
+# Metabolic rate
+js = jags.samples(jm_met, 
+                  variable.names = c("mu_b3"), 
+                  n.iter = samples, 
+                  thin = n.thin)
+
+1-ecdf(js$mu_b3)(0) # We are % certain the slope is smaller than 0
+
+
+
 # How big is a c of 0.01 on celcius scale?
 b <- 0.75
 cc <- 0.01

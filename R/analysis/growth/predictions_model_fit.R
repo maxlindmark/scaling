@@ -83,6 +83,15 @@ data = list(
 
 summary(lm(log(G) ~ temp_norm_arr_ct * log_mass_norm_ct, data = dat))
 
+# Testing how the mass-coefficient differs between relative and absolute mass
+summary(lm(log(G) ~ log_mass_norm_ct, data = dat))
+summary(lm(log(G) ~ log(mass), data = dat))
+
+# If I only do one species:
+test <- filter(dat, common_name == "Atlantic cod")
+summary(lm(log(G) ~ log_mass_norm_ct, data = test))
+summary(lm(log(G) ~ log(mass), data = test))
+
 
 # Check which temperatures to use
 ggplot(dat, aes(temp_norm_arr_ct, temp_norm)) + 
