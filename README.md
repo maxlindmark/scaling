@@ -4,5 +4,4 @@ Project investigating the intraspecific temperature- and size dependence of thes
 
 **Authors:** Max Lindmark, Jan Ohlberger, Anna Gårdmark
 
-## Data
-We use data at different levels in this study. The key information in each data set are:
+to be updated...
