@@ -105,6 +105,7 @@ ggplot(met, aes(temp_norm_arr_ct, temp_norm, color = species)) +
   geom_point() + 
   geom_line() +
   xlim(-1, 0.1) +
+  guides(color = FALSE) +
   ylim(0, 10)
 
 # So, using -1 and 0 roughly corresponds to an increse in + 8

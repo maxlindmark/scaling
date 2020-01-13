@@ -262,7 +262,7 @@ p1 <- cs_met %>%
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
   annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Mass-exponent" & Rate == "Metabolic rate")$pred, 2)[1], 
            size = 3, hjust = -0.5, vjust = 1.3) +
-  labs(x = "Mass-coefficient") +
+  labs(x = "Mass-exponent") +
   ggtitle("") +
   xlim(0.48, 0.9) +
   geom_vline(xintercept = filter(df, Parameter_mte == "Mass-exponent" & Rate == "Metabolic rate")$pred, 
@@ -309,7 +309,7 @@ p4 <- cs_con %>%
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
   annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Mass-exponent" & Rate == "Maximum Consumption")$pred, 2)[1], 
            size = 3, hjust = -0.5, vjust = 1.3) +
-  labs(x = "Mass-coefficient") +
+  labs(x = "Mass-exponent") +
   ggtitle("") +
   xlim(0.48, 0.9) +
   geom_vline(xintercept = filter(df, Parameter_mte == "Mass-exponent" & Rate == "Maximum Consumption")$pred, 
