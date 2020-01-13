@@ -64,8 +64,12 @@ unique(dat$species_n)
 data = NULL # Clear any old data lists that might confuse things
 
 # Mass-range used for prediction
-mass_pred = seq(from = min(dat$log_mass_norm_ct), 
-                to = max(dat$log_mass_norm_ct),
+# mass_pred = seq(from = min(dat$log_mass_norm_ct), 
+#                 to = max(dat$log_mass_norm_ct),
+#                 length.out = 100)
+
+mass_pred = seq(from = min(dat$log_mass_ct), 
+                to = max(dat$log_mass_ct),
                 length.out = 100)
 
 # Filter only positive growth rates
@@ -76,7 +80,8 @@ data = list(
   y = log(dat$G), 
   n_obs = length(dat$G), 
   species_n = dat$species_n,
-  mass = dat$log_mass_norm_ct,
+  #mass = dat$log_mass_norm_ct,
+  mass = dat$log_mass_ct,
   temp = dat$temp_norm_arr_ct,
   mass_pred = mass_pred
 )
@@ -124,8 +129,7 @@ cat(
     mu[i] <- 
       b0[species_n[i]] +               # varying intercept 
       b1[species_n[i]]*mass[i] +       # varying mass-exponent
-      b2[species_n[i]]*temp[i] +       # varying activation energy
-      b3[species_n[i]]*mass[i]*temp[i] # varying M*T interaction
+      b2[species_n[i]]*temp[i] 
   # Add log likelihood computation for each observation
   pd[i] <- dnorm(y[i], mu[i], tau)
   
@@ -138,14 +142,13 @@ cat(
     b0[j] ~ dnorm(mu_b0, tau_b0)
     b1[j] ~ dnorm(mu_b1, tau_b1)
     b2[j] ~ dnorm(mu_b2, tau_b2)
-    b3[j] ~ dnorm(mu_b3, tau_b3)
   }
   
   # Predictions
   for(k in 1:length(mass_pred)){
       
-    pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-0.75 + mu_b3*mass_pred[k]*-0.75
-    pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*0 + mu_b3*mass_pred[k]*0
+    pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-0.75
+    pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*0
     
   } 
 
@@ -162,21 +165,18 @@ cat(
   mu_b0 ~ dnorm(0, 0.5)      # global mean
   mu_b1 ~ dnorm(-0.25, 0.5)  # global mass-exponent
   mu_b2 ~ dnorm(-0.6, 0.5)   # global activation energy
-  mu_b3 ~ dnorm(0, 0.5)      # global interaction
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   sigma_b1 ~ dunif(0, 10)
   sigma_b2 ~ dunif(0, 10)
-  sigma_b3 ~ dunif(0, 10)
   tau <- 1/sigma^2
   tau_b0 <- 1/sigma_b0^2
   tau_b1 <- 1/sigma_b1^2
   tau_b2 <- 1/sigma_b2^2
-  tau_b3 <- 1/sigma_b3^2
   
-  }", fill = TRUE, file = "R/analysis/growth/models/m1_growth_pred.txt")
+  }", fill = TRUE, file = "R/analysis/growth/models/m5_growth_pred.txt")
 
-gro_model = "R/analysis/growth/models/m1_growth_pred.txt"
+gro_model = "R/analysis/growth/models/m5_growth_pred.txt"
 
 jm_gro = jags.model(gro_model,
                     data = data, 
@@ -305,6 +305,7 @@ p3 <- ggplot(pdat, aes(mass, median, color = factor(temp), fill = factor(temp)))
        color = "Temperature\n(centered\nArrhenius)") +
   annotate("text", -Inf, Inf, label = "A", size = 4, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  theme(legend.position = c(0.12, 0.2)) +
   NULL
 
 p3
@@ -331,18 +332,18 @@ sum_dat <- data.frame(summary(cs)[1])
 p4 <- cs %>% 
   mcmc_dens(pars = "mu_b1") +
   theme_classic(base_size = 11) + 
-  geom_vline(xintercept = sum_dat[1, 1], color = "white", size = 0.6, linetype = 2) +
+  geom_vline(xintercept = sum_dat[2, 1], color = "white", size = 0.6, linetype = 2) +
   scale_y_continuous(expand = c(0,0)) +
   annotate("text", -Inf, Inf, label = "B", size = 4, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  labs(x = "Mass-coefficient") +
+  labs(x = "Mass-exponent") +
   NULL
 
 # Temperature-coefficient
 p5 <- cs %>% 
   mcmc_dens(pars = "mu_b2") +
   theme_classic(base_size = 11) + 
-  geom_vline(xintercept = sum_dat[2, 1], color = "white", size = 0.6, linetype = 2) +
+  geom_vline(xintercept = sum_dat[3, 1], color = "white", size = 0.6, linetype = 2) +
   scale_y_continuous(expand = c(0,0)) +
   annotate("text", -Inf, Inf, label = "C", size = 4, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
@@ -350,42 +351,44 @@ p5 <- cs %>%
   NULL
 
 # Mass-temperature interaction
-p6 <- cs %>% 
-  mcmc_dens(pars = "mu_b3") +
-  theme_classic(base_size = 11) + 
-  geom_vline(xintercept = 0, color = "red", size = 0.6, linetype = 2) +
-  geom_vline(xintercept = sum_dat[3, 1], color = "white", size = 0.6, linetype = 2) +
-  scale_y_continuous(expand = c(0,0)) +
-  annotate("text", -Inf, Inf, label = "D", size = 4, 
-           fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  labs(x = "M*T interaction") +
-  NULL
+# p6 <- cs %>% 
+#   mcmc_dens(pars = "mu_b3") +
+#   theme_classic(base_size = 11) + 
+#   geom_vline(xintercept = 0, color = "red", size = 0.6, linetype = 1) +
+#   geom_vline(xintercept = sum_dat[4, 1], color = "white", size = 0.6, linetype = 2) +
+#   scale_y_continuous(expand = c(0,0)) +
+#   coord_cartesian(xlim = c(-0.2, 0.2)) +
+#   annotate("text", -Inf, Inf, label = "D", size = 4, 
+#            fontface = "bold", hjust = -0.5, vjust = 1.3) +
+#   labs(x = "M*T interaction") +
+#   NULL
 
 # Plot all together
-p3 / (p4 + p5 + p6) + plot_layout(ncol = 1, heights = c(2.5, 1, 1))
+#p3 / (p4 + p5 + p6) + plot_layout(ncol = 1, heights = c(2.5, 1, 1))
+p3 / (p4 + p5) + plot_layout(ncol = 1, heights = c(2.5, 1, 1))
 
 #ggsave("figures/pred_warm_cold_gro.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
 
 # Calculate the proportion of the posterior that is less than zero
-js = jags.samples(jm_gro, 
-                  variable.names = c("b3"), 
-                  n.iter = samples, 
-                  thin = n.thin)
-
-ecdf(js$b3)(0) # We are 45% certain the slope is smaller than 0
+# js = jags.samples(jm_gro, 
+#                   variable.names = c("mu_b3"), 
+#                   n.iter = samples, 
+#                   thin = n.thin)
+# 
+# ecdf(js$mu_b3)(0) # We are 45% certain the slope is smaller than 0
+#[1] 0.5435
 
 # How much does the mass exponent decline per change in unit T?
-summary(cs)
+#summary(cs)
 
 # Coefficient is 0.016
-
-head(dat)
-dat$b_a <- 0.016 * dat$temp_norm_arr_ct
-
-summary(lm(b_a ~ temp_norm_arr_ct, data = dat))
+# head(dat)
+# dat$b_a <- 0.016 * dat$temp_norm_arr_ct
+# 
+# summary(lm(b_a ~ temp_norm_arr_ct, data = dat))
 
 # Now fit the same exponents to C
-summary(lm(b_a ~ temp_norm, data = dat))
+#summary(lm(b_a ~ temp_norm, data = dat))
 
 # How much does growth increase with an increase in temperature?
 # We use mass=0 for now, as in prediction. 
@@ -394,19 +397,19 @@ filter(pdat, mass < 0.04 & mass > -0.04)
 
 # now compare the medians
 # warm growth (temp = 0)
-1.3150356
+1.3497010
 
 # warm growth normal scale (temp = 0)
-exp(1.3150356)
+exp(1.3497010)
 
 # cold growth (temp = 0)
-0.7088826
+0.7314395
 
 # cold growth normal scale (temp = -0.75)
-exp(0.7088826)
+exp(0.7314395)
 
 # relative increase when going from cold to warm:
-exp(1.3150356) / exp(0.7088826)
+exp(1.3497010) / exp(0.7314395)
 
 
 # what is the temp range here (0 and -0.75)?
@@ -418,14 +421,15 @@ ggplot(dat, aes(temp_norm_arr_ct, temp_norm)) +
 # Roughly +5 to +10
 
 # Here's how mass norm relates to log_mass
-ggplot(dat, aes(log_mass_norm_ct, mass_norm)) + 
+ggplot(dat, aes(log_mass_ct, mass)) + 
   geom_point()
 
-# What is the mass_norm when log_mass_norm_ct is 0? since it's all calculated by columsn
+# What is the mass when log_mass_ct is 0? since it's all calculated by columsn
 # I can just plot them...
-ggplot(dat, aes(log_mass_norm_ct, mass_norm)) + 
+ggplot(dat, aes(log_mass_ct, mass)) + 
   geom_point() + 
-  coord_cartesian(xlim = c(-1, 1), ylim = c(0, 0.015))
+  coord_cartesian(xlim = c(-1, 1), ylim = c(0, 30))
+  NULL
 
 # looks to be around 2% of max mass. assuming w_inf is 10000 g, this size would be 20g
 # 10000 * 0.002

@@ -1,6 +1,6 @@
 model{
   
-    for(i in 1:n_obs){
+  for(i in 1:n_obs){
     # Simulate for comparison with data
     y_sim[i] ~ dnorm(mu[i], tau)
     
@@ -8,8 +8,8 @@ model{
     mu[i] <- 
       b0[species_n[i]] +           # varying intercept 
       b1[species_n[i]]*mass[i] +   # varying mass-exponent
-      b2[species_n[i]]*temp[i]     # varying activation energy
-  
+      b2[species_n[i]]*temp[i] +   # varying activation energy
+      b3*mass[i]*temp[i]           # non-varying M*T interaction
   # Add log likelihood computation for each observation
   pd[i] <- dnorm(y[i], mu[i], tau)
   
@@ -23,12 +23,13 @@ model{
     b1[j] ~ dnorm(mu_b1, tau_b1)
     b2[j] ~ dnorm(mu_b2, tau_b2)
   }
-
-    for(k in 1:length(mass_pred)){
   
-        pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-1
-        pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*0
-  
+  # Predictions
+  for(k in 1:length(mass_pred)){
+      
+    pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-1 + b3*mass_pred[k]*-1
+    pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*0 + b3*mass_pred[k]*0
+    
   } 
 
   # Model fit
@@ -41,6 +42,7 @@ model{
   p_cv <- step(cv_y_sim - cv_y)
 
   #-- Priors	
+  b3 ~ dnorm(0, 0.5)         # non-varying interaction
   mu_b0 ~ dnorm(0, 0.5)      # global intercept
   mu_b1 ~ dnorm(-0.25, 0.5)  # global mass-exponent
   mu_b2 ~ dnorm(-0.6, 0.5)   # global activation energy

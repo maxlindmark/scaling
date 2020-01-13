@@ -64,7 +64,8 @@ con_data = list(
   y = log(con$y), 
   n_obs = length(con$y), 
   species_n = con$species_n,
-  mass = con$log_mass_norm_ct,
+  #mass = con$log_mass_norm_ct,
+  mass = con$log_mass_ct,
   temp = con$temp_norm_arr_ct
 )
 
@@ -74,7 +75,8 @@ met_data = list(
   y = log(met$y), 
   n_obs = length(met$y), 
   species_n = met$species_n,
-  mass = met$log_mass_norm_ct,
+  #mass = met$log_mass_norm_ct,
+  mass = met$log_mass_ct,
   temp = met$temp_norm_arr_ct
 )
 
@@ -82,6 +84,7 @@ met_data = list(
 # met %>% filter(species == "Gadus morhua") # Cod is species no. 16
 # ggplot(met, aes(species_n, species)) + geom_point()
 # sort(unique(met_data$species_n))
+
 
 # C. PLOT SPECIES VARYING COEFFICIENTS =============================================
 # Refit chosen models from the model selection part
@@ -100,7 +103,7 @@ update(jm_con, n.iter = burn.in)
 
 
 # Metabolic rate
-met_model = "R/analysis/log-linear model/models/m1.txt"
+met_model = "R/analysis/log-linear model/models/m2.txt"
 
 jm_met = jags.model(met_model,
                     data = met_data, 
@@ -129,8 +132,8 @@ summary(cs_con) # Get the mean estimate and SE and 95% CIs
 
 # Metabolic rate
 cs_met <- coda.samples(jm_met,
-                       variable.names = c("b0", "b1", "b2", 
-                                          "mu_b0", "mu_b1", "mu_b2", "mu_b3", 
+                       variable.names = c("b0", "b1", "b2", "b3",
+                                          "mu_b0", "mu_b1", "mu_b2", 
                                           "sigma_b0", "sigma_b1", "sigma_b2",
                                           "sigma"),
                        n.iter = samples, 
@@ -155,7 +158,7 @@ con_b <- con_df %>% filter(Parameter_sub == "b1")
 con_b$Species <- unique(con$species_ab)
 #con_b$Species <- unique(con_data$species)
 con_b$Rate <- "Maximum Consumption"
-con_b$Parameter_mte <- "Mass-coefficient"
+con_b$Parameter_mte <- "Mass-exponent"
 con_b$pred <- filter(con_df, Parameter == "mu_b1")$quantiles.50.
 con_b$pred_sd <- filter(std_con, Parameter == "mu_b1")$statistics.SD
 
@@ -181,7 +184,7 @@ met_b <- met_df %>% filter(Parameter_sub == "b1")
 met_b$Species <- unique(met$species_ab)
 #met_b$Species <- unique(met_data$species)
 met_b$Rate <- "Metabolic rate"
-met_b$Parameter_mte <- "Mass-coefficient"
+met_b$Parameter_mte <- "Mass-exponent"
 met_b$pred <- filter(met_df, Parameter == "mu_b1")$quantiles.50.
 met_b$pred_sd <- filter(std_met, Parameter == "mu_b1")$statistics.SD
 
@@ -195,11 +198,11 @@ met_e$pred <- filter(met_df, Parameter == "mu_b2")$quantiles.50.
 met_e$pred_sd <- filter(std_met, Parameter == "mu_b2")$statistics.SD
 
 #** M*T interaction
-met_c <- met_df %>% filter(Parameter == "mu_b3")
+met_c <- met_df %>% filter(Parameter == "b3")
 met_c$Species <- NA
 met_c$Rate <- "Metabolic rate"
 met_c$Parameter_mte <- "M*T interaction"
-met_c$pred <- filter(met_df, Parameter == "mu_b3")$quantiles.50.
+met_c$pred <- filter(met_df, Parameter == "b3")$quantiles.50.
 met_c$pred_sd <- NA
 
 # Merge data frames
@@ -217,16 +220,16 @@ df_std$ymin <- df_std$pred - 2*df_std$pred_sd
 
 # Plot all species varying estimates and global mean
 df %>% 
-  filter(Parameter_mte %in% c("Activation energy", "Mass-coefficient")) %>% 
+  filter(Parameter_mte %in% c("Activation energy", "Mass-exponent")) %>% 
   ggplot(., aes(Species, quantiles.50., color = Rate, shape = Rate)) +
   facet_grid(~ Parameter_mte, scales = "free") +
   scale_color_manual(values = pal[1:2]) +
   scale_fill_manual(values = pal[1:2]) +
   scale_shape_manual(values = c(21, 24)) +
-  geom_hline(data = filter(df_std, Parameter_mte %in% c("Activation energy", "Mass-coefficient")), 
+  geom_hline(data = filter(df_std, Parameter_mte %in% c("Activation energy", "Mass-exponent")), 
              aes(yintercept = pred, color = Rate),
              size = 0.6, alpha = 1, linetype = "dashed") +
-  geom_rect(data = filter(df_std, Parameter_mte %in% c("Activation energy", "Mass-coefficient")), 
+  geom_rect(data = filter(df_std, Parameter_mte %in% c("Activation energy", "Mass-exponent")), 
             inherit.aes = FALSE, aes(ymin = ymin, ymax = ymax, fill = Rate), xmin = 0, xmax = 50, 
             alpha = 0.2) +
   coord_flip() +
@@ -257,13 +260,13 @@ p1 <- cs_met %>%
   scale_y_continuous(expand = c(0,0)) +
   # annotate("text", -Inf, Inf, label = "C", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Mass-scaling exponent" & Rate == "Metabolic rate")$pred, 2), 
+  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Mass-exponent" & Rate == "Metabolic rate")$pred, 2)[1], 
            size = 3, hjust = -0.5, vjust = 1.3) +
   labs(x = "Mass-coefficient") +
   ggtitle("") +
   xlim(0.48, 0.9) +
-  geom_vline(xintercept = filter(df, Parameter_mte == "Mass-scaling exponent" & Rate == "Metabolic rate")$pred, 
-             linetype = "dashed") +
+  geom_vline(xintercept = filter(df, Parameter_mte == "Mass-exponent" & Rate == "Metabolic rate")$pred, 
+             linetype = "dashed", color = "white") +
   NULL
 
 p2 <- cs_met %>% 
@@ -272,28 +275,28 @@ p2 <- cs_met %>%
   scale_y_continuous(expand = c(0,0)) +
   # annotate("text", -Inf, Inf, label = "C", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Activation energy" & Rate == "Metabolic rate")$pred, 2), 
+  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Activation energy" & Rate == "Metabolic rate")$pred, 2)[1], 
            size = 3, hjust = -0.5, vjust = 1.3) +
   labs(x = "Activation energy") +
   ggtitle("Metabolic rate") +
   xlim(-0.95, -0.4) +
   geom_vline(xintercept = filter(df, Parameter_mte == "Activation energy" & Rate == "Metabolic rate")$pred, 
-             linetype = "dashed") +
+             linetype = "dashed", color = "white") +
   NULL
 
 p3 <- cs_met %>% 
-  mcmc_dens(pars = "mu_b3") +
+  mcmc_dens(pars = "b3") +
   theme_classic(base_size = 11) + 
   scale_y_continuous(expand = c(0,0)) +
   # annotate("text", -Inf, Inf, label = "C", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "M*T interaction" & Rate == "Metabolic rate")$pred, 2), 
+  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "M*T interaction" & Rate == "Metabolic rate")$pred, 2)[1], 
            size = 3, hjust = -0.5, vjust = 1.3) +
   labs(x = "M*T interaction") +
   ggtitle("") +
 #  xlim(-0.95, -0.4) +
   geom_vline(xintercept = filter(df, Parameter_mte == "M*T interaction" & Rate == "Metabolic rate")$pred, 
-             linetype = "dashed") +
+             linetype = "dashed", color = "white") +
   geom_vline(xintercept = 0, 
              linetype = "dashed", color = "red") +
   NULL
@@ -304,13 +307,13 @@ p4 <- cs_con %>%
   scale_y_continuous(expand = c(0,0)) +
   # annotate("text", -Inf, Inf, label = "C", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Mass-scaling exponent" & Rate == "Maximum Consumption")$pred, 2), 
+  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Mass-exponent" & Rate == "Maximum Consumption")$pred, 2)[1], 
            size = 3, hjust = -0.5, vjust = 1.3) +
   labs(x = "Mass-coefficient") +
   ggtitle("") +
   xlim(0.48, 0.9) +
-  geom_vline(xintercept = filter(df, Parameter_mte == "Mass-scaling exponent" & Rate == "Maximum Consumption")$pred, 
-             linetype = "dashed") +
+  geom_vline(xintercept = filter(df, Parameter_mte == "Mass-exponent" & Rate == "Maximum Consumption")$pred, 
+             linetype = "dashed", color = "white") +
   NULL
 
 p5 <- cs_con %>% 
@@ -319,13 +322,13 @@ p5 <- cs_con %>%
   scale_y_continuous(expand = c(0,0)) +
   # annotate("text", -Inf, Inf, label = "C", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Activation energy" & Rate == "Maximum Consumption")$pred, 2), 
+  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Activation energy" & Rate == "Maximum Consumption")$pred, 2)[1], 
            size = 3, hjust = -0.5, vjust = 1.3) +
   labs(x = "Activation energy") +
   ggtitle("Maximum consumption rate") +
   xlim(-0.95, -0.4) +
   geom_vline(xintercept = filter(df, Parameter_mte == "Activation energy" & Rate == "Maximum Consumption")$pred, 
-             linetype = "dashed") +
+             linetype = "dashed", color = "white") +
   NULL
 
 p1 + p2 + p3 + p4 + p5 + plot_layout(ncol = 3)
@@ -333,21 +336,19 @@ p1 + p2 + p3 + p4 + p5 + plot_layout(ncol = 3)
 #ggsave("figures/posterior_mte_parameters.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
 
 
-
 # How much of the interaction coefficient overlaps 0?
 # Metabolic rate
 js = jags.samples(jm_met, 
-                  variable.names = c("mu_b3"), 
+                  variable.names = c("b3"), 
                   n.iter = samples, 
                   thin = n.thin)
 
-1-ecdf(js$mu_b3)(0) # We are % certain the slope is smaller than 0
+1-ecdf(js$b3)(0) # We are % certain the slope is smaller than 0
+# [1] 0.9973333
 
-
-
-# How big is a c of 0.01 on celcius scale?
+# How big is a c of 0.015 on celcius scale?
 b <- 0.75
-cc <- 0.01
+cc <- 0.015
 
 test <- con
 

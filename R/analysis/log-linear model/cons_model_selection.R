@@ -59,8 +59,12 @@ unique(dat$species_n)
 data = NULL # Clear any old data lists that might confuse things
 
 # Mass-range used for prediction
-mass_pred = seq(from = min(dat$log_mass_norm_ct), 
-                to = max(dat$log_mass_norm_ct),
+# mass_pred = seq(from = min(dat$log_mass_norm_ct), 
+#                 to = max(dat$log_mass_norm_ct),
+#                 length.out = 100)
+
+mass_pred = seq(from = min(dat$log_mass_ct), 
+                to = max(dat$log_mass_ct),
                 length.out = 100)
 
 # Data in list-format for JAGS
@@ -68,7 +72,8 @@ data = list(
   y = log(dat$y), 
   n_obs = length(dat$y), 
   species_n = dat$species_n,
-  mass = dat$log_mass_norm_ct,
+  mass = dat$log_mass_ct,
+  #mass = dat$log_mass_norm_ct,
   temp = dat$temp_norm_arr_ct
 )
 
@@ -86,6 +91,7 @@ data = list(
 # M6 no interaction, intercept random
 # M7 no interaction, mass random
 # M8 no interaction, temperature random
+
 
 #**** M1 ===========================================================================
 model = "R/analysis/log-linear model/models/m1.txt"
@@ -118,6 +124,14 @@ WAIC <- lppd + 2*pd.WAIC
 
 c(pd.WAIC, WAIC)
 waic_m1 <- WAIC
+
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+# [1] 103.3267
 
 
 #**** M2 ===========================================================================
@@ -152,6 +166,14 @@ WAIC <- lppd + 2*pd.WAIC
 c(pd.WAIC, WAIC)
 waic_m2 <- WAIC
 
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+#[1] 102.3396
+
 
 #**** M3a ===========================================================================
 model = "R/analysis/log-linear model/models/m3a.txt"
@@ -184,6 +206,14 @@ WAIC <- lppd + 2*pd.WAIC
 
 c(pd.WAIC, WAIC)
 waic_m3a <- WAIC
+
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+#[1] 101.667
 
 
 #**** M3b ===========================================================================
@@ -218,6 +248,13 @@ WAIC <- lppd + 2*pd.WAIC
 c(pd.WAIC, WAIC)
 waic_m3b <- WAIC
 
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+# [1] 88.79128
 
 #**** M4 ===========================================================================
 model = "R/analysis/log-linear model/models/m4.txt"
@@ -250,6 +287,14 @@ WAIC <- lppd + 2*pd.WAIC
 
 c(pd.WAIC, WAIC)
 waic_m4 <- WAIC
+
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+#[1] 91.02917
 
 
 #**** M5 ===========================================================================
@@ -284,6 +329,13 @@ WAIC <- lppd + 2*pd.WAIC
 c(pd.WAIC, WAIC)
 waic_m5 <- WAIC
 
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+# [1] 102.6251
 
 #**** M6 ===========================================================================
 model = "R/analysis/log-linear model/models/m6.txt"
@@ -316,6 +368,14 @@ WAIC <- lppd + 2*pd.WAIC
 
 c(pd.WAIC, WAIC)
 waic_m6 <- WAIC
+
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+#[1] 93.48178
 
 
 #**** M7 ===========================================================================
@@ -350,6 +410,14 @@ WAIC <- lppd + 2*pd.WAIC
 c(pd.WAIC, WAIC)
 waic_m7 <- WAIC
 
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+#[1] 59.10719
+
 
 #**** M8 ===========================================================================
 model = "R/analysis/log-linear model/models/m8.txt"
@@ -383,6 +451,13 @@ WAIC <- lppd + 2*pd.WAIC
 c(pd.WAIC, WAIC)
 waic_m8 <- WAIC
 
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+#[1] 48.22182
 
 
 #** COMPARE WAIC ===================================================================
@@ -397,25 +472,54 @@ waic_m6
 waic_m7
 waic_m8
 
-
 # > waic_m1
-# [1] 530.8643
+# [1] 529.8837
 # > waic_m2
-# [1] 528.6194
+# [1] 528.5802
 # > waic_m3a
-# [1] 674.6614
+# [1] 659.2791
 # > waic_m3b
-# [1] 588.2388
+# [1] 587.4765
 # > waic_m4
-# [1] 710.4642
-
+# [1] 695.2167
 # > waic_m5
-# [1] 527.6447
+# [1] 526.6564
 # > waic_m6
-# [1] 712.1052
+# [1] 711.8353
 # > waic_m7
-# [1] 1931.915
+# [1] 1125.48
 # > waic_m8
-# [1] 2094.067
+# [1] 1349.298
 
-# WAIC suggests model 5 is most parsimonious
+# Calculate delta WAIC
+waic_m1 - waic_m5
+waic_m2 - waic_m5
+waic_m3a - waic_m5
+waic_m3b - waic_m5
+waic_m4 - waic_m5
+waic_m5 - waic_m5
+waic_m6 - waic_m5
+waic_m7 - waic_m5
+waic_m8 - waic_m5
+
+# [1] 103.3267
+# > waic_m1 - waic_m5
+# [1] 2.867496
+# > waic_m2 - waic_m5
+# [1] 0.9142125
+# > waic_m3a - waic_m5
+# [1] 132.2783
+# > waic_m3b - waic_m5
+# [1] 60.50091
+# > waic_m4 - waic_m5
+# [1] 167.9646
+# > waic_m5 - waic_m5
+# [1] 0
+# > waic_m6 - waic_m5
+# [1] 184.9694
+# > waic_m7 - waic_m5
+# [1] 598.6144
+# > waic_m8 - waic_m5
+# [1] 822.4319
+
+# WAIC suggests model 5 is best fitting

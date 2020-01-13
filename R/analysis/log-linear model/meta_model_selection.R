@@ -59,8 +59,12 @@ unique(dat$species_n)
 data = NULL # Clear any old data lists that might confuse things
 
 # Mass-range used for prediction
-mass_pred = seq(from = min(dat$log_mass_norm_ct), 
-                to = max(dat$log_mass_norm_ct),
+# mass_pred = seq(from = min(dat$log_mass_norm_ct), 
+#                 to = max(dat$log_mass_norm_ct),
+#                 length.out = 100)
+
+mass_pred = seq(from = min(dat$log_mass_ct), 
+                to = max(dat$log_mass_ct),
                 length.out = 100)
 
 # Data in list-format for JAGS
@@ -68,7 +72,8 @@ data = list(
   y = log(dat$y), 
   n_obs = length(dat$y), 
   species_n = dat$species_n,
-  mass = dat$log_mass_norm_ct,
+  #mass = dat$log_mass_norm_ct,
+  mass = dat$log_mass_ct,
   temp = dat$temp_norm_arr_ct
 )
 
@@ -118,6 +123,14 @@ WAIC <- lppd + 2*pd.WAIC
 c(pd.WAIC, WAIC)
 waic_m1 <- WAIC
 
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+#[1] 120.3864
+
 
 #**** M2 ===========================================================================
 model = "R/analysis/log-linear model/models/m2.txt"
@@ -150,6 +163,14 @@ WAIC <- lppd + 2*pd.WAIC
 
 c(pd.WAIC, WAIC)
 waic_m2 <- WAIC
+
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+#[1] 120.4724
 
 
 #**** M3a ===========================================================================
@@ -184,6 +205,14 @@ WAIC <- lppd + 2*pd.WAIC
 c(pd.WAIC, WAIC)
 waic_m3a <- WAIC
 
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+#[1] 117.9922
+
 
 #**** M3b ===========================================================================
 model = "R/analysis/log-linear model/models/m3b.txt"
@@ -216,6 +245,14 @@ WAIC <- lppd + 2*pd.WAIC
 
 c(pd.WAIC, WAIC)
 waic_m3b <- WAIC
+
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+#[1] 110.3074
 
 
 #**** M4 ===========================================================================
@@ -250,6 +287,14 @@ WAIC <- lppd + 2*pd.WAIC
 c(pd.WAIC, WAIC)
 waic_m4 <- WAIC
 
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+#[1] 109.1528
+
 
 #**** M5 ===========================================================================
 model = "R/analysis/log-linear model/models/m5.txt"
@@ -282,6 +327,14 @@ WAIC <- lppd + 2*pd.WAIC
 
 c(pd.WAIC, WAIC)
 waic_m5 <- WAIC
+
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+#[1] 121.0769
 
 
 #**** M6 ===========================================================================
@@ -316,6 +369,14 @@ WAIC <- lppd + 2*pd.WAIC
 c(pd.WAIC, WAIC)
 waic_m6 <- WAIC
 
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+#[1] 109.6722
+
 
 #**** M7 ===========================================================================
 model = "R/analysis/log-linear model/models/m7.txt"
@@ -348,6 +409,14 @@ WAIC <- lppd + 2*pd.WAIC
 
 c(pd.WAIC, WAIC)
 waic_m7 <- WAIC
+
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+#[1] 143.1545
 
 
 #**** M8 ===========================================================================
@@ -382,6 +451,15 @@ WAIC <- lppd + 2*pd.WAIC
 c(pd.WAIC, WAIC)
 waic_m8 <- WAIC
 
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+#[1] 111.4014
+
+
 #** COMPARE WAIC ===================================================================
 # WAIC
 waic_m1
@@ -394,43 +472,62 @@ waic_m6
 waic_m7
 waic_m8
 
-# WAIC suggests model 1 is most parsimonious
-
-#-- With interaction
-# waic_m1
-# [1] 290.0021
-
+# > waic_m1
+# [1] 289.5468
 # > waic_m2
-# [1] 290.254
-
+# [1] 288.8439
 # > waic_m3a
-# [1] 626.9541
-
+# [1] 586.8856
 # > waic_m3b
-# [1] 681.2805
-
+# [1] 681.2041
 # > waic_m4
-# [1] 973.359
-
-#-- No interaction
+# [1] 935.1892
 # > waic_m5
-# [1] 294.2837
-
+# [1] 294.901
 # > waic_m6
-# [1] 971.1992
-
+# [1] 971.0657
 # > waic_m7
-# [1] 7988.258
-
+# [1] 4291.59
 # > waic_m8
-# [1] 9523.091
+# [1] 10951.34
+
+# WAIC suggests model 2 is most best fitting
+
+# Calculate delta WAIC
+waic_m1 - waic_m2
+waic_m2 - waic_m2
+waic_m3a - waic_m2
+waic_m3b - waic_m2
+waic_m4 - waic_m2
+waic_m5 - waic_m2
+waic_m6 - waic_m2
+waic_m7 - waic_m2
+waic_m8 - waic_m2
+
+# > waic_m1 - waic_m2
+# [1] 0.7029451
+# > waic_m2 - waic_m2
+# [1] 0
+# > waic_m3a - waic_m2
+# [1] 298.0417
+# > waic_m3b - waic_m2
+# [1] 392.3602
+# > waic_m4 - waic_m2
+# [1] 646.3453
+# > waic_m5 - waic_m2
+# [1] 6.057097
+# > waic_m6 - waic_m2
+# [1] 682.2218
+# > waic_m7 - waic_m2
+# [1] 4002.746
+# > waic_m8 - waic_m2
+# [1] 10662.49
 
 # M1 - all coefficients vary by species
 # M2 - intercept, mass, temperature vary by species
 # M3a - intercept and mass vary by species
 # M3b - intercept and temperature vary by species
 # M4 - intercept vary by species
-
 # M5 no interaction, full random
 # M6 no interaction, intercept random
 # M7 no interaction, mass random

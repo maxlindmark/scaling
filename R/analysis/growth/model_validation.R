@@ -61,8 +61,12 @@ unique(dat$species_n)
 data = NULL # Clear any old data lists that might confuse things
 
 # Mass-range used for prediction
-mass_pred = seq(from = min(dat$log_mass_norm_ct), 
-                to = max(dat$log_mass_norm_ct),
+# mass_pred = seq(from = min(dat$log_mass_norm_ct), 
+#                 to = max(dat$log_mass_norm_ct),
+#                 length.out = 100)
+
+mass_pred = seq(from = min(dat$log_mass_ct), 
+                to = max(dat$log_mass_ct),
                 length.out = 100)
 
 # Filter only positive growth rates
@@ -73,13 +77,14 @@ data = list(
   y = log(dat$G), 
   n_obs = length(dat$G), 
   species_n = dat$species_n,
-  mass = dat$log_mass_norm_ct,
+  #mass = dat$log_mass_norm_ct,
+  mass = dat$log_mass_ct,
   temp = dat$temp_norm_arr_ct
 )
 
 
 # C. MODEL VALIDATION ==============================================================
-model = "R/analysis/growth/models/m1.txt"
+model = "R/analysis/growth/models/m5.txt"
 
 jm = jags.model(model,
                 data = data, 
@@ -146,7 +151,6 @@ p2 <- cs_df %>%
 p1+p2
 #ggsave("figures/supp/model_validation_gro_intercepts.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm", dpi = 300)
 
-
 # Plot posterior densities of species mass-effects
 p3 <- cs_df %>% 
   filter(Parameter %in% c("b1[1]", "b1[2]", "b1[3]", "b1[4]", "b1[5]", "b1[6]", "b1[7]", 
@@ -210,7 +214,7 @@ p5+p6
 
 # Plot posterior densities of group-level means and standard deviations
 p7 <- cs_df %>% 
-  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", "mu_b3",
+  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", #"mu_b3",
                           "sigma_b0", "sigma_b1", "sigma_b2", "sigma_b3")) %>% 
   ggs_density(.) + 
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
@@ -224,7 +228,7 @@ p7 <- cs_df %>%
 
 # Traceplot for evaluating chain convergence
 p8 <- cs_df %>% 
-  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", "mu_b3",
+  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", #"mu_b3",
                           "sigma_b0", "sigma_b1", "sigma_b2", "sigma_b3")) %>% 
   ggs_traceplot(.) +
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +

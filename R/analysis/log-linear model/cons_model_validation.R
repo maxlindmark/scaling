@@ -63,8 +63,12 @@ unique(dat$species_n)
 data = NULL # Clear any old data lists that might confuse things
 
 # Mass-range used for prediction
-mass_pred = seq(from = min(dat$log_mass_norm_ct), 
-                to = max(dat$log_mass_norm_ct),
+# mass_pred = seq(from = min(dat$log_mass_norm_ct), 
+#                 to = max(dat$log_mass_norm_ct),
+#                 length.out = 100)
+
+mass_pred = seq(from = min(dat$log_mass_ct), 
+                to = max(dat$log_mass_ct),
                 length.out = 100)
 
 # Data in list-format for JAGS
@@ -72,7 +76,8 @@ data = list(
   y = log(dat$y), 
   n_obs = length(dat$y), 
   species_n = dat$species_n,
-  mass = dat$log_mass_norm_ct,
+  #mass = dat$log_mass_norm_ct,
+  mass = dat$log_mass_ct,
   temp = dat$temp_norm_arr_ct
 )
 
@@ -228,7 +233,7 @@ p7 <- cs_df %>%
 
 # Traceplot for evaluating chain convergence
 p8 <- cs_df %>% 
-  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", "b3",
+  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", 
                           "sigma_b0", "sigma_b1", "sigma_b2")) %>% 
   ggs_traceplot(.) +
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +

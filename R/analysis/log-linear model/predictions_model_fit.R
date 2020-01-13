@@ -50,8 +50,12 @@ met$species_n <- as.numeric(as.factor(met$species))
 con$species_n <- as.numeric(as.factor(con$species))
 
 # Mass-range used for prediction
-mass_pred_con = seq(from = min(con$log_mass_norm_ct), 
-                    to = max(con$log_mass_norm_ct),
+# mass_pred_con = seq(from = min(con$log_mass_norm_ct), 
+#                     to = max(con$log_mass_norm_ct),
+#                     length.out = 100)
+
+mass_pred_con = seq(from = min(con$log_mass_ct), 
+                    to = max(con$log_mass_ct),
                     length.out = 100)
 
 # Data list for consumption model
@@ -59,14 +63,23 @@ con_data = list(
   y = log(con$y), 
   n_obs = length(con$y), 
   species_n = con$species_n,
-  mass = con$log_mass_norm_ct,
+  #mass = con$log_mass_norm_ct,
+  mass = con$log_mass_ct,
   temp = con$temp_norm_arr_ct,
-  mass_pred_con = mass_pred_con
+  mass_pred = mass_pred_con
 )
 
 # Mass-range used for prediction
-mass_pred_met = seq(from = min(met$log_mass_norm_ct), 
-                    to = max(met$log_mass_norm_ct),
+# mass_pred_met = seq(from = min(met$log_mass_norm_ct), 
+#                     to = max(met$log_mass_norm_ct),
+#                     length.out = 100)
+
+# mass_pred_met = seq(from = min(met$log_mass_ct), 
+#                     to = max(met$log_mass_ct),
+#                     length.out = 100)
+
+mass_pred_met = seq(from = min(met$log_mass_ct), 
+                    to = max(met$log_mass_ct),
                     length.out = 100)
 
 # Data list for metabolism model
@@ -74,9 +87,10 @@ met_data = list(
   y = log(met$y), 
   n_obs = length(met$y), 
   species_n = met$species_n,
-  mass = met$log_mass_norm_ct,
+  #mass = met$log_mass_norm_ct,
+  mass = met$log_mass_ct,
   temp = met$temp_norm_arr_ct,
-  mass_pred_met = mass_pred_met
+  mass_pred = mass_pred_met
 )
 
 # Check which temperatures to use
@@ -87,7 +101,7 @@ ggplot(met, aes(temp_norm_arr_ct, temp_norm)) +
   geom_point() + 
   xlim(-1, 1)
 
-ggplot(met, aes(temp_norm_arr_ct, temp_norm)) + 
+ggplot(met, aes(temp_norm_arr_ct, temp_norm, color = species)) + 
   geom_point() + 
   geom_line() +
   xlim(-1, 0.1) +
@@ -98,7 +112,7 @@ ggplot(met, aes(temp_norm_arr_ct, temp_norm)) +
 
 # C. FIT MODELS ====================================================================
 # Refit chosen models from the model selection part
-#**** Metabolism (M1) ==============================================================
+#**** Metabolism (M2) ==============================================================
 cat(
   "model{
   
@@ -108,10 +122,10 @@ cat(
     
     y[i] ~ dnorm(mu[i], tau)
     mu[i] <- 
-      b0[species_n[i]] +                # varying intercept 
-      b1[species_n[i]]*mass[i] +        # varying mass-exponent
-      b2[species_n[i]]*temp[i] +        # varying activation energy
-      b3[species_n[i]]*mass[i]*temp[i]  # varying M*T interaction
+      b0[species_n[i]] +           # varying intercept 
+      b1[species_n[i]]*mass[i] +   # varying mass-exponent
+      b2[species_n[i]]*temp[i] +   # varying activation energy
+      b3*mass[i]*temp[i]           # non-varying M*T interaction
   # Add log likelihood computation for each observation
   pd[i] <- dnorm(y[i], mu[i], tau)
   
@@ -124,14 +138,13 @@ cat(
     b0[j] ~ dnorm(mu_b0, tau_b0)
     b1[j] ~ dnorm(mu_b1, tau_b1)
     b2[j] ~ dnorm(mu_b2, tau_b2)
-    b3[j] ~ dnorm(mu_b3, tau_b3)
   }
   
   # Predictions
-  for(k in 1:length(mass_pred_met)){
+  for(k in 1:length(mass_pred)){
       
-    pred_warm[k] <- mu_b0 + mu_b1*mass_pred_met[k] + mu_b2*-1 + mu_b3*mass_pred_met[k]*-1
-    pred_cold[k] <- mu_b0 + mu_b1*mass_pred_met[k] + mu_b2*0 + mu_b3*mass_pred_met[k]*0
+    pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-1 + b3*mass_pred[k]*-1
+    pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*0 + b3*mass_pred[k]*0
     
   } 
 
@@ -145,24 +158,22 @@ cat(
   p_cv <- step(cv_y_sim - cv_y)
 
   #-- Priors	
-  mu_b0 ~ dnorm(0, 0.5)      # varying intercept
-  mu_b1 ~ dnorm(-0.25, 0.5)  # varying mass-exponent
-  mu_b2 ~ dnorm(-0.6, 0.5)   # varying activation energy
-  mu_b3 ~ dnorm(0, 0.5)      # varying interaction
+  b3 ~ dnorm(0, 0.5)         # non-varying interaction
+  mu_b0 ~ dnorm(0, 0.5)      # global intercept
+  mu_b1 ~ dnorm(-0.25, 0.5)  # global mass-exponent
+  mu_b2 ~ dnorm(-0.6, 0.5)   # global activation energy
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   sigma_b1 ~ dunif(0, 10)
   sigma_b2 ~ dunif(0, 10)
-  sigma_b3 ~ dunif(0, 10)
   tau <- 1/sigma^2
   tau_b0 <- 1/sigma_b0^2
   tau_b1 <- 1/sigma_b1^2
   tau_b2 <- 1/sigma_b2^2
-  tau_b3 <- 1/sigma_b3^2
   
-  }", fill = TRUE, file = "R/analysis/log-linear model/models/m1_metabolism_pred.txt")
+  }", fill = TRUE, file = "R/analysis/log-linear model/models/m2_metabolism_pred.txt")
 
-met_model = "R/analysis/log-linear model/models/m1_metabolism_pred.txt"
+met_model = "R/analysis/log-linear model/models/m2_metabolism_pred.txt"
 
 jm_met = jags.model(met_model,
                     data = met_data, 
@@ -199,10 +210,10 @@ cat(
     b2[j] ~ dnorm(mu_b2, tau_b2)
   }
 
-    for(k in 1:length(mass_pred_con)){
+    for(k in 1:length(mass_pred)){
   
-        pred_warm[k] <- mu_b0 + mu_b1*mass_pred_con[k] + mu_b2*-1
-        pred_cold[k] <- mu_b0 + mu_b1*mass_pred_con[k] + mu_b2*0
+        pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-1
+        pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*0
   
   } 
 
@@ -216,9 +227,9 @@ cat(
   p_cv <- step(cv_y_sim - cv_y)
 
   #-- Priors	
-  mu_b0 ~ dnorm(0, 0.5)      # varying intercept
-  mu_b1 ~ dnorm(-0.25, 0.5)  # varying mass-exponent
-  mu_b2 ~ dnorm(-0.6, 0.5)   # varying activation energy
+  mu_b0 ~ dnorm(0, 0.5)      # global intercept
+  mu_b1 ~ dnorm(-0.25, 0.5)  # global mass-exponent
+  mu_b2 ~ dnorm(-0.6, 0.5)   # global activation energy
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   sigma_b1 ~ dunif(0, 10)
@@ -344,9 +355,9 @@ n.thin = 5 # Thinning?
 
 # Metabolism
 js_met = jags.samples(jm_met, 
-                  variable.names = c("pred_warm", "pred_cold"), 
-                  n.iter = samples, 
-                  thin = n.thin)
+                      variable.names = c("pred_warm", "pred_cold"), 
+                      n.iter = samples, 
+                      thin = n.thin)
 
 # Generate medians and quantiles that can be used for storing info, plotting etc.
 # Warm temp:

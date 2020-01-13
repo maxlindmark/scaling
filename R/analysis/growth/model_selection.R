@@ -61,8 +61,12 @@ unique(dat$species_n)
 data = NULL # Clear any old data lists that might confuse things
 
 # Mass-range used for prediction
-mass_pred = seq(from = min(dat$log_mass_norm_ct), 
-                to = max(dat$log_mass_norm_ct),
+# mass_pred = seq(from = min(dat$log_mass_norm_ct), 
+#                 to = max(dat$log_mass_norm_ct),
+#                 length.out = 100)
+
+mass_pred = seq(from = min(dat$log_mass_ct), 
+                to = max(dat$log_mass_ct),
                 length.out = 100)
 
 # Filter only positive growth rates
@@ -73,7 +77,8 @@ data = list(
   y = log(dat$G), 
   n_obs = length(dat$G), 
   species_n = dat$species_n,
-  mass = dat$log_mass_norm_ct,
+  #mass = dat$log_mass_norm_ct,
+  mass = dat$log_mass_ct,
   temp = dat$temp_norm_arr_ct
 )
 
@@ -124,6 +129,14 @@ WAIC <- lppd + 2*pd.WAIC
 c(pd.WAIC, WAIC)
 waic_m1 <- WAIC
 
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+# [1] 31.45414
+
 
 #**** M2 ===========================================================================
 model = "R/analysis/growth/models/m2.txt"
@@ -156,6 +169,14 @@ WAIC <- lppd + 2*pd.WAIC
 
 c(pd.WAIC, WAIC)
 waic_m2 <- WAIC
+
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+# [1] 32.07077
 
 
 #**** M3a ===========================================================================
@@ -190,6 +211,14 @@ WAIC <- lppd + 2*pd.WAIC
 c(pd.WAIC, WAIC)
 waic_m3a <- WAIC
 
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+# [1] 31.41895
+
 
 #**** M3b ===========================================================================
 model = "R/analysis/growth/models/m3b.txt"
@@ -222,6 +251,14 @@ WAIC <- lppd + 2*pd.WAIC
 
 c(pd.WAIC, WAIC)
 waic_m3b <- WAIC
+
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+# [1] 31.28701
 
 
 #**** M4 ===========================================================================
@@ -256,6 +293,14 @@ WAIC <- lppd + 2*pd.WAIC
 c(pd.WAIC, WAIC)
 waic_m4 <- WAIC
 
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+# [1] 31.88844
+
 
 #**** M5 ===========================================================================
 model = "R/analysis/growth/models/m5.txt"
@@ -288,6 +333,14 @@ WAIC <- lppd + 2*pd.WAIC
 
 c(pd.WAIC, WAIC)
 waic_m5 <- WAIC
+
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+# [1] 32.25407
 
 
 #**** M6 ===========================================================================
@@ -322,6 +375,14 @@ WAIC <- lppd + 2*pd.WAIC
 c(pd.WAIC, WAIC)
 waic_m6 <- WAIC
 
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+# [1] 31.70706
+
 
 #**** M7 ===========================================================================
 model = "R/analysis/growth/models/m7.txt"
@@ -355,6 +416,13 @@ WAIC <- lppd + 2*pd.WAIC
 c(pd.WAIC, WAIC)
 waic_m7 <- WAIC
 
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+# [1] 25.00297
 
 #**** M8 ===========================================================================
 model = "R/analysis/growth/models/m8.txt"
@@ -380,13 +448,21 @@ lppd <- -2*sum(log(summary(zj$pd, mean)$stat))
 
 # Calculate penalty (i.e. the number of parameters) as the variance of
 # the log of PPD. Do this by squaring the standard deviation.
-pd.WAIC <- sum((summary(zj$log_pd, sd)$stat)^2) # Penalty
+pd.WAIC <- sum((summary(zj$log_pd, sd)$stat)^2) # Penalty (variance across samples)
 
 # WAIC = model fit + 2*penalty
 WAIC <- lppd + 2*pd.WAIC
 
 c(pd.WAIC, WAIC)
 waic_m8 <- WAIC
+
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data))
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+# [1] 18.96065
 
 #** COMPARE WAIC ===================================================================
 # WAIC
@@ -404,32 +480,35 @@ waic_m8
 
 #-- With interaction
 # > waic_m1
-# [1] 32.51117
-
+# [1] 35.47166
 # > waic_m2
-# [1] 37.45695
-
+# [1] 39.36716
 # > waic_m3a
-# [1] 72.0526
-
+# [1] 70.76162
 # > waic_m3b
-# [1] 78.72478
-
+# [1] 79.2966
 # > waic_m4
-# [1] 100.5671
-
-#-- No interaction
+# [1] 101.2919
 # > waic_m5
-# [1] 34.71809
-# 
+# [1] 36.33327
 # > waic_m6
-# [1] 98.97725
-# 
+# [1] 98.58492
 # > waic_m7
-# [1] 313.4243
-# 
+# [1] 206.925
 # > waic_m8
-# [1] 337.2472
+# [1] 223.3752
+
+# delta waic
+waic_m1 - waic_m1
+waic_m2 - waic_m1
+waic_m3a - waic_m1
+waic_m3b - waic_m1
+waic_m4 - waic_m1
+waic_m5 - waic_m1
+waic_m6 - waic_m1
+waic_m7 - waic_m1
+waic_m8 - waic_m1
+
 
 # M1 - all coefficients vary by species
 # M2 - intercept, mass, temperature vary by species
@@ -441,4 +520,117 @@ waic_m8
 # M6 no interaction, intercept random
 # M7 no interaction, mass random
 # M8 no interaction, temperature random
+
+#** COMPARE S.E. OF WAIC ===========================================================
+#**** First, example  ==============================================================
+# Based on Statistical Rethikning version 1
+# Instead of summing the fit and the variance for all observations, as I do with sum
+# above to calculate WAIC, I will use the individual observatuins to calculate standard error
+
+# In stat rethinking, waic is calculated with sligthly different code (but same equation)
+#lppd <- sapply( 1:n_cases , function(i) log_sum_exp(logprob[i,]) - log(n_samples) )
+#pWAIC <- sapply( 1:n_cases , function(i) var(logprob[i,]) )
+#-2*( sum(lppd) - sum(pWAIC) )
+
+# I do the summing directly. I can make sure it's the same:
+# WAIC for model 8 is:
+waic_m8
+# [1] 223.3752
+
+# Using Stat-rethinking method, we get (i.e. same variables but not summing:
+# (lppd_ind = lppd and pd.WAIC_ind = pWAIC in statistical rethinking)
+lppd_ind <- log(summary(zj$pd, mean)$stat)
+pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
+-2*( sum(lppd_ind) - sum(pd.WAIC_ind) )
+# [1] 223.3752
+
+# So, now that we know it's the same, we can use his equation to calculate standard
+# error of the WAIC
+# from stat rethink:
+# waic_vec <- -2*( lppd - pWAIC )
+# sqrt( n_cases*var(waic_vec) )
+
+# Calculate sample size
+n_cases <- nrow(data.frame(data))
+
+waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
+sqrt(n_cases*var(waic_vec))
+# [1] 18.9656
+
+# Stat rethink argues for using the standard error of the WAIC.
+# Here I will look at the interval of the waic, not the difference,
+# but using the same approach:
+# (2.6 corresponding to 99% interval)
+waic <- -2*(sum(lppd_ind) - sum(pd.WAIC_ind))
+waic_se <- sqrt(n_cases*var(waic_vec))
+
+waic + c(-1, 1) * waic_se * 2.6
+
+
+#**** Repeat for M1 and M5  ========================================================
+# Refit models
+# M1
+model = "R/analysis/growth/models/m1.txt"
+
+jm1 = jags.model(model,
+                 data = data, 
+                 n.adapt = 5000, 
+                 n.chains = 3)
+
+burn.in = 10000 # Length of burn-in
+
+update(jm1, n.iter = burn.in) 
+
+zj1 = jags.samples(jm1, 
+                   variable.names = c("pd", "log_pd"), 
+                   n.iter = 10000, 
+                   thin = 1)
+
+# M5
+model = "R/analysis/growth/models/m5.txt"
+
+jm5 = jags.model(model,
+                 data = data, 
+                 n.adapt = 5000, 
+                 n.chains = 3)
+
+burn.in = 10000 # Length of burn-in
+
+update(jm5, n.iter = burn.in) 
+
+zj5 = jags.samples(jm5, 
+                   variable.names = c("pd", "log_pd"), 
+                   n.iter = 10000, 
+                   thin = 1)
+
+
+# Calculate WAIC_se
+lppd_ind_1 <- log(summary(zj1$pd, mean)$stat)
+pd.WAIC_ind_1 <- (summary(zj1$log_pd, sd)$stat)^2
+
+lppd_ind_5 <- log(summary(zj5$pd, mean)$stat)
+pd.WAIC_ind_5 <- (summary(zj5$log_pd, sd)$stat)^2
+
+n_cases <- nrow(data.frame(data))
+
+waic_vec_1 <- -2*(lppd_ind_1 - pd.WAIC_ind_1)
+waic_vec_5 <- -2*(lppd_ind_5 - pd.WAIC_ind_5)
+
+sqrt(n_cases*var(waic_vec))
+sqrt(n_cases*var(waic_vec))
+
+waic_1 <- -2*(sum(lppd_ind_1) - sum(pd.WAIC_ind_1))
+waic_1_se <- sqrt(n_cases*var(waic_vec_1))
+
+waic_5 <- -2*(sum(lppd_ind_5) - sum(pd.WAIC_ind_5))
+waic_5_se <- sqrt(n_cases*var(waic_vec_5))
+
+# Compare WAIC and se for two models
+# (1.96 corresponding to 95% interval)
+
+waic_1 + (c(-1, 1) * waic_1_se * 1.96)
+waic_5 + (c(-1, 1) * waic_5_se * 1.96)
+
+
+
 

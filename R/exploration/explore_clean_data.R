@@ -129,11 +129,17 @@ dat$temp_norm <- dat$temp_c - dat$median_temp
 dat$temp_norm_arr_ct <- dat$temp_norm_arr - mean(dat$temp_norm_arr)
 dat$temp_norm_ct <- dat$temp_norm - mean(dat$temp_norm)
 
+# Calculate log mass
+dat$log_mass <- log(dat$mass_g)
+
+# Calculate mean-centered log mass
+dat$log_mass_ct <- dat$log_mass - mean(dat$log_mass)
+
 # Now normalize mass with respect to max mass
 dat$mass_norm <- dat$mass_g / dat$w_max_published_g
 # ---- Stechlin cisco har larger size than max*
 
-# Calculate log mass
+# Calculate log normalized mass
 dat$log_mass_norm <- log(dat$mass_norm)
 
 # Mean center mass
@@ -562,16 +568,16 @@ p10 / p11
 
 
 # C. SAVE DATA =====================================================================
-s_datm %>% 
-  select(y, mass_g, temp_c, above_optimum, common_name, species, unit, original_unit, 
-         type, rate, median_temp, median_temp_arr, temp_arr, temp_norm_arr, 
-         temp_norm, temp_norm_arr_ct, temp_norm, mass_norm, log_mass_norm, log_mass_norm_ct) %>% 
-  write_csv(., "data/met_analysis.csv", ";")
-
-s_datc %>% 
-  select(y, mass_g, temp_c, above_optimum, common_name, species, unit, original_unit, 
-         type, rate, median_temp, median_temp_arr, temp_arr, temp_norm_arr, 
-         temp_norm, temp_norm_arr_ct, temp_norm, mass_norm, log_mass_norm, log_mass_norm_ct) %>% 
-  write_csv(., "data/con_analysis.csv", ";")
+# s_datm %>% 
+#   select(y, mass_g, log_mass_ct, temp_c, above_optimum, common_name, species, unit, original_unit, 
+#          type, rate, median_temp, median_temp_arr, temp_arr, temp_norm_arr, 
+#          temp_norm, temp_norm_arr_ct, temp_norm, mass_norm, log_mass_norm, log_mass_norm_ct) %>% 
+#   write_csv(., "data/met_analysis.csv", ";")
+# 
+# s_datc %>% 
+#   select(y, mass_g, log_mass_ct, temp_c, above_optimum, common_name, species, unit, original_unit, 
+#          type, rate, median_temp, median_temp_arr, temp_arr, temp_norm_arr, 
+#          temp_norm, temp_norm_arr_ct, temp_norm, mass_norm, log_mass_norm, log_mass_norm_ct) %>% 
+#   write_csv(., "data/con_analysis.csv", ";")
 
 

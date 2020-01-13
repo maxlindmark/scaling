@@ -105,6 +105,12 @@ dat$mass <- ifelse(dat$mass == -9,
 # Check we only have real values:
 dat$mass
 
+# Calculate log mass
+dat$log_mass <- log(dat$mass)
+
+# Calculate mean-centered log mass
+dat$log_mass_ct <- dat$log_mass - mean(dat$log_mass)
+
 # Now normalize mass with respect to max mass
 dat$mass_norm <- dat$mass / dat$w_max_published_g
 
@@ -118,12 +124,11 @@ dat$log_mass_norm_ct <- dat$log_mass_norm - mean(dat$log_mass_norm)
 str(dat)
 head(dat)
 
-# dat %>% 
-#   select(G, mass, geom_mean_mass_g, temp_c, above_optimum, common_name, species,  
-#          median_temp, median_temp_arr, temp_arr, temp_norm_arr, temp_norm, 
-#          temp_norm_arr_ct, temp_norm, mass_norm, log_mass_norm, log_mass_norm_ct) %>% 
+# dat %>%
+#   select(G, mass, log_mass_ct, geom_mean_mass_g, temp_c, above_optimum, common_name, species,
+#          median_temp, median_temp_arr, temp_arr, temp_norm_arr, temp_norm,
+#          temp_norm_arr_ct, temp_norm, mass_norm, log_mass_norm, log_mass_norm_ct) %>%
 #   write_csv(., "data/growth_analysis.csv", ";")
-
 
 
 #** Growth rate ====================================================================
