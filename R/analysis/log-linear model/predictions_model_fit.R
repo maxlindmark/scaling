@@ -109,7 +109,15 @@ ggplot(met, aes(temp_norm_arr_ct, temp_norm, color = species)) +
   ylim(0, 10)
 
 # So, using -1 and 0 roughly corresponds to an increse in + 8
+unique(met$type)
 
+rest <- nrow(subset(met, type == "Resting"))
+rout <- nrow(subset(met, type == "Routine"))
+stand <- nrow(subset(met, type == "Standard"))
+
+(rest + rout) / (rest + rout + stand)
+
+stand / (rest + rout + stand)
 
 # C. FIT MODELS ====================================================================
 # Refit chosen models from the model selection part

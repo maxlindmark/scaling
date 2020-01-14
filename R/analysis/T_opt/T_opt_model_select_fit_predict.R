@@ -74,6 +74,19 @@ data = list(
 
 summary(lm(opt_temp_c_ct ~ log_mass_norm_ct, data = dat))
 
+# Check distribution of relative size range
+p1 <- ggplot(dat, aes(mass_norm)) +
+  geom_histogram()
+
+p2 <- ggplot(dat, aes(mass)) +
+  geom_histogram()
+
+p1/p2
+
+library(tidylog)
+t <- filter(dat, mass_norm < 0.0100001)
+
+
 # C. MODEL SELECTION ===============================================================
 #**** Random intercept & slope (M1) ================================================
 cat(
@@ -141,25 +154,39 @@ burn.in = 10000 # Length of burn-in
 update(jm1, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
-zj = jags.samples(jm1, 
-                  variable.names = c("pd", "log_pd"), 
-                  n.iter = 10000, 
-                  thin = 1)
+zj1 = jags.samples(jm1, 
+                   variable.names = c("pd", "log_pd"), 
+                   n.iter = 10000, 
+                   thin = 1)
 
 # Calculate model fit by summing over the log of means of the posterior distribution of 
 # the PPD and multiply by -2 (i.e. negative log likelihood).
-lppd <- -2*sum(log(summary(zj$pd, mean)$stat))
+lppd1 <- -2*sum(log(summary(zj1$pd, mean)$stat))
 
 # Calculate penalty (i.e. the number of parameters) as the variance of
 # the log of PPD. Do this by squaring the standard deviation.
-pd.WAIC <- sum((summary(zj$log_pd, sd)$stat)^2) # Penalty
+pd.WAIC1 <- sum((summary(zj1$log_pd, sd)$stat)^2) # Penalty
 
 # WAIC = model fit + 2*penalty
-WAIC <- lppd + 2*pd.WAIC
+WAIC1 <- lppd1 + 2*pd.WAIC1
 
-c(pd.WAIC, WAIC)
-waic_m1 <- WAIC
+c(pd.WAIC1, WAIC1)
+waic_m1 <- WAIC1
 waic_m1
+
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data$y))
+lppd_ind1 <- log(summary(zj1$pd, mean)$stat)
+pd.WAIC_ind1 <- (summary(zj1$log_pd, sd)$stat)^2
+waic_vec1 <- -2*(lppd_ind1 - pd.WAIC_ind1)
+waic_1_se <- sqrt(n_cases*var(waic_vec1))
+waic_1_se
+#[1] 11.93607
+
+# Summarize mean and interval of WAIC
+# Compare WAIC and se for two models
+# (1.96 corresponding to 95% interval)
+waic_m1 + (c(-1, 1) * waic_1_se * 1.96)
 
 
 #**** Random intercept (M2) ================================================
@@ -225,37 +252,57 @@ burn.in = 10000 # Length of burn-in
 update(jm2, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
-zj = jags.samples(jm2, 
+zj2 = jags.samples(jm2, 
                   variable.names = c("pd", "log_pd"), 
                   n.iter = 10000, 
                   thin = 1)
 
 # Calculate model fit by summing over the log of means of the posterior distribution of 
 # the PPD and multiply by -2 (i.e. negative log likelihood).
-lppd <- -2*sum(log(summary(zj$pd, mean)$stat))
+lppd2 <- -2*sum(log(summary(zj2$pd, mean)$stat))
 
 # Calculate penalty (i.e. the number of parameters) as the variance of
 # the log of PPD. Do this by squaring the standard deviation.
-pd.WAIC <- sum((summary(zj$log_pd, sd)$stat)^2) # Penalty
+pd.WAIC2 <- sum((summary(zj2$log_pd, sd)$stat)^2) # Penalty
 
 # WAIC = model fit + 2*penalty
-WAIC <- lppd + 2*pd.WAIC
+WAIC2 <- lppd2 + 2*pd.WAIC2
 
-c(pd.WAIC, WAIC)
-waic_m2 <- WAIC
+c(pd.WAIC2, WAIC2)
+waic_m2 <- WAIC2
+
+# Standard error of WAIC
+n_cases <- nrow(data.frame(data$y))
+lppd_ind2 <- log(summary(zj2$pd, mean)$stat)
+pd.WAIC_ind2 <- (summary(zj2$log_pd, sd)$stat)^2
+waic_vec2 <- -2*(lppd_ind2 - pd.WAIC_ind2)
+waic_2_se <- sqrt(n_cases*var(waic_vec2))
+waic_2_se
+# 12.25855
+
+# Summarize mean and interval of WAIC
+# Compare WAIC and se for two models
+# (1.96 corresponding to 95% interval)
+waic_m2 + (c(-1, 1) * waic_2_se * 1.96)
 
 
-#**** Compare M1 and M2 ================================================
-# > waic_m1
-# [1] 179.7691
-# > waic_m2
-# [1] 179.3009
+#** Compare both models ============================================================
+waic_m1 + (c(-1, 1) * waic_1_se * 1.96)
+waic_m2 + (c(-1, 1) * waic_2_se * 1.96)
 
 
 # D. EVALUATE MODEL FIT ============================================================
 # Plot mean of simulated data vs mean of observed data
 samples = 10000 # How many samples to take from the posterior
 n.thin = 5 # Thinning?
+
+# Get main parameters
+cs_fit_par = coda.samples(jm2,
+                          variable.names = c("mu_b0", "b1"), 
+                          n.iter = samples, 
+                          thin = n.thin)
+
+summary(cs_fit_par)
 
 # First convert your matrix 
 cs_fit = coda.samples(jm2,
@@ -335,9 +382,9 @@ pred_df <- data.frame(lwr_95 = pred[1, ],
                       mass = mass_pred)
 
 # Plot data and predictions with 95% credible interval (at each x, plot as ribbon)
-#pal <- viridis(option = "magma", n = 10)[c(2, 6)]
-#pal <- brewer.pal("Set1", n = 5)
-pal <- brewer.pal("Dark2", n = 5)
+colourCount = length(unique(dat$species))
+getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
+pal <- getPalette(colourCount)
 
 p3 <- ggplot(pred_df, aes(mass, median)) +
   geom_ribbon(data = pred_df, aes(x = mass, ymin = lwr_95, ymax = upr_95), 
@@ -345,19 +392,31 @@ p3 <- ggplot(pred_df, aes(mass, median)) +
   geom_ribbon(data = pred_df, aes(x = mass, ymin = lwr_80, ymax = upr_80), 
               size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
   geom_line(size = 1, alpha = 1, col = "black") +
-  geom_point(data = dat, aes(log_mass_norm_ct, opt_temp_c_ct),
-             size = 3.5, shape = 21, alpha = 0.8, color = "white", fill = "grey40") +
+  geom_point(data = dat, aes(log_mass_norm_ct, opt_temp_c_ct, fill = species, size = mass),
+             #size = 3.5, 
+             shape = 21, 
+             alpha = 0.8, 
+             color = "white"
+             ) +
   theme_classic(base_size = 13) + 
-  theme(aspect.ratio = 4/5) +
+  scale_fill_manual(values = pal) +
+  scale_size(range = c(2, 8), breaks = c(0, 1, 10, 100, 1000)) +
+  theme(aspect.ratio = 4/5,
+        #legend.position = c(0.11, 0.22),
+        legend.title = element_text(size = 10)) +
+  guides(fill = FALSE,
+         size = guide_legend(override.aes = list(fill = "black",
+                                                 color = "black"))) +
   labs(x = "ln(standardized mass)",
-       y = "Standardized optimum growth temperature") +
+       y = "Standardized optimum growth temperature",
+       size = "Mass [g]") +
   # annotate("text", -Inf, Inf, label = "A", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
   NULL
 
 p3
 
-#ggsave("figures/topt_scatter.pdf", plot = last_plot(), scale = 1, width = 12, height = 12, units = "cm", dpi = 300)
+#ggsave("figures/topt_scatter.pdf", plot = last_plot(), scale = 1, width = 15, height = 15, units = "cm", dpi = 300)
 
 
 # Add posterior distributions of parameters

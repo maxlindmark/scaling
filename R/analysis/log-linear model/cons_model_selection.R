@@ -35,6 +35,7 @@ library(bayesplot)
 # B. READ IN DATA ==================================================================
 # Read in your data file(s)
 dat <- read.csv("data/con_analysis.csv")
+str(dat)
 
 # Filter data points at below optimum temperatures
 dat <- dat %>% filter(above_optimum == "N")

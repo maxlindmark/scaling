@@ -106,13 +106,15 @@ ggplot(dat, aes(temp_norm_arr_ct, temp_norm)) +
   geom_point() + 
   xlim(-1, 1)
 
-ggplot(dat, aes(temp_norm_arr_ct, temp_norm)) + 
+ggplot(dat, aes(temp_norm_arr_ct, temp_norm, color = species)) + 
   geom_point() + 
   geom_line() +
   xlim(-1, 0.1) +
-  ylim(0, 13)
+  ylim(0, 13) 
+  
 
 # So, using -0.75 and 0 roughly corresponds to an increse in + 5 here...
+
 
 # C. FIT MODELS ====================================================================
 # Refit chosen models from the model selection part
