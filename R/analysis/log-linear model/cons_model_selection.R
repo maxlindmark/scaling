@@ -175,8 +175,26 @@ waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
 sqrt(n_cases*var(waic_vec))
 #[1] 102.3396
 
+# TEST: Checking estimates:
+cs <- coda.samples(jm,
+                   variable.names = c("b3"),
+                   n.iter = 10000, 
+                   thin = 5)
 
-#**** M3a ===========================================================================
+summary(cs)
+
+
+js = jags.samples(jm, 
+                  variable.names = c("b3"), 
+                  n.iter = 10000, 
+                  thin = 5)
+
+1-ecdf(js$b3)(0) 
+
+cs %>% mcmc_dens() 
+
+
+#**** M3a ==========================================================================
 model = "R/analysis/log-linear model/models/m3a.txt"
 
 jm = jags.model(model,
@@ -217,7 +235,7 @@ sqrt(n_cases*var(waic_vec))
 #[1] 101.667
 
 
-#**** M3b ===========================================================================
+#**** M3b ==========================================================================
 model = "R/analysis/log-linear model/models/m3b.txt"
 
 jm = jags.model(model,

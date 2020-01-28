@@ -122,6 +122,9 @@ dat$temp_arr <- 1/((dat$temp_c + 273.15) * 8.617332e-05)
 # Standardize temperatures to median-reference temperature on Arrhenius scale
 dat$temp_norm_arr <- dat$temp_arr - dat$median_temp_arr
 
+# plot(dat$temp_norm_arr)
+# plot(dat$temp_arr)
+
 # Standardize temperatures to median-reference temperature on C scale
 dat$temp_norm <- dat$temp_c - dat$median_temp
 

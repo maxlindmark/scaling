@@ -359,7 +359,8 @@ dat <- left_join(dat,
 
 # Standardize data with respect to max predicted and temp with respect to opt within and grand opt
 dat <- dat %>% 
-  mutate(y_stand = y_norm / max_y_pred,
+  mutate(y_stand_pred = y_norm / max_y_pred,
+         y_stand_dat = y_norm / max(y_norm),
          t_stand = temp_dat - opt_temp + T_opt$mean_temp)
 
 # Now we need to standardize predictions as well
@@ -391,7 +392,7 @@ pred_dat_df %>%
              linetype = 3, color = "gray20", size = 0.7) + 
   geom_vline(xintercept = T_opt$mean_temp + T_opt$stdev_temp, 
              linetype = 3, color = "gray20", size = 0.7) + 
-  geom_point(data = dat,  aes(t_stand, y_stand, color = factor(species_ab)),
+  geom_point(data = dat,  aes(t_stand, y_stand_pred, color = factor(species_ab)),
              size = 3, alpha = 0.6, shape = 21) +
   geom_line(size = 1, alpha = 0.8) +
   scale_color_manual(values = pal) +

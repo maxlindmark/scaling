@@ -60,6 +60,8 @@ colnames(dat)[1] <-  "G"
 dat$pref_temp_mid[is.na(dat$pref_temp_mid)] <- -9
 dat$env_temp_mid[is.na(dat$env_temp_mid)] <- -9
 
+data.frame(filter(dat, common_name == "Marbled flounder"))
+
 # Some species with no temperature-information
 # t <- data.frame(filter(dat, pref_temp_mid == -9 & env_temp_mid == -9))
 # unique(t$common_name)
