@@ -75,6 +75,8 @@ mass_pred = seq(from = min(dat$log_mass_ct),
 # Filter only positive growth rates
 dat <- dat %>% filter(., G > 0)
 
+dat$temp_arr_ct <- dat$temp_arr - mean(dat$temp_arr)
+
 # Data in list-format for JAGS
 data = list(
   y = log(dat$G), 
@@ -82,9 +84,13 @@ data = list(
   species_n = dat$species_n,
   #mass = dat$log_mass_norm_ct,
   mass = dat$log_mass_ct,
-  temp = dat$temp_norm_arr_ct,
+  #temp = dat$temp_norm_arr_ct,
+  temp = dat$temp_arr_ct ,
   mass_pred = mass_pred
 )
+
+mean(dat$log_mass)
+exp(mean(dat$log_mass))
 
 summary(lm(log(G) ~ temp_norm_arr_ct * log_mass_norm_ct, data = dat))
 
@@ -97,23 +103,22 @@ test <- filter(dat, common_name == "Atlantic cod")
 summary(lm(log(G) ~ log_mass_norm_ct, data = test))
 summary(lm(log(G) ~ log(mass), data = test))
 
-
 # Check which temperatures to use
-ggplot(dat, aes(temp_norm_arr_ct, temp_norm)) + 
-  geom_point()
+mean(dat$temp_c)
 
-ggplot(dat, aes(temp_norm_arr_ct, temp_norm)) + 
-  geom_point() + 
-  xlim(-1, 1)
-
-ggplot(dat, aes(temp_norm_arr_ct, temp_norm, color = species)) + 
-  geom_point() + 
+ggplot(dat, aes(temp_arr_ct, temp_c)) + 
   geom_line() +
-  xlim(-1, 0.1) +
-  ylim(0, 13) 
-  
+  ylim(18, 25) +
+  xlim(-2, 0)
 
-# So, using -0.75 and 0 roughly corresponds to an increse in + 5 here...
+
+filter(dat, temp_c < 25.5 & temp_c > 24.5)
+# -1.472807
+
+filter(dat, temp_c < 15.5 & temp_c > 14.5)
+# -0.15
+
+# So, using -0.15 and -1.47 roughly corresponds to 15C and 25C
 
 
 # C. FIT MODELS ====================================================================
@@ -129,9 +134,10 @@ cat(
     
     y[i] ~ dnorm(mu[i], tau)
     mu[i] <- 
-      b0[species_n[i]] +               # varying intercept 
-      b1[species_n[i]]*mass[i] +       # varying mass-exponent
-      b2[species_n[i]]*temp[i] 
+      b0[species_n[i]] +                # varying intercept 
+      b1[species_n[i]]*mass[i] +        # varying mass-exponent
+      b2[species_n[i]]*temp[i] +        # varying activation energy
+      b3[species_n[i]]*temp[i]*mass[i]  # varying interaction
   # Add log likelihood computation for each observation
   pd[i] <- dnorm(y[i], mu[i], tau)
   
@@ -144,13 +150,14 @@ cat(
     b0[j] ~ dnorm(mu_b0, tau_b0)
     b1[j] ~ dnorm(mu_b1, tau_b1)
     b2[j] ~ dnorm(mu_b2, tau_b2)
+    b3[j] ~ dnorm(mu_b3, tau_b3)
   }
   
   # Predictions
   for(k in 1:length(mass_pred)){
       
-    pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-0.75
-    pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*0
+    pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-1.47 + mu_b3*-1.47*mass_pred[k]
+    pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-0.15 + mu_b3*-0.15*mass_pred[k]
     
   } 
 
@@ -167,18 +174,21 @@ cat(
   mu_b0 ~ dnorm(0, 0.5)      # global mean
   mu_b1 ~ dnorm(-0.25, 0.5)  # global mass-exponent
   mu_b2 ~ dnorm(-0.6, 0.5)   # global activation energy
+  mu_b3 ~ dnorm(0, 0.5)      # global activation energy
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   sigma_b1 ~ dunif(0, 10)
   sigma_b2 ~ dunif(0, 10)
+  sigma_b3 ~ dunif(0, 10)
   tau <- 1/sigma^2
   tau_b0 <- 1/sigma_b0^2
   tau_b1 <- 1/sigma_b1^2
   tau_b2 <- 1/sigma_b2^2
+  tau_b3 <- 1/sigma_b3^2
   
-  }", fill = TRUE, file = "R/analysis/growth/models/m5_growth_pred.txt")
+  }", fill = TRUE, file = "R/analysis/growth/models/m1_growth_pred.txt")
 
-gro_model = "R/analysis/growth/models/m5_growth_pred.txt"
+gro_model = "R/analysis/growth/models/m1_growth_pred.txt"
 
 jm_gro = jags.model(gro_model,
                     data = data, 
@@ -267,7 +277,8 @@ pred_warm_df <- data.frame(lwr_95 = pred_warm[1, ],
                            upr_80 = pred_warm[4, ],
                            upr_95 = pred_warm[5, ],
                            mass = mass_pred,
-                           temp = -0.75)
+                           temp = 25#-1.47
+                             )
 
 # Cold temp:
 pred_cold <- summary(js_gro$pred_cold, quantile, c(0.025, 0.1, .5, 0.9, 0.975))$stat
@@ -279,7 +290,8 @@ pred_cold_df <- data.frame(lwr_95 = pred_cold[1, ],
                            upr_80 = pred_cold[4, ],
                            upr_95 = pred_cold[5, ],
                            mass = mass_pred,
-                           temp = 0)
+                           temp = 15 #-0.8
+                           )
 
 
 # Plot data and predictions with 95% credible interval (at each x, plot as ribbon)
@@ -288,26 +300,55 @@ pal <- brewer.pal("Set1", n = 5)
 
 pdat <- rbind(pred_cold_df, pred_warm_df)
 
-p3 <- ggplot(pdat, aes(mass, median, color = factor(temp), fill = factor(temp))) +
-  geom_ribbon(data = filter(pdat, temp == 0), aes(x = mass, ymin = lwr_95, ymax = upr_95), 
+# p3 <- ggplot(pdat, aes(mass, median, color = factor(temp), fill = factor(temp))) +
+#   geom_ribbon(data = filter(pdat, temp == 0), aes(x = mass, ymin = lwr_95, ymax = upr_95), 
+#               size = 2, alpha = 0.2, inherit.aes = FALSE, fill = pal[2]) +
+#   geom_ribbon(data = filter(pdat, temp == 0), aes(x = mass, ymin = lwr_80, ymax = upr_80), 
+#               size = 2, alpha = 0.25, inherit.aes = FALSE, fill = pal[2]) +
+#   geom_ribbon(data = filter(pdat, temp == -1), aes(x = mass, ymin = lwr_95, ymax = upr_95), 
+#               size = 2, alpha = 0.2, inherit.aes = FALSE, fill = pal[1]) +
+#   geom_ribbon(data = filter(pdat, temp == -1), aes(x = mass, ymin = lwr_80, ymax = upr_80), 
+#               size = 2, alpha = 0.25, inherit.aes = FALSE, fill = pal[1]) +
+#   geom_line(size = 1, alpha = 0.8) +
+#   geom_point(data = dat, aes(log_mass_norm_ct, log(G)),
+#              size = 2.8, shape = 21, alpha = 0.8, color = "white", fill = "grey40") +
+#   scale_color_manual(values = pal) +
+#   theme_classic(base_size = 11) + 
+#   labs(x = "ln(mass ct)",
+#        y = "ln(growth rate [%/day])",
+#        color = "Temperature\n(centered\nArrhenius)") +
+#   annotate("text", -Inf, Inf, label = "A", size = 4, 
+#            fontface = "bold", hjust = -0.5, vjust = 1.3) +
+#   theme(legend.position = c(0.12, 0.2)) +
+#   NULL
+
+# Expand color palette
+colourCount = length(unique(dat$species))
+getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
+pal2 <- getPalette(colourCount)
+
+p3 <- ggplot(pdat, aes(mass, median, color = factor(temp))) +
+  geom_ribbon(data = filter(pdat, temp == 15), aes(x = mass, ymin = lwr_95, ymax = upr_95), 
+              size = 2, alpha = 0.15, inherit.aes = FALSE, fill = pal[2]) +
+  geom_ribbon(data = filter(pdat, temp == 15), aes(x = mass, ymin = lwr_80, ymax = upr_80), 
               size = 2, alpha = 0.2, inherit.aes = FALSE, fill = pal[2]) +
-  geom_ribbon(data = filter(pdat, temp == 0), aes(x = mass, ymin = lwr_80, ymax = upr_80), 
-              size = 2, alpha = 0.25, inherit.aes = FALSE, fill = pal[2]) +
-  geom_ribbon(data = filter(pdat, temp == -0.75), aes(x = mass, ymin = lwr_95, ymax = upr_95), 
+  geom_ribbon(data = filter(pdat, temp == 25), aes(x = mass, ymin = lwr_95, ymax = upr_95), 
+              size = 2, alpha = 0.15, inherit.aes = FALSE, fill = pal[1]) +
+  geom_ribbon(data = filter(pdat, temp == 25), aes(x = mass, ymin = lwr_80, ymax = upr_80), 
               size = 2, alpha = 0.2, inherit.aes = FALSE, fill = pal[1]) +
-  geom_ribbon(data = filter(pdat, temp == -0.75), aes(x = mass, ymin = lwr_80, ymax = upr_80), 
-              size = 2, alpha = 0.25, inherit.aes = FALSE, fill = pal[1]) +
-  geom_line(size = 1, alpha = 0.8) +
-  geom_point(data = dat, aes(log_mass_norm_ct, log(G)),
-             size = 2.8, shape = 21, alpha = 0.8, color = "white", fill = "grey40") +
-  scale_color_manual(values = pal) +
+  geom_line(size = 0.8, alpha = 0.8) +
+  geom_point(data = dat, aes(log_mass_ct, log(G), fill = species_ab),
+             size = 2.8, shape = 21, alpha = 0.8, color = "white") +
+  scale_color_manual(values = rev(pal[c(1:2)])) +
+  scale_fill_manual(values = pal2) +
+  guides(fill = FALSE) +
   theme_classic(base_size = 11) + 
-  labs(x = "ln(standardized mass)",
+  labs(x = "ln(mass ct)",
        y = "ln(growth rate [%/day])",
-       color = "Temperature\n(centered\nArrhenius)") +
+       color = expression(paste("Temperature [", degree*C, "]"))) +
   annotate("text", -Inf, Inf, label = "A", size = 4, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  theme(legend.position = c(0.12, 0.2)) +
+  theme(legend.position = c(0.15, 0.15)) +
   NULL
 
 p3
@@ -353,32 +394,36 @@ p5 <- cs %>%
   NULL
 
 # Mass-temperature interaction
-# p6 <- cs %>% 
-#   mcmc_dens(pars = "mu_b3") +
-#   theme_classic(base_size = 11) + 
-#   geom_vline(xintercept = 0, color = "red", size = 0.6, linetype = 1) +
-#   geom_vline(xintercept = sum_dat[4, 1], color = "white", size = 0.6, linetype = 2) +
-#   scale_y_continuous(expand = c(0,0)) +
-#   coord_cartesian(xlim = c(-0.2, 0.2)) +
-#   annotate("text", -Inf, Inf, label = "D", size = 4, 
-#            fontface = "bold", hjust = -0.5, vjust = 1.3) +
-#   labs(x = "M*T interaction") +
-#   NULL
+p6 <- cs %>%
+  mcmc_dens(pars = "mu_b3") +
+  theme_classic(base_size = 11) +
+  geom_vline(xintercept = 0, color = "red", size = 0.6, linetype = 1) +
+  geom_vline(xintercept = sum_dat[4, 1], color = "white", size = 0.6, linetype = 2) +
+  scale_y_continuous(expand = c(0,0)) +
+  coord_cartesian(xlim = c(-0.2, 0.15)) +
+  annotate("text", -Inf, Inf, label = "D", size = 4,
+           fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  labs(x = "M*T interaction") +
+  NULL
+
+p6
 
 # Plot all together
-#p3 / (p4 + p5 + p6) + plot_layout(ncol = 1, heights = c(2.5, 1, 1))
-p3 / (p4 + p5) + plot_layout(ncol = 1, heights = c(2.5, 1, 1))
+p3 / (p4 + p5 + p6) + plot_layout(ncol = 1, heights = c(2.5, 1, 1))
+#p3 / (p4 + p5) + plot_layout(ncol = 1, heights = c(2.5, 1, 1))
 
 #ggsave("figures/pred_warm_cold_gro.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
 
-# Calculate the proportion of the posterior that is less than zero
-# js = jags.samples(jm_gro, 
-#                   variable.names = c("mu_b3"), 
-#                   n.iter = samples, 
-#                   thin = n.thin)
-# 
-# ecdf(js$mu_b3)(0) # We are 45% certain the slope is smaller than 0
-#[1] 0.5435
+# Calculate the proportion of the posterior of activation energy that is less than zero
+js = jags.samples(jm_gro, 
+                  variable.names = c("mu_b2", "mu_b3"), 
+                  n.iter = samples, 
+                  thin = n.thin)
+ 
+ecdf(js$mu_b2)(-0.65) 
+#0.9295
+
+ecdf(js$mu_b3)(0) # how much is below?
 
 # How much does the mass exponent decline per change in unit T?
 #summary(cs)
@@ -399,19 +444,19 @@ filter(pdat, mass < 0.04 & mass > -0.04)
 
 # now compare the medians
 # warm growth (temp = 0)
-1.3497010
+1.1557726
 
 # warm growth normal scale (temp = 0)
-exp(1.3497010)
+
 
 # cold growth (temp = 0)
-0.7314395
+0.4053091
 
 # cold growth normal scale (temp = -0.75)
-exp(0.7314395)
+
 
 # relative increase when going from cold to warm:
-exp(1.3497010) / exp(0.7314395)
+exp(1.1557726) / exp(0.4053091)
 
 
 # what is the temp range here (0 and -0.75)?

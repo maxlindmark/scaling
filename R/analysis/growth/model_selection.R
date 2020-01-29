@@ -79,7 +79,8 @@ data = list(
   species_n = dat$species_n,
   #mass = dat$log_mass_norm_ct,
   mass = dat$log_mass_ct,
-  temp = dat$temp_norm_arr_ct
+  #temp = dat$temp_norm_arr_ct
+  temp = dat$temp_arr - mean(dat$temp_arr)
 )
 
 
@@ -136,6 +137,19 @@ pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
 waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
 sqrt(n_cases*var(waic_vec))
 # [1] 31.45414
+
+# cs = coda.samples(jm,
+#                   variable.names = c(
+#                     "mu_b3"), 
+#                   n.iter = 10000, 
+#                   thin = 5)
+# summary(cs)
+# js = jags.samples(jm, 
+#                   variable.names = c("mu_b3"), 
+#                   n.iter = 10000, 
+#                   thin = 5)
+# 
+# ecdf(js$mu_b3)(0) 
 
 
 #**** M2 ===========================================================================
@@ -463,6 +477,7 @@ pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
 waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
 sqrt(n_cases*var(waic_vec))
 # [1] 18.96065
+
 
 #** COMPARE WAIC ===================================================================
 # WAIC

@@ -26,8 +26,8 @@ model{
 
     for(k in 1:length(mass_pred)){
   
-        pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-1
-        pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*0
+        pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-.97
+        pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*0.38
   
   } 
 

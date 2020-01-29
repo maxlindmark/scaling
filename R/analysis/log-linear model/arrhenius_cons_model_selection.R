@@ -183,13 +183,12 @@ cs <- coda.samples(jm,
 
 summary(cs)
 
-
 js = jags.samples(jm, 
                   variable.names = c("b3"), 
                   n.iter = 10000, 
                   thin = 5)
 
-1-ecdf(js$b3)(0) 
+ecdf(js$b3)(0) 
 
 cs %>% mcmc_dens() 
 
@@ -521,24 +520,23 @@ waic_m6 - waic_m5
 waic_m7 - waic_m5
 waic_m8 - waic_m5
 
-# [1] 103.3267
 # > waic_m1 - waic_m5
-# [1] 2.867496
+# [1] 3.520652
 # > waic_m2 - waic_m5
-# [1] 0.9142125
+# [1] 2.038109
 # > waic_m3a - waic_m5
-# [1] 132.2783
+# [1] 132.4823
 # > waic_m3b - waic_m5
-# [1] 60.50091
+# [1] 47.96525
 # > waic_m4 - waic_m5
-# [1] 167.9646
+# [1] 157.4132
 # > waic_m5 - waic_m5
 # [1] 0
 # > waic_m6 - waic_m5
-# [1] 184.9694
+# [1] 185.4572
 # > waic_m7 - waic_m5
-# [1] 598.6144
+# [1] 681.9205
 # > waic_m8 - waic_m5
-# [1] 822.4319
+# [1] 672.0204
 
 # WAIC suggests model 5 is best fitting

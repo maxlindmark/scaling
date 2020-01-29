@@ -8,7 +8,7 @@ model{
     mu[i] <- 
       b0[species_n[i]] +               # varying intercept 
       b1[species_n[i]]*mass[i] +       # varying mass-exponent
-      b2[species_n[i]]*temp[i] 
+      b2[species_n[i]]*temp[i]         # varying activation energy
   # Add log likelihood computation for each observation
   pd[i] <- dnorm(y[i], mu[i], tau)
   

@@ -155,23 +155,3 @@ plot(opt_temp_c_ct ~ log_mass_norm_ct, data = dat)
 #          mean_opt_temp_c, opt_temp_c_ct, mass, mass_norm, log_mass_norm, log_mass_norm_ct) %>% 
 #   write_csv(., "data/topt_analysis.csv", ";")
 
-
-#** Extra ==========================================================================
-# Growth rate at optimum over size 
-ggplot(dat, aes(log10(mass_norm), G, 
-                  color = common_name)) + 
-  geom_point(size = 5, alpha = 0.7) +
-  stat_smooth(method = "lm", se = FALSE, size = 2, alpha = 0.2)+ 
-  theme_classic(base_size = 15) +
-  scale_color_viridis(discrete = TRUE) +
-  NULL
-
-ggplot(dat, aes(log(mass), log(G), 
-                  color = common_name)) + 
-  geom_point(size = 5, alpha = 0.7) +
-  stat_smooth(method = "lm", se = FALSE, size = 2, alpha = 0.2)+ 
-  theme_classic(base_size = 15) +
-  scale_color_viridis(discrete = TRUE) +
-  NULL
-
-summary(lm(log(s_dat$growth_rate) ~ log(s_dat$mass)))

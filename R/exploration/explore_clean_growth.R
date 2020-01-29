@@ -127,7 +127,7 @@ str(dat)
 head(dat)
 
 # dat %>%
-#   select(G, mass, log_mass_ct, geom_mean_mass_g, temp_c, above_optimum, common_name, species,
+#   select(G, mass, log_mass_ct, log_mass, geom_mean_mass_g, temp_c, above_optimum, common_name, species,
 #          median_temp, median_temp_arr, temp_arr, temp_norm_arr, temp_norm,
 #          temp_norm_arr_ct, temp_norm, mass_norm, log_mass_norm, log_mass_norm_ct) %>%
 #   write_csv(., "data/growth_analysis.csv", ";")

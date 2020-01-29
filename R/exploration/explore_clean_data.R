@@ -571,16 +571,16 @@ p10 / p11
 
 
 # C. SAVE DATA =====================================================================
-# s_datm %>% 
-#   select(y, mass_g, log_mass_ct, temp_c, above_optimum, common_name, species, unit, original_unit, 
-#          type, rate, median_temp, median_temp_arr, temp_arr, temp_norm_arr, 
-#          temp_norm, temp_norm_arr_ct, temp_norm, mass_norm, log_mass_norm, log_mass_norm_ct) %>% 
+# s_datm %>%
+#   select(y, mass_g, log_mass, log_mass_ct, temp_c, above_optimum, common_name, species, unit, original_unit,
+#          type, rate, median_temp, median_temp_arr, temp_arr, temp_norm_arr,
+#          temp_norm, temp_norm_arr_ct, temp_norm, mass_norm, log_mass_norm, log_mass_norm_ct) %>%
 #   write_csv(., "data/met_analysis.csv", ";")
 # 
-# s_datc %>% 
-#   select(y, mass_g, log_mass_ct, temp_c, above_optimum, common_name, species, unit, original_unit, 
-#          type, rate, median_temp, median_temp_arr, temp_arr, temp_norm_arr, 
-#          temp_norm, temp_norm_arr_ct, temp_norm, mass_norm, log_mass_norm, log_mass_norm_ct) %>% 
+# s_datc %>%
+#   select(y, mass_g, log_mass, log_mass_ct, temp_c, above_optimum, common_name, species, unit, original_unit,
+#          type, rate, median_temp, median_temp_arr, temp_arr, temp_norm_arr,
+#          temp_norm, temp_norm_arr_ct, temp_norm, mass_norm, log_mass_norm, log_mass_norm_ct) %>%
 #   write_csv(., "data/con_analysis.csv", ";")
 
 

@@ -65,8 +65,10 @@ con_data = list(
   n_obs = length(con$y), 
   species_n = con$species_n,
   #mass = con$log_mass_norm_ct,
+  #mass = con$log_mass_ct,
+  #temp = con$temp_norm_arr_ct
   mass = con$log_mass_ct,
-  temp = con$temp_norm_arr_ct
+  temp = con$temp_arr - mean(con$temp_arr)
 )
 
 met <- met %>% arrange(species_n)
@@ -76,8 +78,10 @@ met_data = list(
   n_obs = length(met$y), 
   species_n = met$species_n,
   #mass = met$log_mass_norm_ct,
+  #mass = met$log_mass_ct,
+  #temp = met$temp_norm_arr_ct
   mass = met$log_mass_ct,
-  temp = met$temp_norm_arr_ct
+  temp = met$temp_arr - mean(met$temp_arr)
 )
 
 # met_data$species_n
@@ -130,6 +134,18 @@ cs_con <- coda.samples(jm_con,
 
 summary(cs_con) # Get the mean estimate and SE and 95% CIs
 
+# Check overlap with zero
+js = jags.samples(jm_con, 
+                  variable.names = c("mu_b1"), 
+                  n.iter = samples, 
+                  thin = n.thin)
+
+ecdf(js$mu_b1)(0.75) 
+#0.9295
+
+1- ecdf(js$b3)(0) 
+
+
 # Metabolic rate
 cs_met <- coda.samples(jm_met,
                        variable.names = c("b0", "b1", "b2", "b3",
@@ -141,10 +157,21 @@ cs_met <- coda.samples(jm_met,
 
 summary(cs_met)
 
-# Convert to ggplottable data frame
+# Check overlap with zero
+js = jags.samples(jm_met, 
+                  variable.names = c(
+                                     #"mu_b1", 
+                                     "b3"), 
+                  n.iter = samples, 
+                  thin = n.thin)
+
+1-ecdf(js$mu_b1)(0.75) 
+#0.9295
+
+1-ecdf(js$b3)(0)
 
 
-#** Plot species-predictions =======================================================
+#** Plot posteriors ================================================================
 # Maxiumum consumption
 con_df <- data.frame(summary(cs_con)[2])
 con_df$Parameter <- rownames(con_df)
@@ -290,9 +317,9 @@ p3 <- cs_met %>%
   scale_y_continuous(expand = c(0,0)) +
   # annotate("text", -Inf, Inf, label = "C", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "M*T interaction" & Rate == "Metabolic rate")$pred, 2)[1], 
+  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "M*T interaction" & Rate == "Metabolic rate")$pred, 3)[1], 
            size = 3, hjust = -0.5, vjust = 1.3) +
-  labs(x = "M*T interaction") +
+  labs(x = "m*t interaction") +
   ggtitle("") +
 #  xlim(-0.95, -0.4) +
   geom_vline(xintercept = filter(df, Parameter_mte == "M*T interaction" & Rate == "Metabolic rate")$pred, 
@@ -333,7 +360,7 @@ p5 <- cs_con %>%
 
 p1 + p2 + p3 + p4 + p5 + plot_layout(ncol = 3)
 
-#ggsave("figures/posterior_mte_parameters.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
+#ggsave("figures/supp/posterior_mte_parameters.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
 
 
 # How much of the interaction coefficient overlaps 0?
@@ -346,9 +373,9 @@ js = jags.samples(jm_met,
 1-ecdf(js$b3)(0) # We are % certain the slope is smaller than 0
 # [1] 0.9973333
 
-# How big is a c of 0.015 on celcius scale?
+# How big is a c of 0.014 on celcius scale?
 b <- 0.75
-cc <- 0.015
+cc <- 0.017
 
 test <- con
 

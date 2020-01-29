@@ -49,6 +49,9 @@ con <- con %>% filter(above_optimum == "N")
 met$species_n <- as.numeric(as.factor(met$species))
 con$species_n <- as.numeric(as.factor(con$species))
 
+met$temp_arr_ct <- met$temp_arr - mean(met$temp_arr)
+con$temp_arr_ct <- con$temp_arr - mean(con$temp_arr)
+
 # Mass-range used for prediction
 # mass_pred_con = seq(from = min(con$log_mass_norm_ct), 
 #                     to = max(con$log_mass_norm_ct),
@@ -64,9 +67,10 @@ con_data = list(
   n_obs = length(con$y), 
   species_n = con$species_n,
   #mass = con$log_mass_norm_ct,
+  #temp = con$temp_norm_arr_ct,
+  mass_pred = mass_pred_con,
   mass = con$log_mass_ct,
-  temp = con$temp_norm_arr_ct,
-  mass_pred = mass_pred_con
+  temp = con$temp_arr_ct
 )
 
 # Mass-range used for prediction
@@ -88,27 +92,44 @@ met_data = list(
   n_obs = length(met$y), 
   species_n = met$species_n,
   #mass = met$log_mass_norm_ct,
+  #temp = met$temp_norm_arr_ct,
+  mass_pred = mass_pred_met,
   mass = met$log_mass_ct,
-  temp = met$temp_norm_arr_ct,
-  mass_pred = mass_pred_met
+  temp = met$temp_arr_ct
 )
 
 # Check which temperatures to use
-ggplot(met, aes(temp_norm_arr_ct, temp_norm)) + 
-  geom_point()
+# > mean(met$temp_c)
+# [1] 19.35941
+# > mean(con$temp_c)
+# [1] 17.97762
 
-ggplot(met, aes(temp_norm_arr_ct, temp_norm)) + 
-  geom_point() + 
-  xlim(-1, 1)
+# I will therefore predict for 15C and 25C...
 
-ggplot(met, aes(temp_norm_arr_ct, temp_norm, color = species)) + 
-  geom_point() + 
+filter(met, temp_c < 25.1 & temp_c > 24.9)
+#-0.8
+
+filter(met, temp_c < 15.9 & temp_c > 14.9)
+# 0.56
+
+filter(con, temp_c < 25.1 & temp_c > 24.9)
+#-0.97
+
+filter(con, temp_c < 15.9 & temp_c > 14.9)
+# 0.38
+
+ggplot(met, aes(temp_arr_ct, temp_c)) + 
   geom_line() +
-  xlim(-1, 0.1) +
-  guides(color = FALSE) +
-  ylim(0, 10)
+  xlim(-1, 0) +
+  ylim(19, 27)
+# -1 and 0 corresponds to 28 and 18
 
-# So, using -1 and 0 roughly corresponds to an increse in + 8
+ggplot(con, aes(temp_arr_ct, temp_c)) + 
+  geom_point() +
+  xlim(-1, 0) +
+  ylim(17, 25)
+# -1 and 0 corresponds to 25 and 18
+
 unique(met$type)
 
 rest <- nrow(subset(met, type == "Resting"))
@@ -118,6 +139,23 @@ stand <- nrow(subset(met, type == "Standard"))
 (rest + rout) / (rest + rout + stand)
 
 stand / (rest + rout + stand)
+
+
+# ggplot(data = met, aes(log_mass_ct, log(y), fill = species)) +
+#   geom_point(, size = 2, shape = 21, 
+#              alpha = 0.2, color = "white") +
+#   theme_classic(base_size = 13) + 
+#   labs(x = "ln(mass ct)",
+#        y = "ln(metabolic rate)") +
+#   annotate("text", -Inf, Inf, label = "A", size = 4, 
+#            fontface = "bold", hjust = -0.5, vjust = 1.3) +
+#   theme(aspect.ratio = 3/4) +
+#   guides(fill = FALSE, color = FALSE) +
+#   NULL
+# 
+# t <- filter(met, log(y) > 1 & log_mass_ct > -4 & log_mass_ct < -2)
+# 
+# t
 
 # C. FIT MODELS ====================================================================
 # Refit chosen models from the model selection part
@@ -152,8 +190,8 @@ cat(
   # Predictions
   for(k in 1:length(mass_pred)){
       
-    pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-1 + b3*mass_pred[k]*-1
-    pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*0 + b3*mass_pred[k]*0
+    pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-0.8 + b3*mass_pred[k]*-0.8
+    pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*0.56 + b3*mass_pred[k]*0.56
     
   } 
 
@@ -221,8 +259,8 @@ cat(
 
     for(k in 1:length(mass_pred)){
   
-        pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-1
-        pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*0
+        pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-.97
+        pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*0.38
   
   } 
 
@@ -379,7 +417,7 @@ m_pred_warm_df <- data.frame(lwr_95 = m_pred_warm[1, ],
                              upr_80 = m_pred_warm[4, ],
                              upr_95 = m_pred_warm[5, ],
                              mass = mass_pred_met,
-                             temp = -1)
+                             temp = 25)
 
 # Cold temp:
 m_pred_cold <- summary(js_met$pred_cold, quantile, c(0.025, 0.1, .5, 0.9, 0.975))$stat
@@ -391,7 +429,7 @@ m_pred_cold_df <- data.frame(lwr_95 = m_pred_cold[1, ],
                            upr_80 = m_pred_cold[4, ],
                            upr_95 = m_pred_cold[5, ],
                            mass = mass_pred_met,
-                           temp = 0)
+                           temp = 15)
 
 # Consumption
 js_con = jags.samples(jm_con, 
@@ -410,7 +448,7 @@ c_pred_warm_df <- data.frame(lwr_95 = c_pred_warm[1, ],
                              upr_80 = c_pred_warm[4, ],
                              upr_95 = c_pred_warm[5, ],
                              mass = mass_pred_con,
-                             temp = -1)
+                             temp = 25)
 
 # Cold temp:
 c_pred_cold <- summary(js_con$pred_cold, quantile, c(0.025, 0.1, .5, 0.9, 0.975))$stat
@@ -422,29 +460,40 @@ c_pred_cold_df <- data.frame(lwr_95 = c_pred_cold[1, ],
                              upr_80 = c_pred_cold[4, ],
                              upr_95 = c_pred_cold[5, ],
                              mass = mass_pred_con,
-                             temp = 0)
+                             temp = 15)
 
 # Plot data and predictions with 95% credible interval (at each x, plot as ribbon)
 #pal <- viridis(option = "magma", n = 10)[c(2, 6)]
-pal <- brewer.pal("Dark2", n = 5)[c(1,3)]
+#pal <- brewer.pal("Dark2", n = 5)
+pal <- brewer.pal("Set1", n = 5)
 
 m_pdat <- rbind(m_pred_cold_df, m_pred_warm_df)
 c_pdat <- rbind(c_pred_cold_df, c_pred_warm_df)
 
+colourCount = length(unique(met$species))
+getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
+pal2 <- getPalette(colourCount)
+
 p5 <- ggplot(m_pdat, aes(mass, median, color = factor(temp))) +
-  geom_point(data = met, aes(log_mass_norm_ct, log(y)), size = 2.8, shape = 21, 
-             alpha = 0.2, color = "white", fill = "grey40") +
-  geom_ribbon(data = m_pdat, aes(x = mass, ymin = lwr_95, ymax = upr_95, fill = factor(temp)), 
-              size = 0.6, alpha = 0.2, inherit.aes = FALSE)+
-  geom_ribbon(data = m_pdat, aes(x = mass, ymin = lwr_80, ymax = upr_80, fill = factor(temp)), 
-              size = 0.6, alpha = 0.25, inherit.aes = FALSE) +
-  # scale_color_manual(values = pal) +
-  # scale_fill_manual(values = pal) +
-  scale_color_brewer(palette = "Set1") +
-  scale_fill_brewer(palette = "Set1") +
+  geom_point(data = met, aes(log_mass_ct, log(y), fill = species), size = 2.2, shape = 21, 
+             alpha = 0.4, color = "white") +
+  # geom_ribbon(data = m_pdat, aes(x = mass, ymin = lwr_95, ymax = upr_95), 
+  #             size = 0.6, alpha = 0.2, inherit.aes = FALSE)+
+  # geom_ribbon(data = m_pdat, aes(x = mass, ymin = lwr_80, ymax = upr_80), 
+  #             size = 0.6, alpha = 0.25, inherit.aes = FALSE) +
+  geom_ribbon(data = filter(m_pdat, temp == 15), aes(x = mass, ymin = lwr_95, ymax = upr_95), 
+              size = 2, alpha = 0.1, inherit.aes = FALSE, fill = pal[2]) +
+  geom_ribbon(data = filter(m_pdat, temp == 15), aes(x = mass, ymin = lwr_80, ymax = upr_80), 
+              size = 2, alpha = 0.15, inherit.aes = FALSE, fill = pal[2]) +
+  geom_ribbon(data = filter(m_pdat, temp == 25), aes(x = mass, ymin = lwr_95, ymax = upr_95), 
+              size = 2, alpha = 0.1, inherit.aes = FALSE, fill = pal[1]) +
+  geom_ribbon(data = filter(m_pdat, temp == 25), aes(x = mass, ymin = lwr_80, ymax = upr_80), 
+              size = 2, alpha = 0.15, inherit.aes = FALSE, fill = pal[1]) +
+  scale_color_manual(values = rev(pal[1:2])) +
+  scale_fill_manual(values = pal2) +
   geom_line(size = 0.6, alpha = 1) +
   theme_classic(base_size = 13) + 
-  labs(x = "ln(standardized mass)",
+  labs(x = "ln(mass ct)",
        y = "ln(metabolic rate)") +
   annotate("text", -Inf, Inf, label = "A", size = 4, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
@@ -454,22 +503,31 @@ p5 <- ggplot(m_pdat, aes(mass, median, color = factor(temp))) +
 
 p5
 
+
 p6 <- ggplot(c_pdat, aes(mass, median, color = factor(temp))) +
-  geom_point(data = con, aes(log_mass_norm_ct, log(y)), size = 2.8, shape = 21, 
-             alpha = 0.2, color = "white", fill = "grey40") +
-  geom_ribbon(data = c_pdat, aes(x = mass, ymin = lwr_95, ymax = upr_95, fill = factor(temp)), 
-              size = 0.6, alpha = 0.2, inherit.aes = FALSE)+
-  geom_ribbon(data = c_pdat, aes(x = mass, ymin = lwr_80, ymax = upr_80, fill = factor(temp)), 
-              size = 0.6, alpha = 0.25, inherit.aes = FALSE) +
+  geom_point(data = con, aes(log_mass_ct, log(y), fill = species, color = temp), size = 2.2, shape = 21, 
+             alpha = 0.4, color = "white") +
+  # geom_ribbon(data = c_pdat, aes(x = mass, ymin = lwr_95, ymax = upr_95, fill = factor(temp)), 
+  #             size = 0.6, alpha = 0.2, inherit.aes = FALSE)+
+  # geom_ribbon(data = c_pdat, aes(x = mass, ymin = lwr_80, ymax = upr_80, fill = factor(temp)), 
+  #             size = 0.6, alpha = 0.25, inherit.aes = FALSE) +
+  geom_ribbon(data = filter(c_pdat, temp == 15), aes(x = mass, ymin = lwr_95, ymax = upr_95), 
+              size = 2, alpha = 0.1, inherit.aes = FALSE, fill = pal[2]) +
+  geom_ribbon(data = filter(c_pdat, temp == 15), aes(x = mass, ymin = lwr_80, ymax = upr_80), 
+              size = 2, alpha = 0.15, inherit.aes = FALSE, fill = pal[2]) +
+  geom_ribbon(data = filter(c_pdat, temp == 25), aes(x = mass, ymin = lwr_95, ymax = upr_95), 
+              size = 2, alpha = 0.1, inherit.aes = FALSE, fill = pal[1]) +
+  geom_ribbon(data = filter(c_pdat, temp == 25), aes(x = mass, ymin = lwr_80, ymax = upr_80), 
+              size = 2, alpha = 0.15, inherit.aes = FALSE, fill = pal[1]) +
   # scale_color_manual(values = pal) +
   # scale_fill_manual(values = pal) +
-  scale_color_brewer(palette = "Set1") +
-  scale_fill_brewer(palette = "Set1") +
+  scale_color_manual(values = rev(pal[1:2])) +
+  scale_fill_manual(values = pal2) +
   geom_line(size = 0.6, alpha = 1) +
   theme_classic(base_size = 13) + 
-  labs(x = "ln(standardized mass)",
+  labs(x = "ln(mass ct)",
        y = "ln(maximum consumption rate)",
-       color = "Standardized Arrhenius Temperature") +
+       color = expression(paste("Temperature [", degree*C, "]"))) +
   guides(fill = FALSE) +
   annotate("text", -Inf, Inf, label = "B", size = 4, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +

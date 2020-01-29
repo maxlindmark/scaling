@@ -37,6 +37,8 @@ library(bayesplot)
 dat <- read.csv("data/met_analysis.csv")
 str(dat)
 
+sort(log(dat$y))
+
 # Filter data points at below optimum temperatures
 dat <- dat %>% filter(above_optimum == "N")
 
@@ -474,23 +476,23 @@ waic_m7
 waic_m8
 
 # > waic_m1
-# [1] 289.5468
+# [1] 289.6437
 # > waic_m2
-# [1] 288.8439
+# [1] 289.867
 # > waic_m3a
-# [1] 586.8856
+# [1] 586.5194
 # > waic_m3b
-# [1] 681.2041
+# [1] 678.8176
 # > waic_m4
-# [1] 935.1892
+# [1] 931.9436
 # > waic_m5
-# [1] 294.901
+# [1] 294.8764
 # > waic_m6
-# [1] 971.0657
+# [1] 970.9291
 # > waic_m7
-# [1] 4291.59
+# [1] 3954.168
 # > waic_m8
-# [1] 10951.34
+# [1] 6498.894
 
 # WAIC suggests model 2 is most best fitting
 
@@ -505,24 +507,24 @@ waic_m6 - waic_m2
 waic_m7 - waic_m2
 waic_m8 - waic_m2
 
-# > waic_m1 - waic_m2
-# [1] 0.7029451
-# > waic_m2 - waic_m2
+# > waic_m1 - waic_m1
 # [1] 0
-# > waic_m3a - waic_m2
-# [1] 298.0417
-# > waic_m3b - waic_m2
-# [1] 392.3602
-# > waic_m4 - waic_m2
-# [1] 646.3453
-# > waic_m5 - waic_m2
-# [1] 6.057097
-# > waic_m6 - waic_m2
-# [1] 682.2218
-# > waic_m7 - waic_m2
-# [1] 4002.746
-# > waic_m8 - waic_m2
-# [1] 10662.49
+# > waic_m2 - waic_m1
+# [1] 0.2233147
+# > waic_m3a - waic_m1
+# [1] 296.8757
+# > waic_m3b - waic_m1
+# [1] 389.1739
+# > waic_m4 - waic_m1
+# [1] 642.2999
+# > waic_m5 - waic_m1
+# [1] 5.232631
+# > waic_m6 - waic_m1
+# [1] 681.2854
+# > waic_m7 - waic_m1
+# [1] 3664.524
+# > waic_m8 - waic_m1
+# [1] 6209.25
 
 # M1 - all coefficients vary by species
 # M2 - intercept, mass, temperature vary by species

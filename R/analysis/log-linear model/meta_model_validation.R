@@ -76,9 +76,13 @@ data = list(
   y = log(dat$y), 
   n_obs = length(dat$y), 
   species_n = dat$species_n,
-  mass = dat$log_mass_norm_ct,
-  temp = dat$temp_norm_arr_ct
+  mass = dat$log_mass_ct,
+  temp = dat$temp_arr - mean(dat$temp_arr)
 )
+
+# mean mass
+mean(dat$log_mass)
+exp(mean(dat$log_mass))
 
 
 # C. MODEL VALIDATION ==============================================================
@@ -307,7 +311,7 @@ p9+p10
 cs_df %>% 
   ggs_Rhat(.) + 
   xlab("R_hat") +
-  xlim(0.999, 1.01) +
+  xlim(0.999, 1.03) +
   theme_classic(base_size = 11) +
   geom_point(size = 2) +
   theme(aspect.ratio = 1)+

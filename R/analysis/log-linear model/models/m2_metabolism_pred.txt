@@ -27,8 +27,8 @@ model{
   # Predictions
   for(k in 1:length(mass_pred)){
       
-    pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-1 + b3*mass_pred[k]*-1
-    pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*0 + b3*mass_pred[k]*0
+    pred_warm[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*-0.8 + b3*mass_pred[k]*-0.8
+    pred_cold[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*0.56 + b3*mass_pred[k]*0.56
     
   } 
 

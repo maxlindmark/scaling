@@ -77,8 +77,10 @@ data = list(
   n_obs = length(dat$y), 
   species_n = dat$species_n,
   #mass = dat$log_mass_norm_ct,
+  #mass = dat$log_mass_ct,
+  #temp = dat$temp_norm_arr_ct
   mass = dat$log_mass_ct,
-  temp = dat$temp_norm_arr_ct
+  temp = dat$temp_arr - mean(dat$temp_arr)
 )
 
 

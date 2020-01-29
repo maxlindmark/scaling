@@ -10,9 +10,11 @@
 #
 # C. Fit models
 # 
-# E. Evaluate model fit
+# D. Evaluate model fit
 #
-# D. Plot predicted mass-scaling slopes in different temperatures
+# E. Evaluate model convergence
+#
+# F. Plot predicted mass-scaling slopes in different temperatures
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # A. LOAD LIBRARIES ================================================================
@@ -271,19 +273,8 @@ WAIC2 <- lppd2 + 2*pd.WAIC2
 c(pd.WAIC2, WAIC2)
 waic_m2 <- WAIC2
 
-# Standard error of WAIC
-n_cases <- nrow(data.frame(data$y))
-lppd_ind2 <- log(summary(zj2$pd, mean)$stat)
-pd.WAIC_ind2 <- (summary(zj2$log_pd, sd)$stat)^2
-waic_vec2 <- -2*(lppd_ind2 - pd.WAIC_ind2)
-waic_2_se <- sqrt(n_cases*var(waic_vec2))
-waic_2_se
-# 12.25855
-
-# Summarize mean and interval of WAIC
-# Compare WAIC and se for two models
-# (1.96 corresponding to 95% interval)
-waic_m2 + (c(-1, 1) * waic_2_se * 1.96)
+# Compare both WAIC
+WAIC1-WAIC2
 
 
 #** Compare both models ============================================================
@@ -355,10 +346,102 @@ p2 <- ggplot(cs_fit_df, aes(cv_y_sim)) +
 
 #p1 + p2
 p1
-#ggsave("figures/supp/T_opt_cv_mean_fit.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm", dpi = 300)
+#ggsave("figures/supp/cv_mean_fit_T_opt.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm", dpi = 300)
 
 
-# E. PLOT PREDICTIONS ==============================================================
+# E. MODEL VALIDATION ==============================================================
+#** Sample from the posterior ======================================================
+samples = 10000 # How many samples to take from the posterior
+n.thin = 5 # Thinning?
+
+# CODA - Nice for getting the raw posteriors
+cs <- coda.samples(jm2,
+                   variable.names = c("b1", "b0", "mu_b0", "sigma_b0", "sigma"), 
+                   n.iter = samples, 
+                   thin = n.thin)
+
+summary(cs) # Get the mean estimate and SE and 95% CIs
+
+cs_df <- data.frame(summary(cs)[1])
+cs_df$Parameter <- row.names(cs_df)
+
+
+#** Evaluate convergence ===========================================================
+# Convert to ggplottable data frame
+cs_df <- ggs(cs)
+
+# Plot posterior densities of species intercepts
+p1 <- cs_df %>% 
+  filter(Parameter %in% c("b0[1]", "b0[2]", "b0[3]", "b0[4]", "b0[5]", "b0[6]", "b0[7]", 
+                          "b0[8]", "b0[9]", "b0[10]", "b0[11]", "b0[12]", "b0[13]")) %>% 
+  ggs_density(.) + 
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+  theme_classic(base_size = 11) + 
+  geom_density(alpha = 0.05) +
+  scale_color_brewer(palette = "Dark2") + 
+  scale_fill_brewer(palette = "Dark2") +
+  labs(x = "Value", y = "Density", fill = "Chain #") +
+  guides(color = FALSE, fill = FALSE) +
+  NULL
+
+# Traceplot for evaluating chain convergence
+p2 <- cs_df %>% 
+  filter(Parameter %in% c("b0[1]", "b0[2]", "b0[3]", "b0[4]", "b0[5]", "b0[6]", "b0[7]", 
+                          "b0[8]", "b0[9]", "b0[10]", "b0[11]", "b0[12]", "b0[13]")) %>% 
+  ggs_traceplot(.) +
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+  theme_classic(base_size = 11) + 
+  geom_line(alpha = 0.3) +
+  scale_color_brewer(palette = "Dark2") + 
+  labs(x = "Iteration", y = "Value", color = "Chain #") +
+  guides(color = guide_legend(override.aes = list(alpha = 1))) +
+  theme(axis.text.x = element_text(size = 6)) +
+  NULL
+p1+p2
+#ggsave("figures/supp/model_validation_t_opt_intercepts.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm", dpi = 300)
+
+# Plot posterior densities of params
+p1 <- cs_df %>% 
+  filter(Parameter %in% c("b1", "mu_b0", "sigma_b0", "sigma")) %>% 
+  ggs_density(.) + 
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+  theme_classic(base_size = 11) + 
+  geom_density(alpha = 0.05) +
+  scale_color_brewer(palette = "Dark2") + 
+  scale_fill_brewer(palette = "Dark2") +
+  labs(x = "Value", y = "Density", fill = "Chain #") +
+  guides(color = FALSE, fill = FALSE) +
+  NULL
+
+# Traceplot for evaluating chain convergence
+p2 <- cs_df %>% 
+  filter(Parameter %in% c("b1", "mu_b0", "sigma_b0", "sigma")) %>% 
+  ggs_traceplot(.) +
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+  theme_classic(base_size = 11) + 
+  geom_line(alpha = 0.3) +
+  scale_color_brewer(palette = "Dark2") + 
+  labs(x = "Iteration", y = "Value", color = "Chain #") +
+  guides(color = guide_legend(override.aes = list(alpha = 1))) +
+  theme(axis.text.x = element_text(size = 6)) +
+  NULL
+p1+p2
+#ggsave("figures/supp/model_validation_t_opt.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm", dpi = 300)
+
+# Rhat
+cs_df %>% 
+  ggs_Rhat(.) + 
+  xlab("R_hat") +
+  xlim(0.999, 1.01) +
+  theme_classic(base_size = 11) +
+  geom_point(size = 2) +
+  theme(aspect.ratio = 1)+
+  NULL
+#ggsave("figures/supp/rhat_t_opt.pdf", plot = last_plot(), scale = 1, width = 14, height = 14, units = "cm", dpi = 300)
+
+
+
+# F. PLOT PREDICTIONS ==============================================================
 # JAGS - Nice for summaries and predictions
 # Extract the prediction at each x including credible interaval
 samples = 10000 # How many samples to take from the posterior
@@ -407,8 +490,8 @@ p3 <- ggplot(pred_df, aes(mass, median)) +
   guides(fill = FALSE,
          size = guide_legend(override.aes = list(fill = "black",
                                                  color = "black"))) +
-  labs(x = "ln(standardized mass)",
-       y = "Standardized optimum growth temperature",
+  labs(x = "ln(rescaled mass ct)",
+       y = "Rescaled optimum growth temperature",
        size = "Mass [g]") +
   # annotate("text", -Inf, Inf, label = "A", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
@@ -456,5 +539,98 @@ ecdf(js$b1)(0) # We are 99.1% certain the slope is smaller than 0
 #ggsave("figures/supp/T_opt_mass_posterior.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
 
 
+# Plot optimum growth compared to experimental and environmental temperature
+# Read in growth data as that has experimental temperature
+dat2 <- read.csv("data/growth_analysis.csv")
 
+# Create abbreviated species name for plotting. Get first part of name
+sp1 <- substring(dat2$species, 1, 1)
 
+# Get species name
+sp2 <- gsub( ".*\\s", "", dat2$species )
+
+dat2$species_ab <- paste(sp1, sp2, sep = ".")
+
+# Prepare experimental data
+sub <- dat2 %>% 
+  select(temp_c, median_temp, species_ab) %>% 
+  gather(source, temp, 1:2) %>% 
+  mutate(sd = NA)
+
+# Filter T_opt data
+sub2 <- dat %>% 
+  group_by(species_ab) %>% 
+  summarize(temp   = mean(opt_temp_c),
+            sd     = sd(opt_temp_c),
+            source = "Optimum (data)") %>% 
+  ungroup()
+
+# Raw T_opt data
+sub2 <- dat %>% 
+  mutate(source = "Optimum (data)",
+         temp = opt_temp_c,
+         sd = NA) %>% 
+  select(temp, species_ab, sd, source)
+
+head(sub2)
+head(sub)
+
+sub <- bind_rows(sub2, sub)
+
+sub$source <- ifelse(sub$source == "temp_c",
+                     "Experimental\ntemperature",
+                     sub$source)
+
+sub$source <- ifelse(sub$source == "median_temp",
+                     "Mid-point env. temperature",
+                     sub$source)
+
+pal2 <- RColorBrewer::brewer.pal("Dark2", n = 5)
+  
+# For ordering data points in plot...
+
+sub$source2 <- 1
+sub$source2 <- ifelse(sub$source == "Optimum (data)", 2, sub$source2)
+sub$source2 <- ifelse(sub$source == "Mid-point env. temperature", 3, sub$source2)
+
+sub$lower <- sub$temp - 2*sub$sd
+sub$upper <- sub$temp + 2*sub$sd
+
+# Plot
+sub %>% arrange(source2) %>% 
+  ggplot(., aes(x = reorder(species_ab, temp), y = temp, fill = source)) +
+  geom_point(size = 3.5, alpha = 0.6, shape = 21, color = "white") +
+  # geom_errorbar(data = filter(sub, source == "Optimum (data)"), 
+  #               aes(ymin = lower, ymax = upper), color = pal2[2], width = 0) +
+  scale_fill_manual(values = c("grey70", pal2[1], pal2[2])) +
+  theme_classic(base_size = 12) +
+  guides(fill = guide_legend(override.aes = list(alpha = rep(1, 3)))) +
+  xlab("") + 
+  ylab("Temperature [C]") + 
+  coord_flip() +
+  theme(legend.position = c(0.8, 0.2),
+        axis.text.y = element_text(face = "italic"),
+        #aspect.ratio = 3/4
+        ) +
+  NULL 
+
+#ggsave("figures/opt_env_exp.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm", dpi = 300)
+
+ 
+ 
+# cs_df %>% 
+#   filter(Parameter %in% c("b0[1]", "b0[2]", "b0[3]", "b0[4]", "b0[5]", "b0[6]", "b0[7]", 
+#                           "b0[8]", "b0[9]", "b0[10]", "b0[11]", "b0[12]", "b0[13]")) %>% 
+#   ggs_density(.) + 
+#   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+#   theme_classic(base_size = 11) + 
+#   geom_density(alpha = 0.05) +
+#   scale_color_brewer(palette = "Dark2") + 
+#   scale_fill_brewer(palette = "Dark2") +
+#   labs(x = "Value", y = "Density", fill = "Chain #") +
+#   guides(color = FALSE, fill = FALSE) +
+#   NULL
+# 
+# summary(cs) # Get the mean estimate and SE and 95% CIs
+# cs_df <- data.frame(summary(cs)[1])
+# cs_df$Parameter <- row.names(cs_df)

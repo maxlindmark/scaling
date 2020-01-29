@@ -75,19 +75,19 @@ con %>%
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.8) +
   stat_smooth(se = FALSE) +
-  labs(x = "Standardized temperature", y = "Standardized consumption") +
+  labs(x = "Rescaled temperature", y = "Rescaled consumption") +
   scale_color_viridis(discrete = TRUE, option = "magma") +
   NULL
 
 con %>% 
   filter(species %in% spec) %>% 
   #ggplot(., aes(temp_norm_ct, y_norm, color = log_mass_norm)) +
-  #ggplot(., aes(temp_norm_ct, y, color = log_mass_norm)) + 
-  ggplot(., aes(temp_norm, y_norm, color = log_mass_norm)) + 
+  ggplot(., aes(temp_norm_ct, y, color = log_mass_norm)) + 
+  #ggplot(., aes(temp_norm, y_norm, color = log_mass_norm)) + 
   theme_classic(base_size = 12) +
   geom_point(size = 1, alpha = 0.8) +
   stat_smooth(se = FALSE) +
-  labs(x = "Standardized temperature", y = "Standardized consumption") +
+  labs(x = "Rescaled temperature", y = "Rescaled consumption") +
   scale_color_viridis(option = "magma") +
   facet_wrap(~ species, scales = "free") +
   NULL
@@ -289,7 +289,7 @@ pred_dat_df %>%
   geom_line() +
   scale_color_manual(values = pal) +
   theme_classic(base_size = 14) + 
-  labs(x = "Standardized temperature",
+  labs(x = "Rescaled temperature",
        y = "Predicted consumption rate",
        color = "Species") +
   theme(aspect.ratio = 3/4) +
@@ -307,8 +307,8 @@ pred_dat_df %>%
               size = 1, alpha = 0.25, fill = "red") +
   theme_classic(base_size = 14) + 
   guides(fill = FALSE) +
-  labs(x = "Standardized temperature",
-       y = "Standardized consumption rate",
+  labs(x = "Rescaled temperature",
+       y = "Rescaled consumption rate",
        color = "Species") +
   theme(aspect.ratio = 3/4,
         legend.position = c(0.13, 0.75),
@@ -399,8 +399,8 @@ pred_dat_df %>%
   scale_fill_manual(values = pal) +
   guides(fill = FALSE) +
   theme_classic(base_size = 14) + 
-  labs(x = "Standardized temperature",
-       y = "Standardized consumption rate",
+  labs(x = "Rescaled temperature",
+       y = "Rescaled consumption rate",
        color = "Species") +
   theme(aspect.ratio = 3/4,
         legend.position = c(0.13, 0.75),
@@ -434,8 +434,8 @@ pred_dat_df %>%
   scale_fill_manual(values = pal) +
   guides(fill = FALSE)  +
   theme_classic(base_size = 14) + 
-  labs(x = "Standardized temperature",
-       y = "Standardized consumption rate",
+  labs(x = "Rescaled temperature",
+       y = "Rescaled consumption rate",
        color = "Species") +
   theme(aspect.ratio = 3/4,
         legend.position = c(0.13, 0.75),
