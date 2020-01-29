@@ -553,24 +553,25 @@ dat2$species_ab <- paste(sp1, sp2, sep = ".")
 
 # Prepare experimental data
 sub <- dat2 %>% 
-  select(temp_c, median_temp, species_ab) %>% 
+  select(temp_c, median_temp, species_ab, log_mass) %>% 
   gather(source, temp, 1:2) %>% 
   mutate(sd = NA)
 
 # Filter T_opt data
-sub2 <- dat %>% 
-  group_by(species_ab) %>% 
-  summarize(temp   = mean(opt_temp_c),
-            sd     = sd(opt_temp_c),
-            source = "Optimum (data)") %>% 
-  ungroup()
+# sub2 <- dat %>% 
+#   group_by(species_ab) %>% 
+#   summarize(temp   = mean(opt_temp_c),
+#             sd     = sd(opt_temp_c),
+#             source = "Optimum (data)") %>% 
+#   ungroup()
 
 # Raw T_opt data
 sub2 <- dat %>% 
   mutate(source = "Optimum (data)",
          temp = opt_temp_c,
-         sd = NA) %>% 
-  select(temp, species_ab, sd, source)
+         sd = NA,
+         log_mass = log(mass)) %>% 
+  select(temp, species_ab, sd, source, log_mass)
 
 head(sub2)
 head(sub)
@@ -606,31 +607,57 @@ sub %>% arrange(source2) %>%
   theme_classic(base_size = 12) +
   guides(fill = guide_legend(override.aes = list(alpha = rep(1, 3)))) +
   xlab("") + 
-  ylab("Temperature [C]") + 
+  ylab(expression(paste("Temperature [", degree*C, "]"))) + 
   coord_flip() +
-  theme(legend.position = c(0.8, 0.2),
+  theme(legend.position = c(0.8, 0.15),
         axis.text.y = element_text(face = "italic"),
-        #aspect.ratio = 3/4
+        aspect.ratio = 5/6
         ) +
   NULL 
 
 #ggsave("figures/opt_env_exp.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm", dpi = 300)
 
- 
- 
-# cs_df %>% 
-#   filter(Parameter %in% c("b0[1]", "b0[2]", "b0[3]", "b0[4]", "b0[5]", "b0[6]", "b0[7]", 
-#                           "b0[8]", "b0[9]", "b0[10]", "b0[11]", "b0[12]", "b0[13]")) %>% 
-#   ggs_density(.) + 
-#   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
-#   theme_classic(base_size = 11) + 
-#   geom_density(alpha = 0.05) +
-#   scale_color_brewer(palette = "Dark2") + 
-#   scale_fill_brewer(palette = "Dark2") +
-#   labs(x = "Value", y = "Density", fill = "Chain #") +
-#   guides(color = FALSE, fill = FALSE) +
-#   NULL
+# I need to go from long to wide in sub, and then do group by and calculate - by species - the mean distance from environmental midpoint
+
+sub3 <- dat %>%
+  group_by(species_ab) %>%
+  summarize(temp = mean(opt_temp_c)) %>%
+  arrange(species_ab) %>% 
+  ungroup()
+
+sub3
+
+
+sub4 <- dat2 %>%
+  group_by(species_ab) %>%
+  summarize(median_temp = mean(median_temp)) %>%
+  arrange(species_ab) %>% 
+  ungroup()
+
+sub4
+
+sub3$median_temp <- sub4$median_temp
+
+sub3$mean_t_diff <- sub3$temp - sub3$median_temp
+
+mean(sub3$mean_t_diff)
+sd(sub3$mean_t_diff)
+
+# head(sub)
 # 
-# summary(cs) # Get the mean estimate and SE and 95% CIs
-# cs_df <- data.frame(summary(cs)[1])
-# cs_df$Parameter <- row.names(cs_df)
+# sub_wide <- sub %>% 
+#   ungroup() %>% 
+#   filter(source %in% c("Optimum (data)", "Mid-point env. temperature")) %>% 
+#   select(temp, species_ab, source) %>% 
+#   pivot_wider(values_from = temp, names_from = source)
+# 
+# sub_wide
+
+
+
+
+
+
+
+
+ 
