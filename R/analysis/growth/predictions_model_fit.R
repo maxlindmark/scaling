@@ -444,19 +444,33 @@ filter(pdat, mass < 0.04 & mass > -0.04)
 
 # now compare the medians
 # warm growth (temp = 0)
-1.1557726
-
-# warm growth normal scale (temp = 0)
-
+1.5237011
 
 # cold growth (temp = 0)
-0.4053091
+0.5204447
 
-# cold growth normal scale (temp = -0.75)
-
+1.5237011/0.5204447
 
 # relative increase when going from cold to warm:
-exp(1.1557726) / exp(0.4053091)
+exp(1.5237011) / exp(0.5204447)
+
+
+mean(dat$mass)
+mean(log(dat$mass))
+mean(dat$log_mass)
+
+exp(3.27)
+
+tt <- seq(1:10) 
+
+mean(tt)
+
+logtt <- log(tt)
+
+mean(logtt)
+
+exp(1.51)
+
 
 
 # what is the temp range here (0 and -0.75)?

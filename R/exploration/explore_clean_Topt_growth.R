@@ -150,8 +150,8 @@ head(dat)
 # Plot
 plot(opt_temp_c_ct ~ log_mass_norm_ct, data = dat)
 
-# dat %>% 
-#   select(G, geom_mean_mass_g, opt_temp_c, common_name, species,  
-#          mean_opt_temp_c, opt_temp_c_ct, mass, mass_norm, log_mass_norm, log_mass_norm_ct) %>% 
+# dat %>%
+#   select(G, geom_mean_mass_g, opt_temp_c, common_name, species,
+#          mean_opt_temp_c, opt_temp_c_ct, mass, mass_norm, log_mass_norm, log_mass_norm_ct) %>%
 #   write_csv(., "data/topt_analysis.csv", ";")
 

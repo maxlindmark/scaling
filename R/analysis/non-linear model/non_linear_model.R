@@ -299,7 +299,7 @@ pred_dat_df %>%
 pred_dat_df %>% 
   ggplot(., aes(temp, median)) +
   facet_wrap(~ factor(species_ab), scales = "free") +
-  geom_point(data = con, aes(temp_norm, y_norm),
+  geom_point(data = con, aes(temp_norm_ct, y_norm),
              size = 3, alpha = 0.8, shape = 21, fill = "grey20", color = "white") +
   geom_line(size = 1, alpha = 0.6) +
   geom_ribbon(data = filter(pred_dat_df, median > 0), 

@@ -126,11 +126,20 @@ dat$log_mass_norm_ct <- dat$log_mass_norm - mean(dat$log_mass_norm)
 str(dat)
 head(dat)
 
-# dat %>%
-#   select(G, mass, log_mass_ct, log_mass, geom_mean_mass_g, temp_c, above_optimum, common_name, species,
-#          median_temp, median_temp_arr, temp_arr, temp_norm_arr, temp_norm,
-#          temp_norm_arr_ct, temp_norm, mass_norm, log_mass_norm, log_mass_norm_ct) %>%
-#   write_csv(., "data/growth_analysis.csv", ";")
+dat %>%
+  select(G, mass, log_mass_ct, env_temp_min, env_temp_max, log_mass, geom_mean_mass_g, temp_c, above_optimum, common_name, species,
+         median_temp, median_temp_arr, temp_arr, temp_norm_arr, temp_norm,
+         temp_norm_arr_ct, temp_norm, mass_norm, log_mass_norm, log_mass_norm_ct) %>%
+  write_csv(., "data/growth_analysis.csv", ";")
+
+# dat2 <- dat %>% drop_na(env_temp_max) %>% droplevels()
+# 
+# str(dat2)
+# 
+# ggplot(dat2) +
+#   geom_point(aes(species, env_temp_min), col = "blue") +
+#   geom_point(aes(species, env_temp_max), col = "red") +
+#   geom_point(aes(species, env_temp_mid))
 
 
 #** Growth rate ====================================================================
