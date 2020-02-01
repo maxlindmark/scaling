@@ -412,7 +412,7 @@ p6
 p3 / (p4 + p5 + p6) + plot_layout(ncol = 1, heights = c(2.5, 1, 1))
 #p3 / (p4 + p5) + plot_layout(ncol = 1, heights = c(2.5, 1, 1))
 
-#ggsave("figures/pred_warm_cold_gro.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
+#ggsave("figures/pred_warm_cold_gro.pdf", plot = last_plot(), scale = 1, width = 14, height = 14, units = "cm", dpi = 300)
 
 # Calculate the proportion of the posterior of activation energy that is less than zero
 js = jags.samples(jm_gro, 

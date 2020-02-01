@@ -80,10 +80,6 @@ data = list(
   temp = dat$temp_arr - mean(dat$temp_arr)
 )
 
-# mean mass
-mean(dat$log_mass)
-exp(mean(dat$log_mass))
-
 
 # C. MODEL VALIDATION ==============================================================
 model = "R/analysis/log-linear model/models/m2.txt"
@@ -108,8 +104,9 @@ cs <- coda.samples(jm,
                                       "mu_b0", "mu_b1", "mu_b2", 
                                       "sigma_b0", "sigma_b1", "sigma_b2",
                                       "sigma"), 
-                   n.iter = samples, 
-                   thin = n.thin)
+                   n.iter = samples*2, 
+                   thin = 1#n.thin
+                     )
 
 summary(cs) # Get the mean estimate and SE and 95% CIs
 
@@ -120,6 +117,48 @@ cs_df$Parameter <- row.names(cs_df)
 #** Evaluate convergence ===========================================================
 # Convert to ggplottable data frame
 cs_df <- ggs(cs)
+
+test <- cs_df %>% 
+  filter(Parameter %in% c("b0[1]", "b0[2]", "b0[3]", "b0[4]")) %>% 
+  ggs_density(.) + 
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+  theme_classic(base_size = 11) + 
+  geom_density(alpha = 0.05) +
+  scale_color_brewer(palette = "Dark2") + 
+  scale_fill_brewer(palette = "Dark2") +
+  labs(x = "Value", y = "Density", fill = "Chain #") +
+  guides(color = FALSE, fill = FALSE) +
+  NULL
+# b3        0.01720 0.005241 6.766e-05      1.648e-04
+# mu_b0     1.59616 0.153649 1.984e-03      1.951e-03
+# mu_b1     0.76722 0.034897 4.505e-04      4.587e-04
+# mu_b2    -0.61155 0.028394 3.666e-04      4.168e-04
+# sigma     0.24951 0.003430 4.429e-05      4.579e-05
+# sigma_b0  0.90802 0.121776 1.572e-03      2.287e-03
+# sigma_b1  0.20002 0.027405 3.538e-04      4.394e-04
+# sigma_b2  0.15189 0.024788 3.200e-04      4.530e-04
+
+test2 <- cs_df %>% 
+  filter(Parameter %in% c("b0[1]", "b0[2]", "b0[3]", "b0[4]")) %>% 
+  ggs_density(.) + 
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+  theme_classic(base_size = 11) + 
+  geom_density(alpha = 0.05) +
+  scale_color_brewer(palette = "Dark2") + 
+  scale_fill_brewer(palette = "Dark2") +
+  labs(x = "Value", y = "Density", fill = "Chain #") +
+  guides(color = FALSE, fill = FALSE) +
+  NULL
+# b3        0.01714 0.005228 2.134e-05      1.101e-04
+# mu_b0     1.59944 0.155483 6.348e-04      7.468e-04
+# mu_b1     0.76671 0.035087 1.432e-04      2.034e-04
+# mu_b2    -0.61199 0.028450 1.161e-04      2.124e-04
+# sigma     0.24952 0.003425 1.398e-05      1.949e-05
+# sigma_b0  0.91009 0.120602 4.924e-04      1.058e-03
+# sigma_b1  0.19882 0.026929 1.099e-04      2.410e-04
+# sigma_b2  0.15193 0.024800 1.012e-04      2.788e-04
+
+
 
 # Plot posterior densities of species intercepts
 p1 <- cs_df %>% 
