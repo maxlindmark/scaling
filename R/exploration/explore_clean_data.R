@@ -167,8 +167,8 @@ ggplot(dat, aes(mass_norm, fill = species)) +
   facet_wrap(~ rate, scales = "free_y") +
   scale_fill_viridis(discrete = TRUE, option = "magma") +
   coord_cartesian(expand = 0) + 
-  labs(x = "Mass/Asymptotic mass") +
-  theme_classic(base_size = 18) +
+  labs(x = "Mass/Max mass") +
+  theme_classic(base_size = 16) +
   theme(aspect.ratio = 1) +
   guides(fill = FALSE) +
   NULL
@@ -234,7 +234,7 @@ dat %>%
 #ggsave("figures/supp/exp_env_temps_con_met.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
 
 # Max. published weight
-ggplot(dat, aes(x = reorder(common_name, w_max_published_g), 
+ggplot(dat, aes(x = reorder(species, w_max_published_g), 
                 y = log(w_max_published_g))) +
   geom_point(stat = 'identity', size = 2) +
   scale_fill_manual(name = "w_max_published_g") + 
@@ -264,7 +264,7 @@ dat %>% dplyr::distinct(common_name, .keep_all = TRUE) %>%
 dat %>% dplyr::distinct(common_name, .keep_all = TRUE) %>% 
   ggplot(., aes(biogeography, fill = biogeography)) +
   geom_bar() +
-  theme_classic(base_size = 15) +
+  theme_classic(base_size = 20) +
   theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
   #scale_fill_manual(values = mycolors) + 
   scale_fill_viridis(discrete = TRUE, option = "magma") +

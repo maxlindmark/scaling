@@ -70,9 +70,9 @@ ggplot(dat, aes(x = reorder(common_name, trophic_level), y = trophic_level)) +
   NULL 
 
 # Max. published weight
-ggplot(dat, aes(x = reorder(common_name, w_max_published_g), 
+ggplot(dat, aes(x = reorder(species, w_max_published_g), 
                 y = log10(w_max_published_g))) +
-  geom_point(stat = 'identity', size=6) +
+  geom_point(stat = 'identity', size = 2) +
   scale_fill_manual(name = "w_max_published_g") + 
   theme_classic(base_size = 15) +
   guides(colour = FALSE) +
@@ -80,6 +80,8 @@ ggplot(dat, aes(x = reorder(common_name, w_max_published_g),
   ylab("log10(max published weight) [g]") + 
   coord_flip() +
   NULL 
+# ggsave("figures/supp/growth_max_weight.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm")
+
 
 # Phylogeny
 nb.cols <- length(unique(dat$species))
@@ -90,18 +92,22 @@ dat %>% distinct(common_name, .keep_all = TRUE) %>%
   geom_bar() +
   theme_classic(base_size = 15) +
   theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
-  scale_fill_manual(values = mycolors) +
+  scale_fill_viridis(discrete = TRUE, option = "magma") +
   NULL
+# ggsave("figures/supp/growth_phylogeny.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm")
+
 
 # Biogeography
 dat %>% distinct(common_name, .keep_all = TRUE) %>% 
   ggplot(., aes(biogeography, fill = biogeography)) +
   geom_bar() +
-  theme_classic(base_size = 20) +
+  theme_classic(base_size = 15) +
   theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
   guides(fill = FALSE) +
-  scale_fill_manual(values = mycolors) +
+  scale_fill_viridis(discrete = TRUE, option = "magma") +
   NULL
+# ggsave("figures/supp/growth_biogeography.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm")
+
 
 # Lifestyle
 dat %>% 
@@ -112,6 +118,7 @@ dat %>%
   theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
   scale_fill_manual(values = mycolors) +
   NULL
+
 
 
 # C. CLEAN DATA ==================================================================
@@ -155,3 +162,14 @@ plot(opt_temp_c_ct ~ log_mass_norm_ct, data = dat)
 #          mean_opt_temp_c, opt_temp_c_ct, mass, mass_norm, log_mass_norm, log_mass_norm_ct) %>%
 #   write_csv(., "data/topt_analysis.csv", ";")
 
+# Test which sizes I use
+ggplot(dat, aes(mass_norm, fill = species)) + 
+  geom_histogram() + 
+  scale_fill_viridis(discrete = TRUE, option = "magma") +
+  coord_cartesian(expand = 0) + 
+  labs(x = "Mass/Max mass") +
+  theme_classic(base_size = 16) +
+  theme(aspect.ratio = 1) +
+  guides(fill = FALSE) +
+  NULL
+# ggsave("figures/supp/growth_size_range.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm")

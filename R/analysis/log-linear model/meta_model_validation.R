@@ -105,8 +105,7 @@ cs <- coda.samples(jm,
                                       "sigma_b0", "sigma_b1", "sigma_b2",
                                       "sigma"), 
                    n.iter = samples*2, 
-                   thin = 1#n.thin
-                     )
+                   thin = 5)
 
 summary(cs) # Get the mean estimate and SE and 95% CIs
 
@@ -350,9 +349,9 @@ p9+p10
 cs_df %>% 
   ggs_Rhat(.) + 
   xlab("R_hat") +
-  xlim(0.999, 1.03) +
-  theme_classic(base_size = 11) +
+  xlim(0.9998, 1.004) +
+  theme_classic(base_size = 25) +
   geom_point(size = 2) +
-  theme(aspect.ratio = 1)+
+  theme(aspect.ratio = 3/1)+
   NULL
-#ggsave("figures/supp/rhat_met.pdf", plot = last_plot(), scale = 1, width = 14, height = 14, units = "cm", dpi = 300)
+#ggsave("figures/supp/rhat_met.pdf", plot = last_plot(), scale = 1, width = 55, height = 60, units = "cm", dpi = 300)

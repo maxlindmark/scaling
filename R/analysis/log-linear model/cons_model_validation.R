@@ -279,11 +279,11 @@ p7+p8
 cs_df %>% 
   ggs_Rhat(.) + 
   xlab("R_hat") +
-  xlim(0.999, 1.003) +
+  xlim(0.999, 1.006) +
   theme_classic(base_size = 11) +
-  geom_point(size = 2) +
-  theme(aspect.ratio = 1)+
+  geom_point(size = 1.5) +
+  theme(aspect.ratio = 2/1)+
   NULL
-#ggsave("figures/supp/rhat_con.pdf", plot = last_plot(), scale = 1, width = 14, height = 14, units = "cm", dpi = 300)
+#ggsave("figures/supp/rhat_con.pdf", plot = last_plot(), scale = 1, width = 14, height = 20, units = "cm", dpi = 300)
 
 
