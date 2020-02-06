@@ -90,6 +90,12 @@ p1/p2
 library(tidylog)
 t <- filter(dat, mass_norm < 0.0100001)
 
+length(dat$opt_temp_c_ct)
+
+ggplot(dat, aes(log_mass_norm_ct, opt_temp_c_ct)) + geom_point()
+ggplot(dat, aes((mass_norm - mean(mass_norm)), opt_temp_c_ct)) + geom_point()
+ggplot(dat, aes(mass_norm, opt_temp_c_ct)) + geom_point()
+ggplot(dat, aes(mass_norm, opt_temp_c_ct)) + geom_point() + coord_cartesian(xlim = c(0, 0.024))
 
 # C. MODEL SELECTION ===============================================================
 #**** Random intercept & slope (M1) ================================================
