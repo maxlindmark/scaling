@@ -390,7 +390,7 @@ p5 <- cs %>%
   scale_y_continuous(expand = c(0,0)) +
   annotate("text", -Inf, Inf, label = "C", size = 4, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  labs(x = "Activation energy") +
+  labs(x = "Temperature coefficient") +
   NULL
 
 # Mass-temperature interaction
