@@ -194,7 +194,7 @@ con_e <- con_df %>% filter(Parameter_sub == "b2")
 con_e$Species <- unique(con$species_ab)
 #con_e$Species <- unique(con_data$species)
 con_e$Rate <- "Maximum Consumption"
-con_e$Parameter_mte <- "Activation energy"
+con_e$Parameter_mte <- "Temperature-coefficient"
 con_e$pred <- filter(con_df, Parameter == "mu_b2")$quantiles.50.
 con_e$pred_sd <- filter(std_con, Parameter == "mu_b2")$statistics.SD
 
@@ -220,7 +220,7 @@ met_e <- met_df %>% filter(Parameter_sub == "b2")
 met_e$Species <- unique(met$species_ab)
 #met_e$Species <- unique(met_data$species)
 met_e$Rate <- "Metabolic rate"
-met_e$Parameter_mte <- "Activation energy"
+met_e$Parameter_mte <- "Temperature-coefficient"
 met_e$pred <- filter(met_df, Parameter == "mu_b2")$quantiles.50.
 met_e$pred_sd <- filter(std_met, Parameter == "mu_b2")$statistics.SD
 
@@ -247,16 +247,16 @@ df_std$ymin <- df_std$pred - 2*df_std$pred_sd
 
 # Plot all species varying estimates and global mean
 df %>% 
-  filter(Parameter_mte %in% c("Activation energy", "Mass-exponent")) %>% 
+  filter(Parameter_mte %in% c("Temperature-coefficient", "Mass-exponent")) %>% 
   ggplot(., aes(Species, quantiles.50., color = Rate, shape = Rate)) +
   facet_grid(~ Parameter_mte, scales = "free") +
   scale_color_manual(values = pal[1:2]) +
   scale_fill_manual(values = pal[1:2]) +
   scale_shape_manual(values = c(21, 24)) +
-  geom_hline(data = filter(df_std, Parameter_mte %in% c("Activation energy", "Mass-exponent")), 
+  geom_hline(data = filter(df_std, Parameter_mte %in% c("Temperature-coefficient", "Mass-exponent")), 
              aes(yintercept = pred, color = Rate),
              size = 0.6, alpha = 1, linetype = "dashed") +
-  geom_rect(data = filter(df_std, Parameter_mte %in% c("Activation energy", "Mass-exponent")), 
+  geom_rect(data = filter(df_std, Parameter_mte %in% c("Temperature-coefficient", "Mass-exponent")), 
             inherit.aes = FALSE, aes(ymin = ymin, ymax = ymax, fill = Rate), xmin = 0, xmax = 50, 
             alpha = 0.2) +
   coord_flip() +
@@ -270,7 +270,7 @@ df %>%
   labs(x = "Species", y = "Prediction") + 
   theme_classic(base_size = 14) +
   theme(axis.text.y = element_text(size = 8, face = "italic")) +
-  theme(aspect.ratio = 2/1,
+  theme(aspect.ratio = 3/1,
         legend.position = "bottom", 
         legend.title = element_blank()) +
   NULL
@@ -302,12 +302,12 @@ p2 <- cs_met %>%
   scale_y_continuous(expand = c(0,0)) +
   # annotate("text", -Inf, Inf, label = "C", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Activation energy" & Rate == "Metabolic rate")$pred, 2)[1], 
+  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Temperature-coefficient" & Rate == "Metabolic rate")$pred, 2)[1], 
            size = 3, hjust = -0.5, vjust = 1.3) +
-  labs(x = "Activation energy") +
+  labs(x = "Temperature-coefficient") +
   ggtitle("Metabolic rate") +
   xlim(-0.95, -0.4) +
-  geom_vline(xintercept = filter(df, Parameter_mte == "Activation energy" & Rate == "Metabolic rate")$pred, 
+  geom_vline(xintercept = filter(df, Parameter_mte == "Temperature-coefficient" & Rate == "Metabolic rate")$pred, 
              linetype = "dashed", color = "white") +
   NULL
 
@@ -349,12 +349,12 @@ p5 <- cs_con %>%
   scale_y_continuous(expand = c(0,0)) +
   # annotate("text", -Inf, Inf, label = "C", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Activation energy" & Rate == "Maximum Consumption")$pred, 2)[1], 
+  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Temperature-coefficient" & Rate == "Maximum Consumption")$pred, 2)[1], 
            size = 3, hjust = -0.5, vjust = 1.3) +
-  labs(x = "Activation energy") +
+  labs(x = "Temperature-coefficient") +
   ggtitle("Maximum consumption rate") +
   xlim(-0.95, -0.4) +
-  geom_vline(xintercept = filter(df, Parameter_mte == "Activation energy" & Rate == "Maximum Consumption")$pred, 
+  geom_vline(xintercept = filter(df, Parameter_mte == "Temperature-coefficient" & Rate == "Maximum Consumption")$pred, 
              linetype = "dashed", color = "white") +
   NULL
 

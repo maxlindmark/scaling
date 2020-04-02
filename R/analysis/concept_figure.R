@@ -288,11 +288,11 @@ T_opt_s <- dat2 %>%
 dat2$name <- factor(dat2$name, levels = c("cmax_stand", "met_stand", "diff"))
 
 ggplot(dat2, aes(temp, value, color = factor(name), linetype = factor(mass), alpha = factor(name))) +
-  geom_line(size = 1) +
+  geom_line(size = 1.2) +
   coord_cartesian(ylim = c(0, 1.1),
                   xlim = c(-5, 20), 
                   expand = 0) + 
-  theme_classic(base_size = 14) + 
+  theme_classic(base_size = 18) + 
   scale_color_manual(values = c(pal[1], pal[3], pal[2]),
                      labels = c("Consumption", "Metabolism", "Consumption-Metabolism")) +
   scale_linetype_manual(values = c(1, 2), 
@@ -307,8 +307,44 @@ ggplot(dat2, aes(temp, value, color = factor(name), linetype = factor(mass), alp
   guides(alpha = FALSE,
          linetype = guide_legend(override.aes = list(size = 0.5))) +
   theme(aspect.ratio = 3/4,
+        legend.position = "bottom", 
+        legend.direction="vertical",
         #legend.text = element_text(size = 8),
         legend.title = element_text(size = 12)) +
   NULL
 
 #ggsave("figures/concept_stand.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm", dpi = 300)
+
+###### FOR VIVA PRESENTATION
+ggplot(dat2, aes(temp, value, color = factor(name), linetype = factor(mass), alpha = factor(name))) +
+  geom_line(size = 1.2) +
+  coord_cartesian(ylim = c(0, 1.1),
+                  xlim = c(-5, 20), 
+                  expand = 0) + 
+  theme_classic(base_size = 18) + 
+  scale_color_manual(values = c(pal[1], pal[3], pal[2]),
+                     labels = c("Consumption", "Metabolism", "Consumption-Metabolism")) +
+  scale_linetype_manual(values = c(1, 2), 
+                        labels = c("100g", "500g")) +
+  scale_alpha_manual(
+    values = c(0.75, 0.75, 1)
+    #values = c(0.75, 0.2, 0.2)
+    #values = c(0.2, 0.75, 0.2)
+    #values = c(0.3, 0.3, 1)
+    ) +
+  labs(x = expression(paste("Rescaled temperature [", degree*C, "]")),
+       y = "Rescaled rates",
+       color = "Rate",
+       linetype = "Mass") +
+  geom_segment(data = T_opt_s, aes(x = temp, xend = temp, y = c(T_opt_s$value[1], T_opt_s$value[2]), yend = 0),
+               size = 1, arrow = arrow(length = unit(0.35, "cm")), show.legend = FALSE) +
+  guides(alpha = FALSE,
+         linetype = guide_legend(override.aes = list(size = 0.5))) +
+  theme(aspect.ratio = 3/4,
+        legend.position = "bottom", 
+        legend.direction="vertical",
+        #legend.text = element_text(size = 8),
+        legend.title = element_text(size = 12)) +
+  NULL
+
+#ggsave("figures/concept_stand_NET.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm", dpi = 300)

@@ -477,6 +477,7 @@ p3 <- ggplot(pred_df, aes(mass, median)) +
   scale_size(range = c(2, 8), breaks = c(0, 1, 10, 100, 1000)) +
   theme(aspect.ratio = 4/5,
         #legend.position = c(0.11, 0.22),
+        legend.position = "bottom", 
         legend.title = element_text(size = 10)) +
   guides(fill = FALSE,
          size = guide_legend(override.aes = list(fill = "black",
@@ -708,7 +709,7 @@ ggplot() +
                               fill = source, alpha = source, 
                               #shape = factor(temp_source)
                               ),
-             size = 3.5, 
+             size = 4, 
              shape = 21, 
              color = "white", 
              position = position_dodge(width = 1)) +
@@ -724,9 +725,9 @@ ggplot() +
   scale_fill_manual(values = c("grey75", pal2[1], pal2[2], pal2[2])) +
   scale_alpha_manual(values = c(0.8, 0.8, 0)) +
   scale_linetype_manual(values = c(1,1)) +
-  scale_size_area(max_size = 4) +
+  scale_size_area(max_size = 5) +
   #scale_shape_manual(values = c(23, 21)) +
-  theme_classic(base_size = 16) +
+  theme_classic(base_size = 21) +
   guides(fill = guide_legend(override.aes = list(alpha = c(1,1,1),
                                                  color = "white")),
          linetype = FALSE,
@@ -737,9 +738,10 @@ ggplot() +
   ylab(expression(paste("Temperature [", degree*C, "]"))) + 
   coord_flip() +
   theme(
-        #legend.position = c(0.85, 0.26),
+        legend.position = "bottom",
+        legend.direction = "vertical",
         axis.text.y = element_text(face = "italic"),
-        legend.text = element_text(size = 10),
+        legend.text = element_text(size = 16),
         aspect.ratio = 6/7
         ) +
   NULL 
