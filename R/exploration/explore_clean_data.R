@@ -86,13 +86,13 @@ dat$env_temp_mid[is.na(dat$env_temp_mid)] <- -9
 t <- data.frame(filter(dat, pref_temp_mid == -9 & env_temp_mid == -9))
 unique(t$common_name)
 
+##### NOT TRUE ANYMORE!! 
 # For Stechlin cisco, well use the sympatric species Coregonus albula
 dat$pref_temp_mid <- ifelse(dat$common_name == "Stechlin cisco", 
                             filter(dat, species == "Coregonus albula")$pref_temp_mid[1],
                             dat$pref_temp_mid)
 
 filter(dat, common_name == "Stechlin cisco")$pref_temp_mid
-
 # For Southern catfish, we'll assume it's the same as for the closely related species Amur catfish
 # https://www.fishbase.se/summary/Silurus-asotus.html
 dat$pref_temp_mid <- ifelse(dat$common_name == "Southern catfish", 
@@ -100,6 +100,9 @@ dat$pref_temp_mid <- ifelse(dat$common_name == "Southern catfish",
                             dat$pref_temp_mid)
 
 filter(dat, common_name == "Southern catfish")$pref_temp_mid
+
+##### 
+
 
 # Temperature-variable for analysis
 dat$median_temp <- dat$env_temp_mid
