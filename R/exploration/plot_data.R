@@ -111,19 +111,3 @@ p4 <- ggplot(met, aes(temp_norm_arr_ct, log(y), fill = log_mass_norm_ct, color =
 #ggsave("figures/supp/model_data.pdf", plot = last_plot(), scale = 1, width = 18, height = 18, units = "cm", dpi = 300)
 
 
-## Plot separate species
-met %>% filter(common_name == "Brook trout") %>% 
-ggplot(., aes(mass_g, y, color = factor(temp_c))) + 
-  geom_point() +
-  theme_classic(base_size = 11) +
-  theme(aspect.ratio = 1) +
-  coord_trans(y = "log10",
-              x = "log10")
-  NULL
-
-met %>% 
-  filter(common_name == "Brook trout") %>% 
-  summarize(max(mass_g))
-
-
-
