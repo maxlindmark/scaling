@@ -39,6 +39,18 @@ library(bayesplot)
 # [13] RColorBrewer_1.1-2 rjags_4-10         coda_0.19-3    
 
 
+
+
+
+
+# Calculate log normalized mass
+dat$log_mass_norm_max <- log(dat$mass_norm_max)
+dat$log_mass_norm_mat <- log(dat$mass_norm_mat)
+
+
+
+
+
 # B. READ IN DATA ==================================================================
 # Read in your data file(s)
 dat <- read.csv("data/topt_analysis.csv")

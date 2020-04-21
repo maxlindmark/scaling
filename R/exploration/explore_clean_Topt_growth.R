@@ -1,22 +1,18 @@
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # 2019.05.02: Max Lindmark
 #
-# - Explore body growth rate data
+# - Explore optimum growth temperature data
 # 
 # A. Load libraries & read data
 #
-# B. Explore growth data
+# B. Explore data
 #
-# C. Explore growth data
+# C. Save data
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 # A. LOAD LIBRARIES & READ DATA ====================================================
 rm(list = ls())
-
-# When doing a fresh start I need to check I'm in the right libpath:
-# .libPaths() 
-# .libPaths("C:/Program Files/R/R-3.5.0/library")
 
 # Load libraries, install if needed
 library(dplyr)
@@ -38,16 +34,12 @@ library(patchwork)
 # [5] viridisLite_0.3.0  ggplot2_3.1.1      RCurl_1.95-4.12    bitops_1.0-6      
 # [9] readxl_1.3.1       tidylog_0.1.0      tidyr_0.8.3        dplyr_0.8.1    
 
-
-# ***  Will crate a csv that one can read directly once data collection is finished.
-# dat <- read_excel(text=GET("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/growth_data.xlsx"))
-
 dat <- read_excel("data/growth_data_Topt.xlsx")
 
 glimpse(dat)
 
 # Which cols to make numeric?
-cols = c(1, 2, 3, 4, 5, 6, 15, 16, 17, 18, 19, 20, 21)
+cols = c(18, 19, 20, 21)
 dat[,cols] %<>% lapply(function(x) as.numeric(as.character(x)))
 
 glimpse(dat)
@@ -56,120 +48,119 @@ unique(dat$species)
 
 colnames(dat)[1] <-  "G"
 
+
 # B. EXPLORE DATA ==================================================================
-#** General ========================================================================
-# Trophic level
-ggplot(dat, aes(x = reorder(common_name, trophic_level), y = trophic_level)) +
-  geom_point(stat = 'identity', size=6) +
-  scale_fill_manual(name = "trophic_level") + 
-  theme_classic(base_size = 15) +
-  guides(colour = FALSE) +
-  xlab("") + 
-  ylab("Trophic level") + 
-  coord_flip() +
-  NULL 
+# Create a single reference temperature for analysis. This is midpoint of environment (mainly),
+# but sometimes midpoint of preferred (both from fishbase), and in two cases other literature
+dat$pref_temp_mid[is.na(dat$pref_temp_mid)] <- -9
+dat$env_temp_mid[is.na(dat$env_temp_mid)] <- -9
 
-# Max. published weight
-ggplot(dat, aes(x = reorder(species, w_max_published_g), 
-                y = log10(w_max_published_g))) +
-  geom_point(stat = 'identity', size = 2) +
-  scale_fill_manual(name = "w_max_published_g") + 
-  theme_classic(base_size = 15) +
-  guides(colour = FALSE) +
-  xlab("") + 
-  ylab("log10(max published weight) [g]") + 
-  coord_flip() +
-  NULL 
-# ggsave("figures/supp/growth_max_weight.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm")
+# New reference temperature (either mid of preference of environment temperature)
+dat$median_temp <- dat$env_temp_mid
 
+# Take median of "preferred" temperature if environment temp is NA
+# Replace NA with -9...
+dat$median_temp <- ifelse(dat$median_temp == -9,
+                          dat$pref_temp_mid,
+                          dat$median_temp)
 
-# Phylogeny
-nb.cols <- length(unique(dat$species))
-mycolors <- colorRampPalette(brewer.pal(8, "Dark2"))(nb.cols)
+# Bring back NA
+dat$env_temp_mid <- ifelse(dat$env_temp_mid == -9,
+                           NA,
+                           dat$env_temp_mid)
 
-dat %>% distinct(common_name, .keep_all = TRUE) %>% 
-  ggplot(., aes(order, fill = family)) +
-  geom_bar() +
-  theme_classic(base_size = 15) +
-  theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
-  scale_fill_viridis(discrete = TRUE, option = "magma") +
-  NULL
-# ggsave("figures/supp/growth_phylogeny.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm")
+dat$pref_temp_mid <- ifelse(dat$pref_temp_mid == -9,
+                            NA,
+                            dat$pref_temp_mid)
 
+# Any NA's still?
+dplyr::filter(dat, median_temp == -9)
 
-# Biogeography
-dat %>% distinct(common_name, .keep_all = TRUE) %>% 
-  ggplot(., aes(biogeography, fill = biogeography)) +
-  geom_bar() +
-  theme_classic(base_size = 15) +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
-  guides(fill = FALSE) +
-  scale_fill_viridis(discrete = TRUE, option = "magma") +
-  NULL
-# ggsave("figures/supp/growth_biogeography.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm")
-
-
-# Lifestyle
-dat %>% 
-  distinct(common_name, .keep_all = TRUE) %>% 
-  ggplot(., aes(habitat, fill  = lifestyle)) +
-  geom_bar() +
-  theme_classic(base_size = 22) +
-  theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
-  scale_fill_manual(values = mycolors) +
+# Inspect temperatures
+ggplot(dat, aes(median_temp, fill = common_name)) +
+  geom_histogram() + 
+  coord_cartesian(expand = 0) +
+  theme_classic() +
   NULL
 
+# Convert experimental to Arrhenius scale:
+dat$temp_arr <- 1/((dat$temp_c + 273.15) * 8.617332e-05)
 
+# Standardize temperatures to median-reference temperature on C scale
+dat$temp_norm <- dat$temp_c - dat$median_temp
 
-# C. CLEAN DATA ==================================================================
 # Calculate mean optimum temperature within species
 dat$mean_opt_temp_c <- ave(dat$opt_temp_c, dat$common_name)
 
 # Center each size class' optimum temperature by mean optimum temperature for that species
 dat$opt_temp_c_ct <- dat$opt_temp_c - dat$mean_opt_temp_c
 
-# We use geometric mean for size, and if this is not possible we'll go with mid point of size range. # Mass for analysis:
-dat$mass <- dat$geom_mean_mass_g
+# Use size_group if no geometric mean mass
+dat$mass_g <- dat$geom_mean_mass_g
 
-# Replace NA with -9...
-dat$mass[is.na(dat$mass)] <- -9
+dat$mass_g[is.na(dat$mass_g)] <- -9
 
-dat$mass <- ifelse(dat$mass == -9,
-                   dat$size_group,
-                   dat$mass)
-
-# Check we only have real values:
-unique(is.na(dat$mass))
-
-# Now normalize mass with respect to max mass
-dat$mass_norm <- dat$mass / dat$w_max_published_g
+dat$mass_g <- ifelse(dat$mass_g == -9,
+                     dat$size_group,
+                     dat$mass_g)
 
 # Calculate log mass
-dat$log_mass_norm <- log(dat$mass_norm)
+dat$log_mass <- log(dat$mass_g)
 
-# Mean center mass
-dat$log_mass_norm_ct <- dat$log_mass_norm - mean(dat$log_mass_norm)
+# Normalize mass with respect to max mass
+dat$mass_norm_max <- dat$mass_g / dat$w_max_published_g
 
-# Save data:
-str(dat)
-head(dat)
+# Normalize mass with respect to mass at maturation
+dat$mass_norm_mat <- dat$mass_g / dat$w_maturation_g
 
-# Plot
-plot(opt_temp_c_ct ~ log_mass_norm_ct, data = dat)
 
+
+#** Plot general data ==============================================================
+# Test which sizes I use
+p1 <- ggplot(dat, aes(mass_norm_mat, fill = species)) + 
+  geom_histogram() + 
+  scale_fill_viridis(discrete = TRUE, option = "magma") +
+  coord_cartesian(expand = 0) + 
+  labs(x = "Mass/Maturation mass") +
+  guides(fill = FALSE) +
+  NULL
+pWord <- p1 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
+ggsave("figures/supp/data/topt_size_range.png", width = 6.5, height = 6.5, dpi = 600)
+
+
+#** Plot response variable =========================================================
+# Optimum growth temperature as function of mass
+ggplot(dat, aes(log(mass_norm_mat), opt_temp_c_ct, fill = species)) + 
+  geom_point(size = 3, alpha = 1, color = "white", shape = 21) +
+  theme_classic(base_size = 15) +
+  guides(color = FALSE) +
+  scale_fill_viridis(discrete = T, option = "magma") +
+  labs(x = "ln(mass) [g]", 
+       y = expression(paste("Rescaled temperature [", degree*C, "]"))) +
+  theme(aspect.ratio = 3/4,
+        legend.text = element_text(size = 8)) +
+  NULL
+
+ggplot(dat, aes(log(mass_norm_max), opt_temp_c_ct, fill = species)) + 
+  geom_point(size = 3, alpha = 1, color = "white", shape = 21) +
+  theme_classic(base_size = 15) +
+  guides(color = FALSE) +
+  scale_fill_viridis(discrete = T, option = "magma") +
+  labs(x = "ln(mass) [g]", 
+       y = expression(paste("Rescaled temperature [", degree*C, "]"))) +
+  theme(aspect.ratio = 3/4,
+        legend.text = element_text(size = 8)) +
+  NULL
+
+
+# C. SAVE DATA ==================================================================
 # dat %>%
 #   select(G, geom_mean_mass_g, opt_temp_c, common_name, species,
 #          mean_opt_temp_c, opt_temp_c_ct, mass, mass_norm, log_mass_norm, log_mass_norm_ct) %>%
 #   write_csv(., "data/topt_analysis.csv", ";")
 
-# Test which sizes I use
-ggplot(dat, aes(mass_norm, fill = species)) + 
-  geom_histogram() + 
-  scale_fill_viridis(discrete = TRUE, option = "magma") +
-  coord_cartesian(expand = 0) + 
-  labs(x = "Mass/Max mass") +
-  theme_classic(base_size = 16) +
-  theme(aspect.ratio = 1) +
-  guides(fill = FALSE) +
-  NULL
-# ggsave("figures/supp/growth_size_range.pdf", plot = last_plot(), scale = 1, width = 16, height = 16, units = "cm")
+glimpse(dat)
+dat %>%
+  select(G, `growth_rate_%/day`, geom_mean_mass_g, size_group, mass_g, log_mass, mass_norm_max,
+         mass_norm_mat, temp_c, temp_arr, median_temp, above_optimum, common_name, species) %>%
+  write_csv(., "data/topt_analysis.csv", ";")

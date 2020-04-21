@@ -14,10 +14,6 @@
 # A. LOAD LIBRARIES & READ DATA ====================================================
 rm(list = ls())
 
-# When doing a fresh start I need to check I'm in the right libpath:
-# .libPaths() 
-# .libPaths("C:/Program Files/R/R-3.5.0/library")
-
 # Load libraries, install if needed
 library(dplyr)
 library(tidyr)
@@ -39,8 +35,6 @@ library(patchwork)
 # ggplot2_3.2.1      RCurl_1.95-4.12    bitops_1.0-6       readxl_1.3.1      
 # tidylog_0.2.0      patchwork_0.0.1    tidyr_1.0.0        dplyr_0.8.3
 
-# Will crate a csv that one can read directly once data collection is finished.
-# dat <- read_excel(text=GET("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/growth_data.xlsx"))
 con <- read_excel("data/consumption_data.xlsx")
 met <- read_excel("data/metabolism_data.xlsx")
 
@@ -71,21 +65,12 @@ glimpse(dat)
 # Change settings for using scientific notation
 options(scipen=999) 
 
-#** Normalize variables ============================================================
-# Inspect temperatures
-ggplot(dat, aes(env_temp_mid, fill = common_name)) +
-  geom_histogram() + 
-  facet_wrap(~rate) + 
-  coord_cartesian(expand = 0) +
-  theme_classic() +
-  NULL
-
 # Create a single reference temperature for analysis. This is midpoint of environment (mainly),
 # but sometimes midpoint of preferred (both from fishbase), and in two cases other literature
 dat$pref_temp_mid[is.na(dat$pref_temp_mid)] <- -9
 dat$env_temp_mid[is.na(dat$env_temp_mid)] <- -9
 
-# Temperature-variable for analysis
+# New reference temperature (either mid of preference of environment temperature)
 dat$median_temp <- dat$env_temp_mid
 
 # Take median of "preferred" temperature if environment temp is NA
@@ -105,6 +90,14 @@ dat$pref_temp_mid <- ifelse(dat$pref_temp_mid == -9,
 
 # Any NA's still?
 dplyr::filter(dat, median_temp == -9)
+
+# Inspect temperatures
+ggplot(dat, aes(env_temp_mid, fill = common_name)) +
+  geom_histogram() + 
+  facet_wrap(~rate) + 
+  coord_cartesian(expand = 0) +
+  theme_classic() +
+  NULL
 
 # Convert experimental to Arrhenius scale:
 dat$temp_arr <- 1/((dat$temp_c + 273.15) * 8.617332e-05)
@@ -133,7 +126,7 @@ p1 <- ggplot(dat, aes(mass_norm, fill = species)) +
   guides(fill = FALSE) +
   NULL
 pWord <- p1 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
-ggsave("figures/supp/data_metabolism_consumption/size_range.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/data/meta_cons_size_range.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 # Trophic level
@@ -148,7 +141,7 @@ p2 <- ggplot(dat, aes(x = reorder(species, trophic_level), y = trophic_level)) +
   NULL 
 pWord <- p2 + theme_classic() + theme(text = element_text(size = 12),
                                       axis.text.y = element_text(size = 8))
-ggsave("figures/supp/data_metabolism_consumption/trophic_level.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/data/meta_cons_trophic_level.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 # Mid env. temperature (Fishbase) compared to experimental temperature range
@@ -171,7 +164,7 @@ p3 <- ggplot(dat) +
   NULL 
 pWord <- p3 + theme_classic() + theme(text = element_text(size = 12),
                                       axis.text = element_text(size = 8))
-ggsave("figures/supp/data_metabolism_consumption/exp_env_temps_con_met.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/data/meta_cons_temperatures.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 # Max. published weight
@@ -180,14 +173,14 @@ p4 <- ggplot(dat, aes(x = reorder(species, w_max_published_g), y = w_max_publish
   scale_fill_manual(name = "w_max_published_g") + 
   guides(colour = FALSE) +
   xlab("") + 
-  ylab("log10(max published weight) [g]") + 
+  ylab("max published weight [g]") + 
   scale_y_continuous(trans = 'log10') +
   coord_flip() +
   facet_wrap(~ rate) +
   NULL 
 pWord <- p4 + theme_classic() + theme(text = element_text(size = 12),
                                       axis.text.y = element_text(size = 8))
-ggsave("figures/supp/data_metabolism_consumption/max_weight.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/data/meta_cons_max_weight.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 # Phylogeny
@@ -199,7 +192,7 @@ p5 <- dat %>% dplyr::distinct(common_name, .keep_all = TRUE) %>%
   NULL
 pWord <- p5 + theme_classic() + theme(text = element_text(size = 12),
                                       axis.text.x = element_text(angle = 60, hjust = 1, size = 8))
-ggsave("figures/supp/data_metabolism_consumption/phylogeny.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/data/meta_cons_phylogeny.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 # Biogeography
@@ -212,7 +205,7 @@ p6 <- dat %>% dplyr::distinct(common_name, .keep_all = TRUE) %>%
   NULL
 pWord <- p6 + theme_classic() + theme(text = element_text(size = 12),
                                       axis.text.x = element_text(angle = 0, hjust = 1))
-ggsave("figures/supp/data_metabolism_consumption/biogeography.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/data/meta_cons_biogeography.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 # Lifestyle
@@ -225,7 +218,7 @@ p7 <- dat %>%
   NULL
 pWord <- p7 + theme_classic() + theme(text = element_text(size = 12),
                                       axis.text.x = element_text(angle = 50, hjust = 1))
-ggsave("figures/supp/data_metabolism_consumption/lifestyle.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/data/meta_cons_lifestyle.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #** Plot response variable =========================================================
@@ -250,7 +243,7 @@ dat %>% filter(rate == "metabolism") %>%
   NULL
 
 #**** Plot all data combined =======================================================
-# Both together as functions of temperature
+# Both together
 dat$y_spec <- dat$y/dat$mass_g
 dat$rate2 <- factor(dat$rate)
 levels(dat$rate2) <- c("consumption [g/g/day]", "metabolism [mg O2/g/h]")
@@ -262,48 +255,37 @@ dat$sample_size <- ifelse(dat$rate == "consumption",
                           paste("n=", n_con, sep=""),
                           paste("n=", n_met, sep=""))
 
-p8 <- ggplot(dat, aes(x = temp_arr, y = y_spec, color = log10(mass_g))) + 
-  geom_point(size = 2, alpha = 0.3) +
+# As functions of temperature
+p8 <- ggplot(dat, aes(x = temp_arr, y = y_spec, fill = log10(mass_g))) + 
+  geom_point(size = 2, alpha = 0.6, color = "white", shape = 21) +
   facet_wrap(~rate2, scales = "free", nrow = 2) +
   theme_classic(base_size = 11) +
   scale_y_log10() +
-  labs(y = "log10(mass-specific rate)",
+  labs(y = "mass-specific rate",
        x = "Arrhenius temperature [1/kT]") +
-  scale_color_viridis(option = "magma") +
+  scale_fill_viridis(option = "magma", name = "log10(mass)\n[g]") +
   geom_text(aes(x = Inf, y = Inf, label = sample_size, hjust = 1.05, vjust = 1.5), 
             color = "black") + 
   NULL
 pWord <- p8 + theme_classic() + theme(text = element_text(size = 12))
-ggsave("figures/supp/data_metabolism_consumption/rate_temp.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/data/meta_cons_rate_temp.png", width = 6.5, height = 6.5, dpi = 600)
   
 
-# Both together as functions of temperature
-dat$y_spec <- dat$y/dat$mass_g
-dat$rate2 <- factor(dat$rate)
-levels(dat$rate2) <- c("consumption [g/g/day]", "metabolism [mg O2/g/h]")
-
-n_con <- nrow(filter(dat, rate == "consumption"))
-n_met <- nrow(filter(dat, rate == "metabolism"))
-
-dat$sample_size <- ifelse(dat$rate == "consumption",
-                          paste("n=", n_con, sep=""),
-                          paste("n=", n_met, sep=""))
-
-p9 <- ggplot(dat, aes(x = mass_g, y = y_spec, color = temp_arr)) + 
-  geom_point(size = 2, alpha = 0.3) +
+# As functions of mass
+p9 <- ggplot(dat, aes(x = mass_g, y = y_spec, fill = temp_arr)) + 
+  geom_point(size = 2, alpha = 0.6, color = "white", shape = 21) +
   facet_wrap(~rate2, scales = "free", nrow = 2) +
   theme_classic(base_size = 11) +
-  labs(y = "ln(mass-specific rate)",
-       x = "ln(mass) [g]") +
-  scale_color_viridis(option = "magma") +
+  labs(y = "mass-specific rate",
+       x = "mass [g]") +
+  scale_fill_viridis(option = "magma", name = "Arrhenius\ntemperature\n[1/kT]") +
   scale_y_log10() +
   scale_x_log10() +
   geom_text(aes(x = Inf, y = Inf, label = sample_size, hjust = 1.05, vjust = 1.5), 
             color = "black") + 
   NULL
 pWord <- p9 + theme_classic() + theme(text = element_text(size = 12))
-ggsave("figures/supp/data_metabolism_consumption/rate_mass.png", width = 6.5, height = 6.5, dpi = 600)
-
+ggsave("figures/supp/data/meta_cons_rate_mass.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #** Loop through species and save plots ==========================================================
@@ -328,7 +310,7 @@ for(i in unique(s_datc$common_name)) {
     scale_color_viridis(discrete = TRUE) +
     ggtitle(title)
     
-  path <- paste("figures/supp/species_plot_con_met/con_", i, ".pdf", sep = "")
+  path <- paste("figures/supp/data/species_plots/con_met/con_", i, ".pdf", sep = "")
   ggsave(path, plot = p, scale = 1, width = 20, height = 20, units = "cm")
   
 }  
@@ -353,7 +335,7 @@ for(i in unique(s_datm$common_name)) {
     scale_color_viridis(discrete = TRUE) +
     ggtitle(title)
   
-  path <- paste("figures/supp/species_plot_con_met/met_", i, ".pdf", sep = "")
+  path <- paste("figures/supp/data/species_plots/con_met/met_", i, ".pdf", sep = "")
   ggsave(path, plot = p, scale = 1, width = 20, height = 20, units = "cm")
   
 }  
