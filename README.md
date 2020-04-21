@@ -14,12 +14,18 @@ This repository contains all of the clean data and code used to generate the ana
 
 ### Analysis
 **R/analysis**: Contains code for all analysis
+
 **R/analysis/concept_figure**: Conceptual figure on bioenergetics of growth
+
 **R/analysis/growth**: Hierarchical Multiple Regression model in JAGS for growth~temperature*mass using sub-optimum temperatures only. Contains code for specifying JAGS models, perform model selection, perform model validation, make predictions and evalute model fit
+
 **R/analysis/growth**: Hierarchical Multiple Regression model in JAGS for growth~temperature and mass using sub-optimum temperatures only. Contains code for specifying JAGS models, perform model selection, perform model validation, make predictions and evalute model fit
+
 **R/analysis/meta_cons**: Hierarchical Multiple Regression model in JAGS for metabolism or consumprtion ~ temperature and mass using sub-optimum temperatures only. Contains code for specifying JAGS models, perform model selection, perform model validation, make predictions and evalute model fit
+
 **R/analysis/non_linear_model**: Quadratic model in JAGS for metabolism or consumprtion ~ temperature and mass using sub-optimum temperatures only. Contains code for specifying JAGS models, perform model selection, perform model validation, make predictions and evalute model fit
 
 ### Figures
 **figures**: Contains figures for main text
+
 **figures/supp**: Contains supplementary figures
