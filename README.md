@@ -8,7 +8,7 @@ This repository contains all of the clean data and code used to generate the ana
 ## How to replicate our analyses
 
 ### Data
-'data': Contains data (.xlsx) on metabolic rate, maximum consumption rate, growth rate and optimum temperature for growth. For info on how these data were compiled, see Appendix SX.
+`data`: Contains data (.xlsx) on metabolic rate, maximum consumption rate, growth rate and optimum temperature for growth. For info on how these data were compiled, see Appendix SX.
 
 **R/exploration**: Contains code for exploring data and filtering data for modelling
 
