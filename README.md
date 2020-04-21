@@ -31,6 +31,7 @@ This repository contains all of the clean data and code used to generate the ana
 
 ### Key packages
 ```{r}
+# print(sessionInfo())
 # other attached packages:
 # bayesplot_1.7.1
 # patchwork_0.0.1
