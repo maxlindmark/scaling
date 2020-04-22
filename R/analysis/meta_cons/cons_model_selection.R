@@ -34,19 +34,12 @@ library(bayesplot)
 
 # B. READ IN DATA ==================================================================
 # Read in your data file(s)
+# ******************** Read from GH!!
 dat <- read.csv("data/con_analysis.csv")
 str(dat)
 
 # Filter data points at below optimum temperatures
 dat <- dat %>% filter(above_optimum == "N")
-
-# Create abbreviated species name for plotting. Get first part of name
-sp1 <- substring(dat$species, 1, 1)
-
-# Get species name
-sp2 <- gsub( ".*\\s", "", dat$species )
-
-dat$species_ab <- paste(sp1, sp2, sep = ".")
 
 # Rename species factor for JAGS (must be numbered 1:n)
 str(dat)
@@ -56,17 +49,13 @@ dat$species_n <- as.numeric(as.factor(dat$species))
 sort(unique(dat$species_ab))
 unique(dat$species_n)
 
+# Mean-center predictor variables
+dat$log_mass_ct <- dat$log_mass - mean(dat$log_mass)
+dat$temp_arr_ct <- dat$temp_arr - mean(dat$temp_arr)
+
 # Prepare data for JAGS
 data = NULL # Clear any old data lists that might confuse things
 
-# Mass-range used for prediction
-# mass_pred = seq(from = min(dat$log_mass_norm_ct), 
-#                 to = max(dat$log_mass_norm_ct),
-#                 length.out = 100)
-
-mass_pred = seq(from = min(dat$log_mass_ct), 
-                to = max(dat$log_mass_ct),
-                length.out = 100)
 
 # Data in list-format for JAGS
 data = list(
@@ -74,8 +63,7 @@ data = list(
   n_obs = length(dat$y), 
   species_n = dat$species_n,
   mass = dat$log_mass_ct,
-  #mass = dat$log_mass_norm_ct,
-  temp = dat$temp_norm_arr_ct
+  temp = dat$temp_arr_ct
 )
 
 
@@ -95,7 +83,7 @@ data = list(
 
 
 #**** M1 ===========================================================================
-model = "R/analysis/log-linear model/models/m1.txt"
+model = "R/analysis/meta_cons/models/m1.txt"
 
 jm = jags.model(model,
                 data = data, 
@@ -125,14 +113,6 @@ WAIC <- lppd + 2*pd.WAIC
 
 c(pd.WAIC, WAIC)
 waic_m1 <- WAIC
-
-# Standard error of WAIC
-n_cases <- nrow(data.frame(data))
-lppd_ind <- log(summary(zj$pd, mean)$stat)
-pd.WAIC_ind <- (summary(zj$log_pd, sd)$stat)^2
-waic_vec <- -2*(lppd_ind - pd.WAIC_ind)
-sqrt(n_cases*var(waic_vec))
-# [1] 103.3267
 
 
 #**** M2 ===========================================================================
@@ -183,13 +163,12 @@ cs <- coda.samples(jm,
 
 summary(cs)
 
-
 js = jags.samples(jm, 
                   variable.names = c("b3"), 
                   n.iter = 10000, 
                   thin = 5)
 
-1-ecdf(js$b3)(0) 
+ecdf(js$b3)(0) 
 
 cs %>% mcmc_dens() 
 
@@ -521,24 +500,23 @@ waic_m6 - waic_m5
 waic_m7 - waic_m5
 waic_m8 - waic_m5
 
-# [1] 103.3267
 # > waic_m1 - waic_m5
-# [1] 2.867496
+# [1] 3.520652
 # > waic_m2 - waic_m5
-# [1] 0.9142125
+# [1] 2.038109
 # > waic_m3a - waic_m5
-# [1] 132.2783
+# [1] 132.4823
 # > waic_m3b - waic_m5
-# [1] 60.50091
+# [1] 47.96525
 # > waic_m4 - waic_m5
-# [1] 167.9646
+# [1] 157.4132
 # > waic_m5 - waic_m5
 # [1] 0
 # > waic_m6 - waic_m5
-# [1] 184.9694
+# [1] 185.4572
 # > waic_m7 - waic_m5
-# [1] 598.6144
+# [1] 681.9205
 # > waic_m8 - waic_m5
-# [1] 822.4319
+# [1] 672.0204
 
 # WAIC suggests model 5 is best fitting

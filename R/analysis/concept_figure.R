@@ -149,7 +149,7 @@ summary(cs)
 # b3         -0.00502 0.0009126 1.178e-05      1.902e-05
 
 
-# C. SIMULATE DATA FOR PLITTING ====================================================
+# D. SIMULATE DATA FOR PLITTING ====================================================
 summary(df$log_mass_ct)
 summary(df$temp_norm_ct)
 
@@ -186,7 +186,7 @@ dat$cmax_stand <- dat$cmax/max(dat$cmax)
 dat$diff <- dat$cmax_stand - dat$met_stand 
 
 
-# C. PLOT ==========================================================================
+# E. PLOT ==========================================================================
 dat2 <- dat %>% 
   select(mass, temp, met_stand, cmax_stand, diff) %>% 
   pivot_longer(cols = 3:5)

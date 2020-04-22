@@ -5,7 +5,7 @@
 # 
 # A. Load libraries & read data
 #
-# B. Explore data
+# B. Explore & clean data
 #
 # C. Save data
 #
@@ -46,10 +46,18 @@ glimpse(dat)
 
 unique(dat$species)
 
-colnames(dat)[1] <-  "G"
+dat$y <- dat$`growth_rate_%/day`
 
 
-# B. EXPLORE DATA ==================================================================
+# B. EXPLORE & CLEAN DATA ==================================================================
+# Create abbreviated species name for plotting. Get first part of name
+sp1 <- substring(dat$species, 1, 1)
+
+# Get species name
+sp2 <- gsub( ".*\\s", "", dat$species )
+
+dat$species_ab <- paste(sp1, sp2, sep = ".")
+
 # Create a single reference temperature for analysis. This is midpoint of environment (mainly),
 # but sometimes midpoint of preferred (both from fishbase), and in two cases other literature
 dat$pref_temp_mid[is.na(dat$pref_temp_mid)] <- -9
@@ -154,13 +162,8 @@ ggplot(dat, aes(log(mass_norm_max), opt_temp_c_ct, fill = species)) +
 
 
 # C. SAVE DATA ==================================================================
-# dat %>%
-#   select(G, geom_mean_mass_g, opt_temp_c, common_name, species,
-#          mean_opt_temp_c, opt_temp_c_ct, mass, mass_norm, log_mass_norm, log_mass_norm_ct) %>%
-#   write_csv(., "data/topt_analysis.csv", ";")
-
 glimpse(dat)
 dat %>%
-  select(G, `growth_rate_%/day`, geom_mean_mass_g, size_group, mass_g, log_mass, mass_norm_max,
-         mass_norm_mat, temp_c, temp_arr, median_temp, above_optimum, common_name, species) %>%
+  select(y, `growth_rate_%/day`, geom_mean_mass_g, size_group, mass_g, mass_norm_max,
+         mass_norm_mat, opt_temp_c, opt_temp_c_ct, median_temp, common_name, species, species_ab) %>%
   write_csv(., "data/topt_analysis.csv", ";")

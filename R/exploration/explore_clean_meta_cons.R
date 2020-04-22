@@ -5,7 +5,7 @@
 # 
 # A. Load libraries & read data
 #
-# B. Explore data
+# B. Explore & clean data
 #
 # C. Save data
 #
@@ -61,7 +61,15 @@ head(dat)
 glimpse(dat)
 
 
-# B. EXPLORE DATA ==================================================================
+# B. EXPLORE & CLEAN DATA ==========================================================
+# Create abbreviated species name for plotting. Get first part of name
+sp1 <- substring(dat$species, 1, 1)
+
+# Get species name
+sp2 <- gsub( ".*\\s", "", dat$species )
+
+dat$species_ab <- paste(sp1, sp2, sep = ".")
+
 # Change settings for using scientific notation
 options(scipen=999) 
 
@@ -345,14 +353,14 @@ for(i in unique(s_datm$common_name)) {
 glimpse(s_datm)
 s_datm %>%
  select(y, mass_g, log_mass, mass_norm, log_mass_norm, temp_c, temp_arr, median_temp, 
-        above_optimum, common_name, species, unit, type) %>%
+        above_optimum, common_name, species, species_ab, unit, type) %>%
 write_csv(., "data/met_analysis.csv", ";")
 
 
 glimpse(s_datc) 
 s_datc %>%
   select(y, mass_g, log_mass, mass_norm, log_mass_norm, temp_c, temp_arr, median_temp, 
-         above_optimum, common_name, species, unit, type) %>%
+         above_optimum, common_name, species, species_ab, unit, type) %>%
 write_csv(., "data/con_analysis.csv", ";")
 
 

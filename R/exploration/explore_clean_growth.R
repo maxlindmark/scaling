@@ -5,7 +5,7 @@
 # 
 # A. Load libraries & read data
 #
-# B. Explore data
+# B. Explore & clean data
 #
 # C. Save data
 #
@@ -52,7 +52,15 @@ dat$y <- dat$`growth_rate_%/day`
 glimpse(dat)
 
 
-# B. EXPLORE DATA ==================================================================
+# B. EXPLORE & CLEAN DATA ==========================================================
+# Create abbreviated species name for plotting. Get first part of name
+sp1 <- substring(dat$species, 1, 1)
+
+# Get species name
+sp2 <- gsub( ".*\\s", "", dat$species )
+
+dat$species_ab <- paste(sp1, sp2, sep = ".")
+
 # Create a single reference temperature for analysis. This is midpoint of environment (mainly),
 # but sometimes midpoint of preferred (both from fishbase), and in two cases other literature
 dat$pref_temp_mid[is.na(dat$pref_temp_mid)] <- -9
@@ -213,15 +221,19 @@ ggsave("figures/supp/data/growth_lifestyle.png", width = 6.5, height = 6.5, dpi 
 
 #** Plot response variable =========================================================
 # Plot growth rate over temp within species, how many points beynd optimum?
-ggplot(dat, aes(temp_norm, y, color = factor(log10(mass_norm)))) + 
+p8 <- ggplot(dat, aes(temp_c, y, 
+                      group = factor(log10(mass_norm)),
+                      color = log10(mass_norm))) + 
   geom_point(size = 2, alpha = 1) +
   geom_line() +
   facet_wrap(~common_name, scales = "free") +
-  theme_bw(base_size = 15) +
-  guides(color = FALSE) +
-  scale_color_viridis(discrete = T, option = "magma") +
-  labs(x = "Relative temperature (environment", y = "Specific growth rate (%/day)") +
+  scale_color_viridis(option = "magma") +
+  labs(x = expression(paste("Temperature [", degree*C, "]")), 
+       y = "Specific growth rate (%/day)") +
   NULL
+pWord <- p8 + theme_classic() + theme(text = element_text(size = 12),
+                                      strip.text.x = element_text(size = 6.5))
+ggsave("figures/supp/data/species_plots/growth/growth.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Plot all data combined =======================================================
@@ -263,5 +275,5 @@ ggsave("figures/supp/data/growth_rate_temp_mass.png", width = 6.5, height = 6.5,
 glimpse(dat)
 dat %>%
   select(y, `growth_rate_%/day`, geom_mean_mass_g, size_group, mass_g, log_mass, mass_norm, log_mass_norm, 
-         temp_c, temp_arr, median_temp, above_optimum, common_name, species) %>%
+         temp_c, temp_arr, median_temp, above_optimum, common_name, species, species_ab) %>%
   write_csv(., "data/growth_analysis.csv", ";")
