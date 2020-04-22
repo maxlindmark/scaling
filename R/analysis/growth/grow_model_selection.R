@@ -33,7 +33,7 @@ library(bayesplot)
 
 
 # B. READ IN DATA ==================================================================
-# Read in your data file(s)
+# Read in your data file
 dat <- 
   read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/growth_analysis.csv"))
 
@@ -132,8 +132,7 @@ jm1 = jags.model(model1,
                  data = data, 
                  n.adapt = 5000, 
                  n.chains = 3,
-                 inits = inits
-)
+                 inits = inits)
 
 # Just to check the specified initial values are used!
 # jm1 = jags.model(model, data = data, n.adapt = 0, n.chains = 3, inits = inits)
@@ -341,7 +340,7 @@ jm3b = jags.model(model3b,
 
 burn.in = 10000 # Length of burn-in
 
-update(jm, n.iter = burn.in) 
+update(jm3b, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj3b = jags.samples(jm3b, 
@@ -693,3 +692,23 @@ waic_m6b - waic_m1
 waic_m7 - waic_m1
 
 # WAIC suggests model 1 is best fitting with model
+
+# > # Calculate delta WAIC
+#   > waic_m1 - waic_m1
+# [1] 0
+# > waic_m2 - waic_m1
+# [1] 7.507469
+# > waic_m3a - waic_m1
+# [1] 24.2434
+# > waic_m3b - waic_m1
+# [1] 33.23503
+# > waic_m4 - waic_m1
+# [1] 45.05897
+# > waic_m5 - waic_m1
+# [1] 5.38049
+# > waic_m6a - waic_m1
+# [1] 22.1094
+# > waic_m6b - waic_m1
+# [1] 34.64249
+# > waic_m7 - waic_m1
+# [1] 46.4271

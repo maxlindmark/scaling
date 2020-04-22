@@ -33,7 +33,7 @@ library(bayesplot)
 
 
 # B. READ IN DATA ==================================================================
-# Read in your data file(s)
+# Read in your data file
 dat <- 
   read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/met_analysis.csv"))
 
@@ -132,8 +132,7 @@ jm1 = jags.model(model1,
                  data = data, 
                  n.adapt = 5000, 
                  n.chains = 3,
-                 inits = inits
-)
+                 inits = inits)
 
 # Just to check the specified initial values are used!
 # jm1 = jags.model(model, data = data, n.adapt = 0, n.chains = 3, inits = inits)
@@ -341,7 +340,7 @@ jm3b = jags.model(model3b,
 
 burn.in = 10000 # Length of burn-in
 
-update(jm, n.iter = burn.in) 
+update(jm3b, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj3b = jags.samples(jm3b, 
