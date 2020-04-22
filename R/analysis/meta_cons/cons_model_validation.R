@@ -94,8 +94,6 @@ jm = jags.model(model,
 
 burn.in = 10000 # Length of burn-in
 
-update(jm, n.iter = burn.in) 
-
 
 #** Sample from the posterior ======================================================
 samples = 10000 # How many samples to take from the posterior
@@ -107,8 +105,10 @@ cs <- coda.samples(jm,
                                       "mu_b0", "mu_b1", "mu_b2", 
                                       "sigma_b0", "sigma_b1", "sigma_b2",
                                       "sigma"), 
-                   n.iter = samples, 
-                   thin = n.thin)
+                   n.iter = samples
+                   #, 
+                   #thin = n.thin
+                   )
 
 summary(cs) # Get the mean estimate and SE and 95% CIs
 

@@ -5,7 +5,7 @@ model{
      mu[i] <- 
        b0[species_n[i]] +                # varying intercept
        b1[species_n[i]]*mass[i] +        # varying mass-exponent 
-       b2[species_n[i]]*temp[i] +        # varying activation energy
+       b2[species_n[i]]*temp[i] +        # varying temperature coefficient
        b3[species_n[i]]*mass[i]*temp[i]  # varying M*T interaction
     # Add log likelihood computation for each observation
     pd[i] <- dnorm(y[i], mu[i], tau)
@@ -25,7 +25,7 @@ model{
   #-- Priors	
   mu_b0 ~ dnorm(0, 0.5)      # global mean
   mu_b1 ~ dnorm(-0.25, 0.5)  # global mass-exponent
-  mu_b2 ~ dnorm(-0.6, 0.5)   # global activation energy
+  mu_b2 ~ dnorm(-0.6, 0.5)   # global temperature coefficient
   mu_b3 ~ dnorm(0, 0.5)      # global interaction
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)

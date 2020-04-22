@@ -5,7 +5,7 @@ model{
     mu[i] <- 
       b0[species_n[i]] +          # varying intercept 
       b1*mass[i] +                # non-varying mass-exponent
-      b2[species_n[i]]*temp[i] +  # varying activation energy
+      b2[species_n[i]]*temp[i] +  # varying temperature coefficient
       b3*mass[i]*temp[i]          # non-varying M*T interaction
     # Add log likelihood computation for each observation
     pd[i] <- dnorm(y[i], mu[i], tau)
