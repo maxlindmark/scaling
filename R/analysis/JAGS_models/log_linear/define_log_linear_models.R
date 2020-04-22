@@ -49,10 +49,10 @@ cat(
   }
   
   #-- Priors	
-  mu_b0 ~ dnorm(0, 0.5)      # global mean
-  mu_b1 ~ dnorm(-0.25, 0.5)  # global mass-exponent
-  mu_b2 ~ dnorm(-0.6, 0.5)   # global temperature coefficient
-  mu_b3 ~ dnorm(0, 0.5)      # global interaction
+  mu_b0 ~ dnorm(0, 1)      
+  mu_b1 ~ dnorm(-0.25, 1)  
+  mu_b2 ~ dnorm(-0.6, 1)   
+  mu_b3 ~ dnorm(0, 1)      
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   sigma_b1 ~ dunif(0, 10)
@@ -94,10 +94,10 @@ cat(
   }
   
   #-- Priors	
-  b3 ~ dnorm(0, 0.5)         # global interaction
-  mu_b0 ~ dnorm(0, 0.5)      # varying intercept
-  mu_b1 ~ dnorm(-0.25, 0.5)  # varying mass-exponent
-  mu_b2 ~ dnorm(-0.6, 0.5)   # varying temperature coefficient
+  b3 ~ dnorm(0, 1)         
+  mu_b0 ~ dnorm(0, 1)      
+  mu_b1 ~ dnorm(-0.25, 1)  
+  mu_b2 ~ dnorm(-0.6, 1)   
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   sigma_b1 ~ dunif(0, 10)
@@ -136,10 +136,10 @@ cat(
   }
   
   #-- Priors	
-  b2 ~ dnorm(-0.6, 0.5)
-  b3 ~ dnorm(0, 0.5)
-  mu_b0 ~ dnorm(0, 0.5)
-  mu_b1 ~ dnorm(-0.25, 0.5)
+  b2 ~ dnorm(-0.6, 1)
+  b3 ~ dnorm(0, 1)
+  mu_b0 ~ dnorm(0, 1)
+  mu_b1 ~ dnorm(-0.25, 1)
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   sigma_b1 ~ dunif(0, 10)
@@ -176,10 +176,10 @@ cat(
   }
   
   #-- Priors	
-  b1 ~ dnorm(-0.25, 0.5)
-  b3 ~ dnorm(0, 0.5)
-  mu_b0 ~ dnorm(0, 0.5)
-  mu_b2 ~ dnorm(-0.6, 0.5)
+  b1 ~ dnorm(-0.25, 1)
+  b3 ~ dnorm(0, 1)
+  mu_b0 ~ dnorm(0, 1)
+  mu_b2 ~ dnorm(-0.6, 1)
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   sigma_b2 ~ dunif(0, 10)
@@ -215,10 +215,10 @@ cat(
   }
   
   #-- Priors	
-  b1 ~ dnorm(-0.25, 0.5)
-  b2 ~ dnorm(-0.6, 0.5)
-  b3 ~ dnorm(0, 0.5)
-  mu_b0 ~ dnorm(0, 0.5)
+  b1 ~ dnorm(-0.25, 1)
+  b2 ~ dnorm(-0.6, 1)
+  b3 ~ dnorm(0, 1)
+  mu_b0 ~ dnorm(0, 1)
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   tau <- 1/sigma^2
@@ -254,9 +254,9 @@ cat(
   }
   
   #-- Priors	
-  mu_b0 ~ dnorm(0, 0.5)      # varying intercept
-  mu_b1 ~ dnorm(-0.25, 0.5)  # varying mass-exponent
-  mu_b2 ~ dnorm(-0.6, 0.5)   # varying temperature coefficient
+  mu_b0 ~ dnorm(0, 1)              
+  mu_b1 ~ dnorm(-0.25, 1)          
+  mu_b2 ~ dnorm(-0.6, 1)           
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   sigma_b1 ~ dunif(0, 10)
@@ -295,9 +295,9 @@ cat(
   }
   
   #-- Priors	
-  mu_b0 ~ dnorm(0, 0.5)      # varying intercept
-  mu_b1 ~ dnorm(-0.25, 0.5)  # varying mass-exponent
-  b2 ~ dnorm(-0.6, 0.5)      # non-varying temperature coefficient
+  mu_b0 ~ dnorm(0, 1)              
+  mu_b1 ~ dnorm(-0.25, 1)          
+  b2 ~ dnorm(-0.6, 1)              
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   sigma_b1 ~ dunif(0, 10)
@@ -317,7 +317,7 @@ cat(
     y[i] ~ dnorm(mu[i], tau)
     mu[i] <- 
       b0[species_n[i]] +           # varying intercept 
-      b1*mass[i] +                 # non-varying mass-exponent
+      b1*mass[i] +                 # non-varying temperature coefficient
       b2[species_n[i]]*temp[i]     # varying temperature coefficient
   
   # Add log likelihood computation for each observation
@@ -334,9 +334,9 @@ cat(
   }
   
   #-- Priors	
-  mu_b0 ~ dnorm(0, 0.5)      # varying intercept
-  b1 ~ dnorm(-0.25, 0.5)     # non-varying mass-exponent
-  mu_b2 ~ dnorm(-0.6, 0.5)   # varying temperature coefficient
+  mu_b0 ~ dnorm(0, 1)             
+  b1 ~ dnorm(-0.25, 1)            
+  mu_b2 ~ dnorm(-0.6, 1)          
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   sigma_b2 ~ dunif(0, 10)
@@ -372,9 +372,9 @@ cat(
     }
   
   #-- Priors	
-  mu_b0 ~ dnorm(0, 0.5)      # varying intercept
-  b1 ~ dnorm(-0.25, 0.5)
-  b2 ~ dnorm(-0.6, 0.5)
+  mu_b0 ~ dnorm(0, 1)              
+  b1 ~ dnorm(-0.25, 1)
+  b2 ~ dnorm(-0.6, 1)
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   tau <- 1/sigma^2

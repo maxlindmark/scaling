@@ -8,7 +8,10 @@
 #
 # B. Read data
 #
-# C. Model validation
+# C. Model validation: posterior shape, chain convergence, rhat and prior vs posterior)
+#    (The reason I don't evalute fit here is because I use JAGS code that doesn't
+#     do fitting. This is because I would then have to add that to all models, in case
+#     I would select a different one based on WAIC)
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -25,6 +28,7 @@ library(magrittr)
 library(viridis)
 library(patchwork)
 library(bayesplot)
+library(MCMCvis)
 
 # other attached packages:
 # [1] bayesplot_1.7.1    patchwork_0.0.1    viridis_0.5.1      viridisLite_0.3.0  magrittr_1.5       readxl_1.3.1      
@@ -293,7 +297,7 @@ ggsave("figures/supp/log_linear_model/growth/validation_gro.png", width = 6.5, h
 p9 <- cs_df %>% 
   ggs_Rhat(.) + 
   xlab("R_hat") +
-  xlim(0.999, 1.0035) +
+  xlim(0.999, 1.005) +
   theme_classic(base_size = 11) +
   geom_point(size = 2) +
   theme(aspect.ratio = 1)+
@@ -301,3 +305,46 @@ p9 <- cs_df %>%
 pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 10),
                                        axis.text = element_text(size = 5))
 ggsave("figures/supp/log_linear_model/growth/validation_rhat_gro.png", width = 6.5, height = 6.5, dpi = 600)
+
+
+#**** Prior vs posterior ===========================================================
+# https://cran.r-project.org/web/packages/MCMCvis/vignettes/MCMCvis.html
+
+# Priors from JAGS
+# mu_b0 ~ dnorm(0, 1)      # global mean
+# mu_b1 ~ dnorm(-0.25, 1)  # global mass-exponent
+# mu_b2 ~ dnorm(-0.6, 1)   # global temperature coefficient
+# mu_b3 ~ dnorm(0, 1)      # global interaction
+
+# Remember: distributions in JAGS have arguments mean and precision (inverse of variance)
+# tau = 1/variance
+
+# from sigma to tau 
+sigma = 1
+tau <- 1/sigma^2
+
+# from tau to sigma
+sqrt(1/tau)
+
+mu_b0 <- rnorm(15000, 0, sqrt(1/tau))      # global intercept 
+mu_b1 <- rnorm(15000, -0.25, sqrt(1/tau))  # global mass-exponent
+mu_b2 <- rnorm(15000, -0.6, sqrt(1/tau))   # global temperature coefficient
+mu_b3 <- rnorm(15000, 0, sqrt(1/tau))      # global interaction
+
+PR <- as.matrix(cbind(mu_b0, mu_b1, mu_b2, mu_b3))
+
+# This is not a ggplot...
+png(file = "/Users/maxlindmark/Desktop/R_STUDIO_PROJECTS/scaling/figures/supp/log_linear_model/growth/validation_prior_post_growth.png", 
+    units = "px", width = 600, height = 600)
+
+MCMCtrace(cs,
+          params = c("mu_b0", "mu_b1", "mu_b2", "mu_b3"),
+          ISB = FALSE,
+          priors = PR,
+          pdf = FALSE,
+          Rhat = TRUE,
+          n.eff = TRUE,
+          type = "density")   # removes the trace plot
+
+dev.off()
+

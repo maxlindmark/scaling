@@ -101,7 +101,7 @@ inits = list(
     sigma_b1 = 0.1,
     sigma_b2 = 0.1,
     sigma_b3 = 0.1,
-    .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples, see JAGS 4.3 user manual
   ),
   list(
     mu_b0 = 1,
@@ -135,6 +135,7 @@ jm1 = jags.model(model1,
                  inits = inits)
 
 # Just to check the specified initial values are used!
+# https://stats.stackexchange.com/questions/231787/rjags-does-not-seem-to-use-initial-values-specified
 # jm1 = jags.model(model, data = data, n.adapt = 0, n.chains = 3, inits = inits)
 # jm1$state()
 # coda.samples(jm1, c('mu_b0'), n.iter = 1)
@@ -680,6 +681,27 @@ waic_m6a
 waic_m6b
 waic_m7
 
+# WAIC suggests model 2, closely followed by model 1
+
+# > waic_m1
+# [1] 303.7944
+# > waic_m2
+# [1] 302.3457
+# > waic_m3a
+# [1] 594.3783
+# > waic_m3b
+# [1] 668.8778
+# > waic_m4
+# [1] 922.772
+# > waic_m5
+# [1] 305.8178
+# > waic_m6a
+# [1] 633.3207
+# > waic_m6b
+# [1] 670.4176
+# > waic_m7
+# [1] 953.8256
+
 # Calculate delta WAIC
 waic_m1 - waic_m2
 waic_m2 - waic_m2
@@ -690,23 +712,3 @@ waic_m5 - waic_m2
 waic_m6a - waic_m2
 waic_m6b - waic_m2
 waic_m7 - waic_m2
-
-# WAIC suggests model 2
-# > waic_m1 - waic_m2
-# [1] 3.803442
-# > waic_m2 - waic_m2
-# [1] 0
-# > waic_m3a - waic_m2
-# [1] 293.2295
-# > waic_m3b - waic_m2
-# [1] 368.4379
-# > waic_m4 - waic_m2
-# [1] 622.2747
-# > waic_m5 - waic_m2
-# [1] 5.884965
-# > waic_m6a - waic_m2
-# [1] 332.3562
-# > waic_m6b - waic_m2
-# [1] 369.6106
-# > waic_m7 - waic_m2
-# [1] 653.0449

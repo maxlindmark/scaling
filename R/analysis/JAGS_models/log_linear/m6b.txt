@@ -4,7 +4,7 @@ model{
     y[i] ~ dnorm(mu[i], tau)
     mu[i] <- 
       b0[species_n[i]] +           # varying intercept 
-      b1*mass[i] +                 # non-varying mass-exponent
+      b1*mass[i] +                 # non-varying temperature coefficient
       b2[species_n[i]]*temp[i]     # varying temperature coefficient
   
   # Add log likelihood computation for each observation
@@ -21,9 +21,9 @@ model{
   }
   
   #-- Priors	
-  mu_b0 ~ dnorm(0, 0.5)      # varying intercept
-  b1 ~ dnorm(-0.25, 0.5)     # non-varying mass-exponent
-  mu_b2 ~ dnorm(-0.6, 0.5)   # varying temperature coefficient
+  mu_b0 ~ dnorm(0, 1)             
+  b1 ~ dnorm(-0.25, 1)            
+  mu_b2 ~ dnorm(-0.6, 1)          
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   sigma_b2 ~ dunif(0, 10)

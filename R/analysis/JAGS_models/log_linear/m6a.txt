@@ -21,9 +21,9 @@ model{
   }
   
   #-- Priors	
-  mu_b0 ~ dnorm(0, 0.5)      # varying intercept
-  mu_b1 ~ dnorm(-0.25, 0.5)  # varying mass-exponent
-  b2 ~ dnorm(-0.6, 0.5)      # non-varying temperature coefficient
+  mu_b0 ~ dnorm(0, 1)              
+  mu_b1 ~ dnorm(-0.25, 1)          
+  b2 ~ dnorm(-0.6, 1)              
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   sigma_b1 ~ dunif(0, 10)
