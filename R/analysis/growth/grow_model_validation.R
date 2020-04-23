@@ -326,16 +326,20 @@ tau <- 1/sigma^2
 # from tau to sigma
 sqrt(1/tau)
 
-mu_b0 <- rnorm(15000, 0, sqrt(1/tau))      # global intercept 
-mu_b1 <- rnorm(15000, -0.25, sqrt(1/tau))  # global mass-exponent
-mu_b2 <- rnorm(15000, -0.6, sqrt(1/tau))   # global temperature coefficient
-mu_b3 <- rnorm(15000, 0, sqrt(1/tau))      # global interaction
+mu_b0 <- rnorm(25000, 0, sqrt(1/tau))      # global intercept 
+#mu_b0 <- rnorm(20000, 1, 0.2)      # global intercept 
+mu_b1 <- rnorm(25000, -0.25, sqrt(1/tau))  # global mass-exponent
+#mu_b1 <- rnorm(20000, -0.25, 0.2)  # global mass-exponent
+mu_b2 <- rnorm(25000, -0.6, sqrt(1/tau))   # global temperature coefficient
+#mu_b2 <- rnorm(20000, -0.6, 0.2)   # global temperature coefficient
+mu_b3 <- rnorm(25000, 0, sqrt(1/tau))      # global interaction
+#mu_b3 <- rnorm(20000, 0, 0.2)      # global interaction
 
 PR <- as.matrix(cbind(mu_b0, mu_b1, mu_b2, mu_b3))
 
 # This is not a ggplot...
 png(file = "/Users/maxlindmark/Desktop/R_STUDIO_PROJECTS/scaling/figures/supp/log_linear_model/growth/validation_prior_post_growth.png", 
-    units = "px", width = 600, height = 600)
+    units = "px", width = 1800, height = 1800, res = 300)
 
 MCMCtrace(cs,
           params = c("mu_b0", "mu_b1", "mu_b2", "mu_b3"),
@@ -347,4 +351,3 @@ MCMCtrace(cs,
           type = "density")   # removes the trace plot
 
 dev.off()
-
