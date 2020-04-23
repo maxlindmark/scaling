@@ -62,7 +62,7 @@ data = NULL # Clear any old data lists that might confuse things
 
 # Data in list-format for JAGS
 data = list(
-  y = log(dat$y), 
+  y = log(dat$y_spec), 
   n_obs = length(dat$y), 
   species_n = dat$species_n,
   mass = dat$log_mass_ct,
@@ -90,6 +90,7 @@ data = list(
 model1 = "R/analysis/JAGS_models/log_linear/m1.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
+# NOTE I don't do it for all parameters...
 inits = list(
   list(
     mu_b0 = 0.1,

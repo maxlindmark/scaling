@@ -90,6 +90,7 @@ data = list(
 model1 = "R/analysis/JAGS_models/log_linear/m1.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
+# NOTE I don't do it for all parameters...
 inits = list(
   list(
     mu_b0 = 0.1,
