@@ -955,3 +955,6 @@ pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 12))
 pWord14 / pWord15
 ggsave("figures/pred_con_met.png", width = 6.5, height = 6.5, dpi = 600)
 
+
+
+
