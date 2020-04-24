@@ -1,8 +1,8 @@
 model{
   
   for(i in 1:n_obs){
-     y[i] ~ dnorm(mu[i], tau)
-     mu[i] <- 
+     y[i] ~ dnorm(mu[i], tau)            # likelihood
+     mu[i] <-                            # explanatory model 
        b0[species_n[i]] +                # varying intercept
        b1[species_n[i]]*mass[i] +        # varying mass-exponent 
        b2[species_n[i]]*temp[i] +        # varying temperature coefficient
@@ -23,7 +23,7 @@ model{
   }
   
   #-- Priors	
-  mu_b0 ~ dnorm(0, 1)      
+  mu_b0 ~ dnorm(0, 0.04)                 # remember the second argument is precision (1/variance)   
   mu_b1 ~ dnorm(-0.25, 1)  
   mu_b2 ~ dnorm(-0.6, 1)   
   mu_b3 ~ dnorm(0, 1)      

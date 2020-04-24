@@ -1,7 +1,7 @@
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # 2019.12.02: Max Lindmark
 #
-# - Code to fit hierarchicals model to maximum consumption using a log-linear model 
+# - Code to fit hierarchicals model to metabolism using a log-linear model 
 # inspired by the MTE, and perform model selection using WAIC
 # 
 # A. Load libraries
@@ -35,7 +35,7 @@ library(bayesplot)
 # B. READ IN DATA ==================================================================
 # Read in your data file
 dat <- 
-  read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/con_analysis.csv"))
+  read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/met_analysis.csv"))
 
 str(dat)
 
@@ -83,6 +83,11 @@ data = list(
 # M6a - no interaction, intercept and mass vary by species
 # M6b - no interaction, intercept and temperature vary by species
 # M7  - no interaction, intercept varies by species
+
+# Some settings:
+burn.in <- 15000 # Length of burn-in
+n.iter <- 15000  # Number of samples
+thin <- 5        # Save every 5th sample
 
 #**** M1 ===========================================================================
 # M1  - all coefficients vary by species
@@ -142,15 +147,13 @@ jm1 = jags.model(model1,
 # coda.samples(jm1, c('mu_b0'), n.iter = 1)
 # jm1$state()[[1]]$mu_b0
 
-burn.in = 10000 # Length of burn-in
-
-update(jm1, n.iter = burn.in) 
+update(jm1, n.iter = n.iter) 
 
 # Monitor the likelihood to calculate WAIC
 zj1 = jags.samples(jm1, 
                    variable.names = c("pd", "log_pd"), 
-                   n.iter = 10000, 
-                   thin = 1)
+                   n.iter = n.iter, 
+                   thin = thin)
 
 # Calculate model fit by summing over the log of means of the posterior distribution of 
 # the PPD and multiply by -2 (i.e. negative log likelihood).
@@ -210,15 +213,13 @@ jm2 = jags.model(model2,
                  n.adapt = 5000, 
                  n.chains = 3)
 
-burn.in = 10000 # Length of burn-in
-
-update(jm2, n.iter = burn.in) 
+update(jm2, n.iter = n.iter) 
 
 # Monitor the likelihood to calculate WAIC
 zj2 = jags.samples(jm2, 
-                  variable.names = c("pd", "log_pd"), 
-                  n.iter = 10000, 
-                  thin = 1)
+                   variable.names = c("pd", "log_pd"), 
+                   n.iter = n.iter, 
+                   thin = thin)
 
 # Calculate model fit by summing over the log of means of the posterior distribution of 
 # the PPD and multiply by -2 (i.e. negative log likelihood).
@@ -275,15 +276,13 @@ jm3a = jags.model(model3a,
                   n.adapt = 5000, 
                   n.chains = 3)
 
-burn.in = 10000 # Length of burn-in
-
-update(jm3a, n.iter = burn.in) 
+update(jm3a, n.iter = n.iter) 
 
 # Monitor the likelihood to calculate WAIC
 zj3a = jags.samples(jm3a, 
                     variable.names = c("pd", "log_pd"), 
-                     n.iter = 10000, 
-                    thin = 1)
+                    n.iter = n.iter, 
+                    thin = thin)
 
 # Calculate model fit by summing over the log of means of the posterior distribution of 
 # the PPD and multiply by -2 (i.e. negative log likelihood).
@@ -340,15 +339,13 @@ jm3b = jags.model(model3b,
                   n.adapt = 5000, 
                   n.chains = 3)
 
-burn.in = 10000 # Length of burn-in
-
-update(jm3b, n.iter = burn.in) 
+update(jm3b, n.iter = n.iter) 
 
 # Monitor the likelihood to calculate WAIC
 zj3b = jags.samples(jm3b, 
                     variable.names = c("pd", "log_pd"), 
-                    n.iter = 10000, 
-                    thin = 1)
+                    n.iter = n.iter, 
+                    thin = thin)
 
 # Calculate model fit by summing over the log of means of the posterior distribution of 
 # the PPD and multiply by -2 (i.e. negative log likelihood).
@@ -402,15 +399,13 @@ jm4 = jags.model(model4,
                  n.adapt = 5000, 
                  n.chains = 3)
 
-burn.in = 10000 # Length of burn-in
-
-update(jm4, n.iter = burn.in) 
+update(jm4, n.iter = n.iter) 
 
 # Monitor the likelihood to calculate WAIC
 zj4 = jags.samples(jm4, 
                    variable.names = c("pd", "log_pd"), 
-                   n.iter = 10000, 
-                   thin = 1)
+                   n.iter = n.iter, 
+                   thin = thin)
 
 # Calculate model fit by summing over the log of means of the posterior distribution of 
 # the PPD and multiply by -2 (i.e. negative log likelihood).
@@ -467,15 +462,13 @@ jm5 = jags.model(model5,
                  n.adapt = 5000, 
                  n.chains = 3)
 
-burn.in = 10000 # Length of burn-in
-
-update(jm5, n.iter = burn.in) 
+update(jm5, n.iter = n.iter) 
 
 # Monitor the likelihood to calculate WAIC
 zj5 = jags.samples(jm5, 
                    variable.names = c("pd", "log_pd"), 
-                   n.iter = 10000, 
-                   thin = 1)
+                   n.iter = n.iter, 
+                   thin = thin)
 
 # Calculate model fit by summing over the log of means of the posterior distribution of 
 # the PPD and multiply by -2 (i.e. negative log likelihood).
@@ -529,15 +522,13 @@ jm6a = jags.model(model6a,
                   n.adapt = 5000, 
                   n.chains = 3)
 
-burn.in = 10000 # Length of burn-in
-
-update(jm6a, n.iter = burn.in) 
+update(jm6a, n.iter = n.iter) 
 
 # Monitor the likelihood to calculate WAIC
 zj6a = jags.samples(jm6a, 
                     variable.names = c("pd", "log_pd"), 
-                    n.iter = 10000, 
-                    thin = 1)
+                    n.iter = n.iter, 
+                    thin = thin)
 
 # Calculate model fit by summing over the log of means of the posterior distribution of 
 # the PPD and multiply by -2 (i.e. negative log likelihood).
@@ -590,15 +581,13 @@ jm6b = jags.model(model6b,
                   n.adapt = 5000, 
                   n.chains = 3)
 
-burn.in = 10000 # Length of burn-in
-
-update(jm6b, n.iter = burn.in) 
+update(jm6b, n.iter = n.iter) 
 
 # Monitor the likelihood to calculate WAIC
 zj6b = jags.samples(jm6b, 
                     variable.names = c("pd", "log_pd"), 
-                    n.iter = 10000, 
-                    thin = 1)
+                    n.iter = n.iter, 
+                    thin = thin)
 
 # Calculate model fit by summing over the log of means of the posterior distribution of 
 # the PPD and multiply by -2 (i.e. negative log likelihood).
@@ -648,15 +637,13 @@ jm7 = jags.model(model7,
                  n.adapt = 5000, 
                  n.chains = 3)
 
-burn.in = 10000 # Length of burn-in
-
-update(jm7, n.iter = burn.in) 
+update(jm7, n.iter = n.iter) 
 
 # Monitor the likelihood to calculate WAIC
 zj7 = jags.samples(jm7, 
-                  variable.names = c("pd", "log_pd"), 
-                  n.iter = 10000, 
-                  thin = 1)
+                   variable.names = c("pd", "log_pd"), 
+                   n.iter = n.iter, 
+                   thin = thin)
 
 # Calculate model fit by summing over the log of means of the posterior distribution of 
 # the PPD and multiply by -2 (i.e. negative log likelihood).
@@ -682,36 +669,35 @@ waic_m6a
 waic_m6b
 waic_m7
 
-# WAIC suggests model 5 is best fitting with model 2 as a close runner up
+# WAIC suggests model 2, closely followed by model 1
 
-# > # WAIC
+# WAIC
 #   > waic_m1
-# [1] 539.3767
+# [1] 301.9007
 # > waic_m2
-# [1] 538.0474
+# [1] 301.8823
 # > waic_m3a
-# [1] 669.2371
+# [1] 594.714
 # > waic_m3b
-# [1] 596.1623
+# [1] 669.1251
 # > waic_m4
-# [1] 701.3556
+# [1] 922.8293
 # > waic_m5
-# [1] 536.4902
+# [1] 307.6701
 # > waic_m6a
-# [1] 685.428
+# [1] 633.1002
 # > waic_m6b
-# [1] 600.6361
+# [1] 670.3108
 # > waic_m7
-# [1] 726.7849
+# [1] 953.6218
 
 # Calculate delta WAIC
-waic_m1 - waic_m5
-waic_m2 - waic_m5
-waic_m3a - waic_m5
-waic_m3b - waic_m5
-waic_m4 - waic_m5
-waic_m5 - waic_m5
-waic_m6a - waic_m5
-waic_m6b - waic_m5
-waic_m7 - waic_m5
-
+waic_m1 - waic_m2
+waic_m2 - waic_m2
+waic_m3a - waic_m2
+waic_m3b - waic_m2
+waic_m4 - waic_m2
+waic_m5 - waic_m2
+waic_m6a - waic_m2
+waic_m6b - waic_m2
+waic_m7 - waic_m2

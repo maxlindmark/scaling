@@ -58,6 +58,15 @@ con$temp_arr_ct <- con$temp_arr - mean(con$temp_arr)
 met$y_spec <- met$y / met$mass_g
 con$y_spec <- con$y / con$mass_g
 
+# Masses for prediction
+mass_pred_met = seq(from = min(met$log_mass_ct), 
+                    to = max(met$log_mass_ct),
+                    length.out = 100)
+
+mass_pred_con = seq(from = min(con$log_mass_ct), 
+                    to = max(con$log_mass_ct),
+                    length.out = 100)
+
 # Prepare data for JAGS
 met_data = NULL # Clear any old data lists that might confuse things
 con_data = NULL
@@ -214,7 +223,7 @@ summary(cs_met)
 
 #** Plot species-predictions =======================================================
 # Maxiumum consumption
-con_df <- data.frame(summary(cs_con)[2])
+con_df <- data.frame(summary(cs_con)[2]) # Extract quantiles
 con_df$Parameter <- rownames(con_df)
 con_df$Parameter_sub <- factor(substring(con_df$Parameter, 1, 2))
 
@@ -224,7 +233,6 @@ std_con$Parameter <- rownames(std_con)
 #** Mass exponent
 con_b <- con_df %>% filter(Parameter_sub == "b1")
 con_b$Species <- unique(con$species_ab)
-#con_b$Species <- unique(con_data$species)
 con_b$Rate <- "Maximum consumption rate"
 con_b$Parameter_mte <- "Mass exponent"
 con_b$pred <- filter(con_df, Parameter == "mu_b1")$quantiles.50.
@@ -233,7 +241,6 @@ con_b$pred_sd <- filter(std_con, Parameter == "mu_b1")$statistics.SD
 #** Activation energy
 con_e <- con_df %>% filter(Parameter_sub == "b2")
 con_e$Species <- unique(con$species_ab)
-#con_e$Species <- unique(con_data$species)
 con_e$Rate <- "Maximum consumption rate"
 con_e$Parameter_mte <- "Activation energy"
 con_e$pred <- filter(con_df, Parameter == "mu_b2")$quantiles.50.
@@ -250,7 +257,6 @@ std_met$Parameter <- rownames(std_met)
 #** Mass exponent
 met_b <- met_df %>% filter(Parameter_sub == "b1")
 met_b$Species <- unique(met$species_ab)
-#met_b$Species <- unique(met_data$species)
 met_b$Rate <- "Metabolic rate"
 met_b$Parameter_mte <- "Mass exponent"
 met_b$pred <- filter(met_df, Parameter == "mu_b1")$quantiles.50.
@@ -259,7 +265,6 @@ met_b$pred_sd <- filter(std_met, Parameter == "mu_b1")$statistics.SD
 #** Activation energy
 met_e <- met_df %>% filter(Parameter_sub == "b2")
 met_e$Species <- unique(met$species_ab)
-#met_e$Species <- unique(met_data$species)
 met_e$Rate <- "Metabolic rate"
 met_e$Parameter_mte <- "Activation energy"
 met_e$pred <- filter(met_df, Parameter == "mu_b2")$quantiles.50.
@@ -308,7 +313,7 @@ df$pred_sd <- ifelse(df$Parameter_mte == "Activation energy",
                      df$pred_sd * -1,
                      df$pred_sd)
 
-# Create data frame for rectangles
+# Create data frame for rectangles (prediction +/- 2*standard deviation)
 df_std <- df[!duplicated(df$pred_sd), ]
 df_std$ymax <- df_std$pred + 2*df_std$pred_sd
 df_std$ymin <- df_std$pred - 2*df_std$pred_sd
@@ -317,8 +322,9 @@ df_std$ymin <- df_std$pred - 2*df_std$pred_sd
 p1 <- df %>% 
   filter(Parameter_mte %in% c("Activation energy", "Mass exponent")) %>% 
   ggplot(., aes(Species, quantiles.50., color = Rate, shape = Rate)) +
+  #facet_grid(~ Parameter_mte, scales = "free") +
   facet_grid(Rate ~ Parameter_mte, scales = "free") +
-  guides(color = FALSE, fill = FALSE, shape = FALSE) +
+  #guides(color = FALSE, fill = FALSE, shape = FALSE) +
   scale_color_manual(values = pal[1:2]) +
   scale_fill_manual(values = pal[1:2]) +
   scale_shape_manual(values = c(21, 24)) +
@@ -329,25 +335,22 @@ p1 <- df %>%
             inherit.aes = FALSE, aes(ymin = ymin, ymax = ymax, fill = Rate), xmin = 0, xmax = 50, 
             alpha = 0.2) +
   coord_flip() +
-  geom_errorbar(aes(Species, quantiles.50., color = Rate, 
+  geom_errorbar(aes(Species_ord, quantiles.50., color = Rate, 
                     ymin = quantiles.2.5., ymax = quantiles.97.5.),
                 size = 1, width = 0, alpha = 0.4) +
-  geom_errorbar(aes(Species, quantiles.50., color = Rate, 
+  geom_errorbar(aes(Species_ord, quantiles.50., color = Rate, 
                     ymin = quantiles.25., ymax = quantiles.75.), 
                 size = 1.5, width = 0, alpha = 0.7) +
   geom_point(size = 1.5, fill = "white") +
   labs(x = "Species", y = "Prediction") + 
-  theme(axis.text.y = element_text(size = 8, face = "italic")) +
-  theme(aspect.ratio = 2/1,
-        legend.position = "bottom", 
-        legend.title = element_blank()) +
   NULL
 
 pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 12),
-                                       axis.text = element_text(size = 7))
+                                       axis.text = element_text(size = 7, face = "italic"),
+                                       aspect.ratio = 2/1,
+                                       legend.position = "bottom",
+                                       legend.title = element_blank())
 ggsave("figures/species_b_ea.png", width = 6.5, height = 6.5, dpi = 600)
-
-#ggsave("figures/species_b_ea.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm", dpi = 300)
 
 
 #** Plot global-predictions ========================================================
@@ -436,7 +439,7 @@ pWord6 <- p6 + theme_classic() + theme(text = element_text(size = 12),
 
 pWord2 + pWord3 + pWord4 + pWord5 + pWord6 + plot_layout(ncol = 3)
 
-ggsave("figures/supp/log_linear_model/met_con/species_b_ea.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear_model/met_con/posterior_main_param.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #** Do calculations on the posterior... ============================================

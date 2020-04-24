@@ -3,7 +3,9 @@
 #
 # - Define and save models for rjags for model selection using WAIC
 # 
-# A. Specify models
+# A. Specify models for model selection
+# 
+# B. Add predictions and fit to the selected model code
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -27,8 +29,8 @@ cat(
   "model{
   
   for(i in 1:n_obs){
-     y[i] ~ dnorm(mu[i], tau)
-     mu[i] <- 
+     y[i] ~ dnorm(mu[i], tau)            # likelihood
+     mu[i] <-                            # explanatory model 
        b0[species_n[i]] +                # varying intercept
        b1[species_n[i]]*mass[i] +        # varying mass-exponent 
        b2[species_n[i]]*temp[i] +        # varying temperature coefficient
@@ -49,7 +51,7 @@ cat(
   }
   
   #-- Priors	
-  mu_b0 ~ dnorm(0, 1)      
+  mu_b0 ~ dnorm(0, 0.04)                 # remember the second argument is precision (1/variance)   
   mu_b1 ~ dnorm(-0.25, 1)  
   mu_b2 ~ dnorm(-0.6, 1)   
   mu_b3 ~ dnorm(0, 1)      
@@ -95,7 +97,7 @@ cat(
   
   #-- Priors	
   b3 ~ dnorm(0, 1)         
-  mu_b0 ~ dnorm(0, 1)      
+  mu_b0 ~ dnorm(0, 0.04)      
   mu_b1 ~ dnorm(-0.25, 1)  
   mu_b2 ~ dnorm(-0.6, 1)   
   sigma ~ dunif(0, 10) 
@@ -138,7 +140,7 @@ cat(
   #-- Priors	
   b2 ~ dnorm(-0.6, 1)
   b3 ~ dnorm(0, 1)
-  mu_b0 ~ dnorm(0, 1)
+  mu_b0 ~ dnorm(0, 0.04)
   mu_b1 ~ dnorm(-0.25, 1)
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
@@ -178,7 +180,7 @@ cat(
   #-- Priors	
   b1 ~ dnorm(-0.25, 1)
   b3 ~ dnorm(0, 1)
-  mu_b0 ~ dnorm(0, 1)
+  mu_b0 ~ dnorm(0, 0.04)
   mu_b2 ~ dnorm(-0.6, 1)
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
@@ -218,7 +220,7 @@ cat(
   b1 ~ dnorm(-0.25, 1)
   b2 ~ dnorm(-0.6, 1)
   b3 ~ dnorm(0, 1)
-  mu_b0 ~ dnorm(0, 1)
+  mu_b0 ~ dnorm(0, 0.04)
   sigma ~ dunif(0, 10) 
   sigma_b0 ~ dunif(0, 10)
   tau <- 1/sigma^2
@@ -254,7 +256,7 @@ cat(
   }
   
   #-- Priors	
-  mu_b0 ~ dnorm(0, 1)              
+  mu_b0 ~ dnorm(0, 0.04)              
   mu_b1 ~ dnorm(-0.25, 1)          
   mu_b2 ~ dnorm(-0.6, 1)           
   sigma ~ dunif(0, 10) 
@@ -295,7 +297,7 @@ cat(
   }
   
   #-- Priors	
-  mu_b0 ~ dnorm(0, 1)              
+  mu_b0 ~ dnorm(0, 0.04)              
   mu_b1 ~ dnorm(-0.25, 1)          
   b2 ~ dnorm(-0.6, 1)              
   sigma ~ dunif(0, 10) 
@@ -334,7 +336,7 @@ cat(
   }
   
   #-- Priors	
-  mu_b0 ~ dnorm(0, 1)             
+  mu_b0 ~ dnorm(0, 0.04)             
   b1 ~ dnorm(-0.25, 1)            
   mu_b2 ~ dnorm(-0.6, 1)          
   sigma ~ dunif(0, 10) 
@@ -372,7 +374,7 @@ cat(
     }
   
   #-- Priors	
-  mu_b0 ~ dnorm(0, 1)              
+  mu_b0 ~ dnorm(0, 0.04)              
   b1 ~ dnorm(-0.25, 1)
   b2 ~ dnorm(-0.6, 1)
   sigma ~ dunif(0, 10) 
@@ -381,3 +383,196 @@ cat(
   tau_b0 <- 1/sigma_b0^2
   
   }", fill = TRUE, file = "R/analysis/JAGS_models/log_linear/m7.txt")
+
+
+# B. Add predictions to selected models ============================================
+#** Metabolism =====================================================================
+#**** M2 ===========================================================================
+# Intercept, mass, temperature vary by species
+cat(
+  "model{
+  
+  for(i in 1:n_obs){
+  # Simulate for comparison with data (evalute fit)
+    y_sim[i] ~ dnorm(mu[i], tau)
+    
+    y[i] ~ dnorm(mu[i], tau)
+    mu[i] <- 
+      b0[species_n[i]] +           # varying intercept 
+      b1[species_n[i]]*mass[i] +   # varying mass-exponent
+      b2[species_n[i]]*temp[i] +   # varying temperature coefficient
+      b3*mass[i]*temp[i]           # non-varying M*T interaction
+  # Add log likelihood computation for each observation
+  pd[i] <- dnorm(y[i], mu[i], tau)
+  
+  # Calculates the log PPD
+  log_pd[i] <- log(dnorm(y[i], mu[i], tau))
+  }
+  
+  # Second level (species-level effects)
+  for(j in 1:max(species_n)){
+    b0[j] ~ dnorm(mu_b0, tau_b0)
+    b1[j] ~ dnorm(mu_b1, tau_b1)
+    b2[j] ~ dnorm(mu_b2, tau_b2)
+  }
+  
+  # Predictions
+  for(k in 1:length(mass_pred)){
+      
+    pred[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*temp_pred + b3*temp_pred*mass_pred[k]
+    
+  } 
+
+  # Model fit
+  mean_y <- mean(y[])
+  mean_y_sim <- mean(y_sim[])
+  p_mean <- step(mean_y_sim - mean_y) # Proportion of data above and below 
+  
+  cv_y <- sd(y[])/mean(y[])
+  cv_y_sim <- sd(y_sim[])/max(0.0000001, mean(y_sim[])) # Not to divide by 0
+  p_cv <- step(cv_y_sim - cv_y)
+  
+  #-- Priors	
+  b3 ~ dnorm(0, 1)         
+  mu_b0 ~ dnorm(0, 0.04)      
+  mu_b1 ~ dnorm(-0.25, 1)  
+  mu_b2 ~ dnorm(-0.6, 1)   
+  sigma ~ dunif(0, 10) 
+  sigma_b0 ~ dunif(0, 10)
+  sigma_b1 ~ dunif(0, 10)
+  sigma_b2 ~ dunif(0, 10)
+  tau <- 1/sigma^2
+  tau_b0 <- 1/sigma_b0^2
+  tau_b1 <- 1/sigma_b1^2
+  tau_b2 <- 1/sigma_b2^2
+  
+  }", fill = TRUE, file = "R/analysis/JAGS_models/log_linear/selected_models/m2_pred_fit.txt")
+
+
+#** Consumption ====================================================================
+#**** M5 ===========================================================================
+# No interaction, full random
+cat(
+  "model{
+  
+  for(i in 1:n_obs){
+  # Simulate for comparison with data (evalute fit)
+    y_sim[i] ~ dnorm(mu[i], tau)
+  
+    y[i] ~ dnorm(mu[i], tau)
+    mu[i] <- 
+      b0[species_n[i]] +           # varying intercept 
+      b1[species_n[i]]*mass[i] +   # varying mass-exponent
+      b2[species_n[i]]*temp[i]     # varying temperature coefficient
+  
+  # Add log likelihood computation for each observation
+  pd[i] <- dnorm(y[i], mu[i], tau)
+  
+  # Calculates the log PPD
+  log_pd[i] <- log(dnorm(y[i], mu[i], tau))
+  }
+  
+  # Second level (species-level effects)
+  for(j in 1:max(species_n)){
+    b0[j] ~ dnorm(mu_b0, tau_b0)
+    b1[j] ~ dnorm(mu_b1, tau_b1)
+    b2[j] ~ dnorm(mu_b2, tau_b2)
+  }
+  
+  # Predictions
+  for(k in 1:length(mass_pred)){
+      
+    pred[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*temp_pred
+    
+  } 
+
+  # Model fit
+  mean_y <- mean(y[])
+  mean_y_sim <- mean(y_sim[])
+  p_mean <- step(mean_y_sim - mean_y) # Proportion of data above and below 
+  
+  cv_y <- sd(y[])/mean(y[])
+  cv_y_sim <- sd(y_sim[])/max(0.0000001, mean(y_sim[])) # Not to divide by 0
+  p_cv <- step(cv_y_sim - cv_y)
+  
+  #-- Priors	
+  mu_b0 ~ dnorm(0, 0.04)              
+  mu_b1 ~ dnorm(-0.25, 1)          
+  mu_b2 ~ dnorm(-0.6, 1)           
+  sigma ~ dunif(0, 10) 
+  sigma_b0 ~ dunif(0, 10)
+  sigma_b1 ~ dunif(0, 10)
+  sigma_b2 ~ dunif(0, 10)
+  tau <- 1/sigma^2
+  tau_b0 <- 1/sigma_b0^2
+  tau_b1 <- 1/sigma_b1^2
+  tau_b2 <- 1/sigma_b2^2
+  
+  }", fill = TRUE, file = "R/analysis/JAGS_models/log_linear/selected_models/m5_pred_fit.txt")
+
+
+#** Growth =========================================================================
+#**** M1 ===========================================================================
+# All coefficients vary by species
+cat(
+  "model{
+  
+  for(i in 1:n_obs){
+  # Simulate for comparison with data (evalute fit)
+    y_sim[i] ~ dnorm(mu[i], tau)
+    
+    y[i] ~ dnorm(mu[i], tau)
+    mu[i] <- 
+      b0[species_n[i]] +                # varying intercept
+      b1[species_n[i]]*mass[i] +        # varying mass-exponent 
+      b2[species_n[i]]*temp[i] +        # varying temperature coefficient
+      b3[species_n[i]]*mass[i]*temp[i]  # varying M*T interaction
+    
+  # Add log likelihood computation for each observation
+    pd[i] <- dnorm(y[i], mu[i], tau)
+    
+  # Calculates the log PPD
+    log_pd[i] <- log(dnorm(y[i], mu[i], tau))
+  }
+  
+  # Second level (species-level effects)
+  for(j in 1:max(species_n)){
+    b0[j] ~ dnorm(mu_b0, tau_b0)
+    b1[j] ~ dnorm(mu_b1, tau_b1)
+    b2[j] ~ dnorm(mu_b2, tau_b2)
+    b3[j] ~ dnorm(mu_b3, tau_b3)
+  }
+  
+  # Predictions
+  for(k in 1:length(mass_pred)){
+      
+    pred[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*temp_pred + mu_b3*temp_pred*mass_pred[k]
+    
+  } 
+
+  # Model fit
+  mean_y <- mean(y[])
+  mean_y_sim <- mean(y_sim[])
+  p_mean <- step(mean_y_sim - mean_y) # Proportion of data above and below 
+  
+  cv_y <- sd(y[])/mean(y[])
+  cv_y_sim <- sd(y_sim[])/max(0.0000001, mean(y_sim[])) # Not to divide by 0
+  p_cv <- step(cv_y_sim - cv_y)
+  
+  #-- Priors	
+  mu_b0 ~ dnorm(0, 0.04)      
+  mu_b1 ~ dnorm(-0.25, 1)  
+  mu_b2 ~ dnorm(-0.6, 1)   
+  mu_b3 ~ dnorm(0, 1)      
+  sigma ~ dunif(0, 10) 
+  sigma_b0 ~ dunif(0, 10)
+  sigma_b1 ~ dunif(0, 10)
+  sigma_b2 ~ dunif(0, 10)
+  sigma_b3 ~ dunif(0, 10)
+  tau <- 1/sigma^2
+  tau_b0 <- 1/sigma_b0^2
+  tau_b1 <- 1/sigma_b1^2
+  tau_b2 <- 1/sigma_b2^2
+  tau_b3 <- 1/sigma_b3^2
+  
+}", fill = TRUE, file = "R/analysis/JAGS_models/log_linear/selected_models/m1_pred_fit.txt")

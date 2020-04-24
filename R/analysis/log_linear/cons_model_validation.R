@@ -1,17 +1,14 @@
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # 2019.12.02: Max Lindmark
 #
-# - Code to fit hierarchical model of growth rate as a function of 
+# - Code to fit hierarchical model of maximum consumption rate as a function of 
 # temperature with different group-effects and evaluate convergence
 # 
 # A. Load libraries
 #
 # B. Read data
 #
-# C. Model validation: posterior shape, chain convergence, rhat and prior vs posterior)
-#    (The reason I don't evalute fit here is because I use JAGS code that doesn't
-#     do fitting. This is because I would then have to add that to all models, in case
-#     I would select a different one based on WAIC)
+# C. Model validation: posterior shape, chain convergence, rhat and prior vs posterior
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -39,7 +36,7 @@ library(MCMCvis)
 # B. READ IN DATA ==================================================================
 # Read in your data file
 dat <- 
-  read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/growth_analysis.csv"))
+  read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/con_analysis.csv"))
 
 str(dat)
 
@@ -58,15 +55,15 @@ unique(dat$species_n)
 dat$log_mass_ct <- dat$log_mass - mean(dat$log_mass)
 dat$temp_arr_ct <- dat$temp_arr - mean(dat$temp_arr)
 
+# Use mass-specific values
+dat$y_spec <- dat$y / dat$mass_g
+
 # Prepare data for JAGS
 data = NULL # Clear any old data lists that might confuse things
 
-# Use only positive growth rates
-dat <- dat %>% filter(y > 0)
-
 # Data in list-format for JAGS
 data = list(
-  y = log(dat$y), 
+  y = log(dat$y_spec), 
   n_obs = length(dat$y), 
   species_n = dat$species_n,
   mass = dat$log_mass_ct,
@@ -76,7 +73,7 @@ data = list(
 
 # C. MODEL VALIDATION ==============================================================
 # Select model with lowest WAIC (see grow_model_selection.R)
-model = "R/analysis/JAGS_models/log_linear/m1.txt"
+model = "R/analysis/JAGS_models/log_linear/m5.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -84,36 +81,30 @@ inits = list(
     mu_b0 = 0.1,
     mu_b1 = 0.1,
     mu_b2 = 0.1,
-    mu_b3 = 0.1,
     sigma = 0.1,
     sigma_b0 = 0.1,
     sigma_b1 = 0.1,
     sigma_b2 = 0.1,
-    sigma_b3 = 0.1,
-    .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
     mu_b0 = 1,
     mu_b1 = 1,
     mu_b2 = 1,
-    mu_b3 = 1,
     sigma = 1,
     sigma_b0 = 1,
     sigma_b1 = 1,
     sigma_b2 = 1,
-    sigma_b3 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
     mu_b0 = 2,
     mu_b1 = 2,
     mu_b2 = 2,
-    mu_b3 = 2,
     sigma = 2,
     sigma_b0 = 2,
     sigma_b1 = 2,
     sigma_b2 = 2,
-    sigma_b3 = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ))
 
@@ -123,23 +114,23 @@ jm = jags.model(model,
                 n.chains = 3,
                 inits = inits)
 
-burn.in = 10000 # Length of burn-in
+# Some settings:
+burn.in <- 15000 # Length of burn-in
+n.iter <- 15000  # Number of samples
+thin <- 5        # Save every 5th sample
 
-update(jm, n.iter = burn.in) 
+update(jm, n.iter = n.iter) 
 
 
 #** Sample from the posterior ======================================================
-samples = 10000 # How many samples to take from the posterior
-n.thin = 5 # Thinning?
-
 # CODA - Nice for getting the raw posteriors
 cs <- coda.samples(jm,
-                   variable.names = c("b0", "b1", "b2", "b3", 
-                                      "mu_b0", "mu_b1", "mu_b2", "mu_b3",
-                                      "sigma_b0", "sigma_b1", "sigma_b2", "sigma_b3",
+                   variable.names = c("b0", "b1", "b2", 
+                                      "mu_b0", "mu_b1", "mu_b2",
+                                      "sigma_b0", "sigma_b1", "sigma_b2",
                                       "sigma"), 
-                   n.iter = samples, 
-                   thin = n.thin)
+                   n.iter = n.iter, 
+                   thin = thin)
 
 summary(cs) # Get the mean estimate and SE and 95% CIs
 
@@ -157,7 +148,8 @@ unique(cs_df$Parameter)
 
 p1 <- cs_df %>% 
   filter(Parameter %in% c("b0[1]", "b0[2]", "b0[3]", "b0[4]", "b0[5]", "b0[6]", "b0[7]", 
-                          "b0[8]", "b0[9]", "b0[10]", "b0[11]", "b0[12]", "b0[13]")) %>% 
+                          "b0[8]", "b0[9]", "b0[10]", "b0[11]", "b0[12]", "b0[13]",
+                          "b0[14]", "b0[15]", "b0[16]", "b0[17]", "b0[18]", "b0[19]")) %>% 
   ggs_density(.) + 
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_density(alpha = 0.05) +
@@ -166,13 +158,14 @@ p1 <- cs_df %>%
   labs(x = "Value", y = "Density", fill = "Chain #") +
   guides(color = FALSE, fill = FALSE) +
   NULL
-pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 10),
+pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 8),
                                        axis.text = element_text(size = 5))
 
 # Traceplot for evaluating chain convergence
 p2 <- cs_df %>% 
   filter(Parameter %in% c("b0[1]", "b0[2]", "b0[3]", "b0[4]", "b0[5]", "b0[6]", "b0[7]", 
-                          "b0[8]", "b0[9]", "b0[10]", "b0[11]", "b0[12]", "b0[13]")) %>% 
+                          "b0[8]", "b0[9]", "b0[10]", "b0[11]", "b0[12]", "b0[13]",
+                          "b0[14]", "b0[15]", "b0[16]", "b0[17]", "b0[18]", "b0[19]")) %>% 
   ggs_traceplot(.) +
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_line(alpha = 0.3) +
@@ -181,17 +174,18 @@ p2 <- cs_df %>%
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
   theme(axis.text.x = element_text(size = 6)) +
   NULL
-pWord2 <- p2 + theme_classic() + theme(text = element_text(size = 10),
+pWord2 <- p2 + theme_classic() + theme(text = element_text(size = 8),
                                        axis.text = element_text(size = 5))
 pWord1 + pWord2
-ggsave("figures/supp/log_linear_model/growth/validation_gro_intercepts.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear_model/met_con/validation_con_intercepts.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Species mass-effects =========================================================
 # Plot posterior densities of species mass-effects
 p3 <- cs_df %>% 
   filter(Parameter %in% c("b1[1]", "b1[2]", "b1[3]", "b1[4]", "b1[5]", "b1[6]", "b1[7]", 
-                          "b1[8]", "b1[9]", "b1[10]", "b1[11]", "b1[12]", "b1[13]")) %>% 
+                          "b1[8]", "b1[9]", "b1[10]", "b1[11]", "b1[12]", "b1[13]",
+                          "b1[14]", "b1[15]", "b1[16]", "b1[17]", "b1[18]", "b1[19]")) %>% 
   ggs_density(.) + 
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_density(alpha = 0.05) +
@@ -200,14 +194,15 @@ p3 <- cs_df %>%
   labs(x = "Value", y = "Density", fill = "Chain #") +
   guides(color = FALSE, fill = FALSE) +
   NULL
-pWord3 <- p3 + theme_classic() + theme(text = element_text(size = 10),
+pWord3 <- p3 + theme_classic() + theme(text = element_text(size = 8),
                                        axis.text = element_text(size = 5))
 
 
 # Traceplot for evaluating chain convergence
 p4 <- cs_df %>% 
   filter(Parameter %in% c("b1[1]", "b1[2]", "b1[3]", "b1[4]", "b1[5]", "b1[6]", "b1[7]", 
-                          "b1[8]", "b1[9]", "b1[10]", "b1[11]", "b1[12]", "b1[13]")) %>% 
+                          "b1[8]", "b1[9]", "b1[10]", "b1[11]", "b1[12]", "b1[13]",
+                          "b1[14]", "b1[15]", "b1[16]", "b1[17]", "b1[18]", "b1[19]")) %>% 
   ggs_traceplot(.) +
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_line(alpha = 0.3) +
@@ -216,17 +211,18 @@ p4 <- cs_df %>%
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
   theme(axis.text.x = element_text(size = 6)) +
   NULL
-pWord4 <- p4 + theme_classic() + theme(text = element_text(size = 10),
+pWord4 <- p4 + theme_classic() + theme(text = element_text(size = 8),
                                        axis.text = element_text(size = 5))
 pWord3 + pWord4
-ggsave("figures/supp/log_linear_model/growth/validation_gro_mass.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear_model/met_con/validation_con_mass.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Species temperature-effects ==================================================
 # Plot posterior densities of temperature-effects
 p5 <- cs_df %>% 
   filter(Parameter %in% c("b2[1]", "b2[2]", "b2[3]", "b2[4]", "b2[5]", "b2[6]", "b2[7]", 
-                          "b2[8]", "b2[9]", "b2[10]", "b2[11]", "b2[12]", "b2[13]")) %>% 
+                          "b2[8]", "b2[9]", "b2[10]", "b2[11]", "b2[12]", "b2[13]",
+                          "b2[14]", "b2[15]", "b2[16]", "b2[17]", "b2[18]", "b2[19]")) %>% 
   ggs_density(.) + 
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   theme_classic(base_size = 11) + 
@@ -236,13 +232,14 @@ p5 <- cs_df %>%
   labs(x = "Value", y = "Density", fill = "Chain #") +
   guides(color = FALSE, fill = FALSE) +
   NULL
-pWord5 <- p5 + theme_classic() + theme(text = element_text(size = 10),
+pWord5 <- p5 + theme_classic() + theme(text = element_text(size = 8),
                                        axis.text = element_text(size = 5))
 
 # Traceplot for evaluating chain convergence
 p6 <- cs_df %>% 
   filter(Parameter %in% c("b2[1]", "b2[2]", "b2[3]", "b2[4]", "b2[5]", "b2[6]", "b2[7]", 
-                          "b2[8]", "b2[9]", "b2[10]", "b2[11]", "b2[12]", "b2[13]")) %>% 
+                          "b2[8]", "b2[9]", "b2[10]", "b2[11]", "b2[12]", "b2[13]",
+                          "b2[14]", "b2[15]", "b2[16]", "b2[17]", "b2[18]", "b2[19]")) %>% 
   ggs_traceplot(.) +
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_line(alpha = 0.3) +
@@ -251,17 +248,17 @@ p6 <- cs_df %>%
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
   theme(axis.text.x = element_text(size = 6)) +
   NULL
-pWord6 <- p6 + theme_classic() + theme(text = element_text(size = 10),
+pWord6 <- p6 + theme_classic() + theme(text = element_text(size = 8),
                                        axis.text = element_text(size = 5))
 pWord5 + pWord6
-ggsave("figures/supp/log_linear_model/growth/validation_gro_temp.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear_model/met_con/validation_con_temp.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Group-level means ============================================================
 # Plot posterior densities of group-level means and standard deviations
 p7 <- cs_df %>% 
-  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", #"mu_b3",
-                          "sigma_b0", "sigma_b1", "sigma_b2", "sigma_b3")) %>% 
+  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", 
+                          "sigma_b0", "sigma_b1", "sigma_b2")) %>% 
   ggs_density(.) + 
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   theme_classic(base_size = 11) + 
@@ -276,8 +273,8 @@ pWord7 <- p7 + theme_classic() + theme(text = element_text(size = 10),
 
 # Traceplot for evaluating chain convergence
 p8 <- cs_df %>% 
-  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", #"mu_b3",
-                          "sigma_b0", "sigma_b1", "sigma_b2", "sigma_b3")) %>% 
+  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", 
+                          "sigma_b0", "sigma_b1", "sigma_b2")) %>% 
   ggs_traceplot(.) +
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   theme_classic(base_size = 11) + 
@@ -290,59 +287,51 @@ p8 <- cs_df %>%
 pWord8 <- p8 + theme_classic() + theme(text = element_text(size = 10),
                                        axis.text = element_text(size = 5))
 pWord7 + pWord8
-ggsave("figures/supp/log_linear_model/growth/validation_gro.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear_model/met_con/validation_con.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Chain convergencve (Rhat) ====================================================
 p9 <- cs_df %>% 
   ggs_Rhat(.) + 
   xlab("R_hat") +
-  xlim(0.999, 1.005) +
-  theme_classic(base_size = 11) +
+  xlim(0.999, 1.003) +
   geom_point(size = 2) +
   theme(aspect.ratio = 1)+
   NULL
 pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 10),
                                        axis.text = element_text(size = 5))
-ggsave("figures/supp/log_linear_model/growth/validation_rhat_gro.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear_model/met_con/validation_rhat_con.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Prior vs posterior ===========================================================
 # https://cran.r-project.org/web/packages/MCMCvis/vignettes/MCMCvis.html
 
 # Priors from JAGS
-# mu_b0 ~ dnorm(0, 1)      # global mean
-# mu_b1 ~ dnorm(-0.25, 1)  # global mass-exponent
-# mu_b2 ~ dnorm(-0.6, 1)   # global temperature coefficient
-# mu_b3 ~ dnorm(0, 1)      # global interaction
+# mu_b0 ~ dnorm(0, 0.04)   # mean of all species intercept
+# mu_b1 ~ dnorm(-0.25, 1)  # mean of all species mass-exponent
+# mu_b2 ~ dnorm(-0.6, 1)   # mean of all species temperature coefficient
 
 # Remember: distributions in JAGS have arguments mean and precision (inverse of variance)
 # tau = 1/variance
-
 # from sigma to tau 
-sigma = 1
-tau <- 1/sigma^2
+# sigma = 1
+# tau <- 1/sigma^2
 
-# from tau to sigma
-sqrt(1/tau)
+tau <- 1
+tau_int <- 0.04
 
-mu_b0 <- rnorm(25000, 0, sqrt(1/tau))      # global intercept 
-#mu_b0 <- rnorm(20000, 1, 0.2)      # global intercept 
-mu_b1 <- rnorm(25000, -0.25, sqrt(1/tau))  # global mass-exponent
-#mu_b1 <- rnorm(20000, -0.25, 0.2)  # global mass-exponent
-mu_b2 <- rnorm(25000, -0.6, sqrt(1/tau))   # global temperature coefficient
-#mu_b2 <- rnorm(20000, -0.6, 0.2)   # global temperature coefficient
-mu_b3 <- rnorm(25000, 0, sqrt(1/tau))      # global interaction
-#mu_b3 <- rnorm(20000, 0, 0.2)      # global interaction
+mu_b0 <- rnorm(25000, 0, sqrt(1/tau_int))
+mu_b1 <- rnorm(25000, -0.25, sqrt(1/tau))
+mu_b2 <- rnorm(25000, -0.6, sqrt(1/tau)) 
 
-PR <- as.matrix(cbind(mu_b0, mu_b1, mu_b2, mu_b3))
+PR <- as.matrix(cbind(mu_b0, mu_b1, mu_b2))
 
 # This is not a ggplot...
-png(file = "/Users/maxlindmark/Desktop/R_STUDIO_PROJECTS/scaling/figures/supp/log_linear_model/growth/validation_prior_post_growth.png", 
+png(file = "/Users/maxlindmark/Desktop/R_STUDIO_PROJECTS/scaling/figures/supp/log_linear_model/met_con/validation_prior_post_con.png", 
     units = "px", width = 1800, height = 1800, res = 300)
 
 MCMCtrace(cs,
-          params = c("mu_b0", "mu_b1", "mu_b2", "mu_b3"),
+          params = c("mu_b0", "mu_b1", "mu_b2"),
           ISB = FALSE,
           priors = PR,
           pdf = FALSE,

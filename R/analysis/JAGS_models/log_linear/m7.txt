@@ -20,7 +20,7 @@ model{
     }
   
   #-- Priors	
-  mu_b0 ~ dnorm(0, 1)              
+  mu_b0 ~ dnorm(0, 0.04)              
   b1 ~ dnorm(-0.25, 1)
   b2 ~ dnorm(-0.6, 1)
   sigma ~ dunif(0, 10) 

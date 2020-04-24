@@ -1,6 +1,9 @@
 model{
   
   for(i in 1:n_obs){
+  # Simulate for comparison with data (evalute fit)
+    y_sim[i] ~ dnorm(mu[i], tau)
+    
     y[i] ~ dnorm(mu[i], tau)
     mu[i] <- 
       b0[species_n[i]] +           # varying intercept 
@@ -20,6 +23,22 @@ model{
     b1[j] ~ dnorm(mu_b1, tau_b1)
     b2[j] ~ dnorm(mu_b2, tau_b2)
   }
+  
+  # Predictions
+  for(k in 1:length(mass_pred)){
+      
+    pred[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*temp_pred + b3*temp_pred*mass_pred[k]
+    
+  } 
+
+  # Model fit
+  mean_y <- mean(y[])
+  mean_y_sim <- mean(y_sim[])
+  p_mean <- step(mean_y_sim - mean_y) # Proportion of data above and below 
+  
+  cv_y <- sd(y[])/mean(y[])
+  cv_y_sim <- sd(y_sim[])/max(0.0000001, mean(y_sim[])) # Not to divide by 0
+  p_cv <- step(cv_y_sim - cv_y)
   
   #-- Priors	
   b3 ~ dnorm(0, 1)         
