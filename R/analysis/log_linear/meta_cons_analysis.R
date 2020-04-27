@@ -9,7 +9,7 @@
 # B. Read data
 #
 # C. Fit models 
-#    - After this section you can run the others separately)
+#    - After this section you can run the others separately
 #
 # D. Model validation (convergence)
 #    - This part is LONG and contains lots of big plots. Skip if you don't want that
@@ -56,8 +56,8 @@ met <- met %>% filter(above_optimum == "N")
 con <- con %>% filter(above_optimum == "N")
 
 # Rename species factor for JAGS (must be numbered 1:n)
-met$species_n <- as.numeric(as.factor(met$species))
-con$species_n <- as.numeric(as.factor(con$species))
+met$species_n <- as.numeric(as.factor(met$species_ab))
+con$species_n <- as.numeric(as.factor(con$species_ab))
 
 # Mean-center predictor variables
 met$log_mass_ct <- met$log_mass - mean(met$log_mass)
@@ -111,59 +111,12 @@ con_data = list(
 
 # C. FIT MODELS ====================================================================
 # Some settings:
-burn.in <- 100 # 15000 # Length of burn-in
-n.iter <- 100 # 15000  # Number of samples
+burn.in <- 15000 # Length of burn-in
+n.iter <- 15000  # Number of samples
 thin <- 5        # Save every 5th sample
 
-# Maximum consumption rate =========================================================
-# Select model with lowest WAIC (see grow_model_selection.R)
-con_model = "R/analysis/JAGS_models/log_linear/selected_models/m5_pred_fit.txt"
-
-# Manually set initial values, because otherwise all the chains get the same
-# NOTE I don't do it for all parameters...
-inits_con = list(
-  list(
-    mu_b0 = 0.1,
-    mu_b1 = 0.1,
-    mu_b2 = 0.1,
-    sigma = 0.1,
-    sigma_b0 = 0.1,
-    sigma_b1 = 0.1,
-    sigma_b2 = 0.1,
-    .RNG.name = "base::Super-Duper", .RNG.seed = 2
-  ),
-  list(
-    mu_b0 = 1,
-    mu_b1 = 1,
-    mu_b2 = 1,
-    sigma = 1,
-    sigma_b0 = 1,
-    sigma_b1 = 1,
-    sigma_b2 = 1,
-    .RNG.name = "base::Super-Duper", .RNG.seed = 2
-  ),
-  list(
-    mu_b0 = 2,
-    mu_b1 = 2,
-    mu_b2 = 2,
-    sigma = 2,
-    sigma_b0 = 2,
-    sigma_b1 = 2,
-    sigma_b2 = 2,
-    .RNG.name = "base::Super-Duper", .RNG.seed = 2
-  ))
-
-jm_con = jags.model(con_model,
-                    data = con_data, 
-                    n.adapt = 5000, 
-                    n.chains = 3,
-                    inits = inits_con)
-
-update(jm_con, n.iter = n.iter) 
-
-
 # Metabolic rate ===================================================================
-# Select model with lowest WAIC (see grow_model_selection.R)
+# Select model with lowest WAIC (see met_model_selection.R)
 met_model = "R/analysis/JAGS_models/log_linear/selected_models/m2_pred_fit.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
@@ -210,14 +163,60 @@ jm_met = jags.model(met_model,
 
 update(jm_met, n.iter = n.iter) 
 
+# Maximum consumption rate =========================================================
+# Select model with lowest WAIC (see con_model_selection.R)
+con_model = "R/analysis/JAGS_models/log_linear/selected_models/m5_pred_fit.txt"
+
+# Manually set initial values, because otherwise all the chains get the same
+# NOTE I don't do it for all parameters...
+inits_con = list(
+  list(
+    mu_b0 = 0.1,
+    mu_b1 = 0.1,
+    mu_b2 = 0.1,
+    sigma = 0.1,
+    sigma_b0 = 0.1,
+    sigma_b1 = 0.1,
+    sigma_b2 = 0.1,
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2
+  ),
+  list(
+    mu_b0 = 1,
+    mu_b1 = 1,
+    mu_b2 = 1,
+    sigma = 1,
+    sigma_b0 = 1,
+    sigma_b1 = 1,
+    sigma_b2 = 1,
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2
+  ),
+  list(
+    mu_b0 = 2,
+    mu_b1 = 2,
+    mu_b2 = 2,
+    sigma = 2,
+    sigma_b0 = 2,
+    sigma_b1 = 2,
+    sigma_b2 = 2,
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2
+  ))
+
+jm_con = jags.model(con_model,
+                    data = con_data, 
+                    n.adapt = 5000, 
+                    n.chains = 3,
+                    inits = inits_con)
+
+update(jm_con, n.iter = n.iter) 
+
 
 # D. MODEL VALIDATION ==============================================================
 # Metabolic rate ===================================================================
 # CODA - Nice for getting the raw posteriors
 cs_met <- coda.samples(jm_met,
                        variable.names = c("b0", "b1", "b2", "b3",
-                                          "mu_b0", "mu_b1", "mu_b2", "mu_b3",
-                                          "sigma_b0", "sigma_b1", "sigma_b2", "sigma_b2",
+                                          "mu_b0", "mu_b1", "mu_b2",
+                                          "sigma_b0", "sigma_b1", "sigma_b2",
                                           "sigma"), 
                        n.iter = n.iter, 
                        thin = thin)
@@ -491,7 +490,7 @@ p9 <- cs_met_df %>%
   ggs_Rhat(.) + 
   xlab("R_hat") +
   xlim(0.999, 1.004) +
-  geom_point(size = 2) +
+  geom_point(size = 1) +
   theme(aspect.ratio = 1) +
   NULL
 pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 10),
@@ -705,7 +704,7 @@ p9 <- cs_con_df %>%
   ggs_Rhat(.) + 
   xlab("R_hat") +
   xlim(0.999, 1.003) +
-  geom_point(size = 2) +
+  geom_point(size = 1) +
   theme(aspect.ratio = 1)+
   NULL
 pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 10),
@@ -780,10 +779,11 @@ cs_fit_df_met <- data.frame(as.matrix(cs_fit_met))
 cs_fit_df_con <- data.frame(as.matrix(cs_fit_con))
 
 # Plot mean y and mean cv at each iteration and compare to data
-# General formula for number of bins..
-n_bins <- round(1 + 3.2*log(nrow(cs_fit_df_met)))
+
 
 # Metabolism
+n_bins <- round(1 + 3.2*log(nrow(cs_fit_df_met)))
+
 p10 <- ggplot(cs_fit_df_met, aes(mean_y_sim)) + 
   geom_histogram(bins = n_bins) +
   geom_vline(xintercept = cs_fit_df_met$mean_y, color = "white", 
@@ -798,14 +798,13 @@ p10 <- ggplot(cs_fit_df_met, aes(mean_y_sim)) +
   NULL
 pWord10 <- p10 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
 
-
 p11 <- ggplot(cs_fit_df_met, aes(cv_y_sim)) + 
   geom_histogram(bins = n_bins) +
-  geom_vline(xintercept = cs_fit_df_met$cv_y, color = "white", 
-             linetype = 2, size = 0.4) +
-  annotate("text", -Inf, Inf, label = "B", size = 4, 
+  # geom_vline(xintercept = cs_fit_df_met$cv_y, color = "white", 
+  #            linetype = 2, size = 0.4) +
+  annotate("text", -Inf, Inf, label = "B", size = 4,
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", -Inf, Inf, size = 4, hjust = -0.2, vjust = 3.3, 
+  annotate("text", -Inf, Inf, size = 4, hjust = -0.2, vjust = 3.3,
            label = paste("P =", round(mean(cs_fit_df_met$p_cv), digits = 3))) +
   labs(x = "cv simulated metabolism", y = "") +
   coord_cartesian(expand = 0) +
@@ -814,6 +813,8 @@ pWord11 <- p11 + theme_classic() + theme(text = element_text(size = 12), aspect.
 
 
 # Consumption
+n_bins <- round(1 + 3.2*log(nrow(cs_fit_df_con)))
+
 p12 <- ggplot(cs_fit_df_con, aes(mean_y_sim)) + 
   geom_histogram(bins = n_bins) +
   geom_vline(xintercept = cs_fit_df_con$mean_y, color = "white", 
@@ -838,17 +839,17 @@ p13 <- ggplot(cs_fit_df_con, aes(cv_y_sim)) +
   annotate("text", -Inf, Inf, size = 4, hjust = -2, vjust = 3.3, 
            label = paste("P =", round(mean(cs_fit_df_con$p_cv), digits = 3))) +
   labs(x = "cv simulated consumption", y = "") +
-  theme(aspect.ratio = 1) +
   coord_cartesian(expand = 0) +
   NULL
 pWord13 <- p13 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
 
 
 (pWord10 + pWord11) / (pWord12 + pWord13)
-ggsave("figures/supp/log_linear_model/growth/fit_con_met_mean_cv.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear_model/met_con/fit_con_met_mean_cv.png", width = 6.5, height = 6.5, dpi = 600)
 
 
-# E. PLOT PREDICTIONS ==============================================================
+# F. PLOT PREDICTIONS ==============================================================
+#** Fits and data ==================================================================
 # jags.samples - Nice for summaries and predictions
 # Extract the prediction at each x including credible interaval
 # Metabolism
@@ -955,6 +956,287 @@ pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 12))
 pWord14 / pWord15
 ggsave("figures/pred_con_met.png", width = 6.5, height = 6.5, dpi = 600)
 
+
+#** Parameter estimates ============================================================
+# CODA - Nice for getting the raw posteriors
+# Maximum consumption rate
+cs_con <- coda.samples(jm_con,
+                       variable.names = c("b0", "b1", "b2", 
+                                          "mu_b0", "mu_b1", "mu_b2", 
+                                          "sigma_b0", "sigma_b1", "sigma_b2",
+                                          "sigma"), 
+                       n.iter = n.iter, 
+                       thin = thin)
+
+# Metabolic rate - NOTE I'm also sampling b3 here! That parameter is not in consumption
+cs_met <- coda.samples(jm_met,
+                       variable.names = c("b0", "b1", "b2", "b3",
+                                          "mu_b0", "mu_b1", "mu_b2", 
+                                          "sigma_b0", "sigma_b1", "sigma_b2",
+                                          "sigma"),
+                       n.iter = n.iter, 
+                       thin = thin)
+
+
+#**** Plot species-predictions =====================================================
+# Maxiumum consumption
+# First get the species names in order as they appear in the output. This is based on 
+# the order of the factor level (1:n), based on the species names in alphabetical order,
+# which is not the same as the order they appear in the data.
+con_spec <- unique(arrange(con, species_n)$species_ab)
+
+con_df <- data.frame(summary(cs_con)[2]) # Extract quantiles
+con_df$Parameter <- rownames(con_df)
+con_df$Parameter_sub <- factor(substring(con_df$Parameter, 1, 2))
+
+std_con <- data.frame(summary(cs_con)[1])
+std_con$Parameter <- rownames(std_con)
+
+#** Mass exponent
+con_b <- con_df %>% filter(Parameter_sub == "b1")
+con_b$Species <- con_spec
+con_b$Rate <- "Maximum consumption rate"
+con_b$Parameter_mte <- "Mass exponent"
+con_b$pred <- filter(con_df, Parameter == "mu_b1")$quantiles.50.
+con_b$pred_sd <- filter(std_con, Parameter == "mu_b1")$statistics.SD
+
+#** Activation energy
+con_e <- con_df %>% filter(Parameter_sub == "b2")
+con_e$Species <- con_spec
+con_e$Rate <- "Maximum consumption rate"
+con_e$Parameter_mte <- "Activation energy"
+con_e$pred <- filter(con_df, Parameter == "mu_b2")$quantiles.50.
+con_e$pred_sd <- filter(std_con, Parameter == "mu_b2")$statistics.SD
+
+# Metabolism
+# First get the species names in order as they appear in the output. This is based on 
+# the order of the factor level (1:n), based on the species names in alphabetical order,
+# which is not the same as the order they appear in the data.
+met_spec <- unique(arrange(met, species_n)$species_ab)
+
+met_df <- data.frame(summary(cs_met)[2])
+met_df$Parameter <- rownames(met_df)
+met_df$Parameter_sub <- factor(substring(met_df$Parameter, 1, 2))
+
+std_met <- data.frame(summary(cs_met)[1])
+std_met$Parameter <- rownames(std_met)
+
+#** Mass exponent
+met_b <- met_df %>% filter(Parameter_sub == "b1")
+met_b$Species <- met_spec
+met_b$Rate <- "Metabolic rate"
+met_b$Parameter_mte <- "Mass exponent"
+met_b$pred <- filter(met_df, Parameter == "mu_b1")$quantiles.50.
+met_b$pred_sd <- filter(std_met, Parameter == "mu_b1")$statistics.SD
+
+#** Activation energy
+met_e <- met_df %>% filter(Parameter_sub == "b2")
+met_e$Species <- met_spec
+met_e$Rate <- "Metabolic rate"
+met_e$Parameter_mte <- "Activation energy"
+met_e$pred <- filter(met_df, Parameter == "mu_b2")$quantiles.50.
+met_e$pred_sd <- filter(std_met, Parameter == "mu_b2")$statistics.SD
+
+#** M*T interaction
+met_c <- met_df %>% filter(Parameter == "b3")
+met_c$Species <- NA
+met_c$Rate <- "Metabolic rate"
+met_c$Parameter_mte <- "M*T interaction"
+met_c$pred <- filter(met_df, Parameter == "b3")$quantiles.50.
+met_c$pred_sd <- NA
+
+# Merge data frames
+df <- rbind(con_b, con_e, met_b, met_e, met_c)
+
+# Define color palettes
+pal <- brewer.pal("Dark2", n = 5)[c(1,3)]
+
+# Convert temperature ceofficient to activation energy by multiplying with -1
+df$quantiles.2.5. <- ifelse(df$Parameter_mte == "Activation energy",
+                            df$quantiles.2.5. * -1,
+                            df$quantiles.2.5.)
+
+df$quantiles.25. <- ifelse(df$Parameter_mte == "Activation energy",
+                           df$quantiles.25. * -1,
+                           df$quantiles.25.)
+
+df$quantiles.50. <- ifelse(df$Parameter_mte == "Activation energy",
+                           df$quantiles.50. * -1,
+                           df$quantiles.50.)
+
+df$quantiles.75. <- ifelse(df$Parameter_mte == "Activation energy",
+                           df$quantiles.75. * -1,
+                           df$quantiles.75.)
+
+df$quantiles.97.5. <- ifelse(df$Parameter_mte == "Activation energy",
+                             df$quantiles.97.5. * -1,
+                             df$quantiles.97.5.)
+
+df$pred <- ifelse(df$Parameter_mte == "Activation energy",
+                  df$pred * -1,
+                  df$pred)
+
+df$pred_sd <- ifelse(df$Parameter_mte == "Activation energy",
+                     df$pred_sd * -1,
+                     df$pred_sd)
+
+# Create data frame for rectangles (prediction +/- 2*standard deviation)
+df_std <- df[!duplicated(df$pred_sd), ]
+df_std$ymax <- df_std$pred + 2*df_std$pred_sd
+df_std$ymin <- df_std$pred - 2*df_std$pred_sd
+
+# Plot all species varying estimates and global mean
+p16 <- df %>% 
+  filter(Parameter_mte %in% c("Activation energy", "Mass exponent")) %>% 
+  ggplot(., aes(Species, quantiles.50., color = Rate, shape = Rate)) +
+  #facet_grid(~ Parameter_mte, scales = "free") +
+  facet_grid(Rate ~ Parameter_mte, scales = "free") +
+  #guides(color = FALSE, fill = FALSE, shape = FALSE) +
+  scale_color_manual(values = pal[1:2]) +
+  scale_fill_manual(values = pal[1:2]) +
+  scale_shape_manual(values = c(21, 24)) +
+  geom_hline(data = filter(df_std, Parameter_mte %in% c("Activation energy", "Mass exponent")), 
+             aes(yintercept = pred, color = Rate),
+             size = 0.6, alpha = 1, linetype = "dashed") +
+  geom_rect(data = filter(df_std, Parameter_mte %in% c("Activation energy", "Mass exponent")), 
+            inherit.aes = FALSE, aes(ymin = ymin, ymax = ymax, fill = Rate), xmin = 0, xmax = 50, 
+            alpha = 0.2) +
+  coord_flip() +
+  geom_errorbar(aes(Species, quantiles.50., color = Rate, 
+                    ymin = quantiles.2.5., ymax = quantiles.97.5.),
+                size = 1, width = 0, alpha = 0.4) +
+  geom_errorbar(aes(Species, quantiles.50., color = Rate, 
+                    ymin = quantiles.25., ymax = quantiles.75.), 
+                size = 1.5, width = 0, alpha = 0.7) +
+  geom_point(size = 1.5, fill = "white") +
+  labs(x = "Species", y = "Prediction") + 
+  NULL
+
+pWord16 <- p16 + theme_classic() + theme(text = element_text(size = 12),
+                                         axis.text = element_text(size = 7, face = "italic"),
+                                         aspect.ratio = 2/1,
+                                         legend.position = "bottom",
+                                         legend.title = element_blank())
+ggsave("figures/species_b_ea.png", width = 6.5, height = 6.5, dpi = 600)
+
+
+#**** Plot global-predictions ======================================================
+color_scheme_set("gray")
+
+# Mass exponent
+p17 <- cs_met %>% 
+  mcmc_dens(pars = "mu_b1") +
+  scale_y_continuous(expand = c(0,0)) +
+  # annotate("text", -Inf, Inf, label = "C", size = 4, 
+  #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Mass exponent" & Rate == "Metabolic rate")$pred, 2)[1], 
+           size = 3, hjust = -0.5, vjust = 1.3) +
+  labs(x = "Mass exponent") +
+  ggtitle("") +
+  xlim(-0.6, -0.1) +
+  geom_vline(xintercept = filter(df, Parameter_mte == "Mass exponent" & Rate == "Metabolic rate")$pred, 
+             linetype = "dashed", color = "white") +
+  NULL
+pWord17 <- p17 + theme_classic() + theme(text = element_text(size = 12),
+                                         axis.text = element_text(size = 12))
+
+# Temperature coefficient
+p18 <- cs_met %>% 
+  mcmc_dens(pars = "mu_b2") +
+  scale_y_continuous(expand = c(0,0)) +
+  # annotate("text", -Inf, Inf, label = "C", size = 4, 
+  #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Activation energy" & Rate == "Metabolic rate")$pred, 2)[1], 
+           size = 3, hjust = -0.5, vjust = 1.3) +
+  labs(x = "Temperature coefficient") +
+  ggtitle("Metabolic rate") +
+  xlim(-0.95, -0.4) +
+  geom_vline(xintercept = filter(df, Parameter_mte == "Activation energy" & Rate == "Metabolic rate")$pred*-1, # To get back to coefficient rather than activation energy because the distribution is for the coefficient 
+             linetype = "dashed", color = "white") +
+  NULL
+pWord18 <- p18 + theme_classic() + theme(text = element_text(size = 12),
+                                         axis.text = element_text(size = 12))
+
+# Mass-temperature interaction
+p19 <- cs_met %>% 
+  mcmc_dens(pars = "b3") +
+  scale_y_continuous(expand = c(0,0)) +
+  # annotate("text", -Inf, Inf, label = "C", size = 4, 
+  #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "M*T interaction" & Rate == "Metabolic rate")$pred, 2)[1], 
+           size = 3, hjust = -0.5, vjust = 1.3) +
+  labs(x = "M*T interaction") +
+  ggtitle("") +
+  geom_vline(xintercept = filter(df, Parameter_mte == "M*T interaction" & Rate == "Metabolic rate")$pred, 
+             linetype = "dashed", color = "white") +
+  geom_vline(xintercept = 0, 
+             linetype = "dashed", color = "red") +
+  NULL
+pWord19 <- p19 + theme_classic() + theme(text = element_text(size = 12),
+                                         axis.text = element_text(size = 12))
+
+# Mass exponent
+p20 <- cs_con %>% 
+  mcmc_dens(pars = "mu_b1") +
+  scale_y_continuous(expand = c(0,0)) +
+  # annotate("text", -Inf, Inf, label = "C", size = 4, 
+  #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Mass exponent" & Rate == "Maximum consumption rate")$pred, 2)[1], 
+           size = 3, hjust = -0.5, vjust = 1.3) +
+  labs(x = "Mass exponent") +
+  ggtitle("") +
+  xlim(-0.6, -0.1) +
+  geom_vline(xintercept = filter(df, Parameter_mte == "Mass exponent" & Rate == "Maximum consumption rate")$pred, 
+             linetype = "dashed", color = "white") +
+  NULL
+pWord20 <- p20 + theme_classic() + theme(text = element_text(size = 12),
+                                         axis.text = element_text(size = 12))
+
+# Temperature coefficient
+p21 <- cs_con %>% 
+  mcmc_dens(pars = "mu_b2") +
+  scale_y_continuous(expand = c(0,0)) +
+  # annotate("text", -Inf, Inf, label = "C", size = 4, 
+  #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Activation energy" & Rate == "Maximum consumption rate")$pred, 2)[1], 
+           size = 3, hjust = -0.5, vjust = 1.3) +
+  labs(x = "Temperature coefficient") +
+  ggtitle("Maximum consumption rate") +
+  xlim(-0.95, -0.4) +
+  geom_vline(xintercept = filter(df, Parameter_mte == "Activation energy" & Rate == "Maximum consumption rate")$pred*-1, # To get back to coefficient rather than activation energy because the distribution is for the coefficient 
+             linetype = "dashed", color = "white") +
+  NULL
+pWord21 <- p21 + theme_classic() + theme(text = element_text(size = 12),
+                                         axis.text = element_text(size = 12))
+
+pWord17 + pWord18 + pWord19 + pWord20 + pWord21 + plot_layout(ncol = 3)
+
+ggsave("figures/supp/log_linear_model/met_con/posterior_main_param.png", width = 6.5, height = 6.5, dpi = 600)
+
+
+# G. ADDITINAL CALCULATIONS ON THE POSTERIOR =======================================
+# Calculate the proportion of the posterior of activation energy that is less than zero
+# js = jags.samples(jm_met, 
+#                   variable.names = c("mu_b2", "b3"), 
+#                   n.iter = n.iter, 
+#                   thin = thin)
+
+#ecdf(js$mu_b2)(-0.65) 
+# [1] 0.8321111
+
+#ecdf(js$b3)(0) # how much is below?
+
+# How much does the mass exponent decline per change in unit T?
+#summary(cs)
+
+# Coefficient is 0.016
+# head(dat)
+# dat$b_a <- 0.016 * dat$temp_norm_arr_ct
+# 
+# summary(lm(b_a ~ temp_norm_arr_ct, data = dat))
+
+# Now fit the same exponents to C
+#summary(lm(b_a ~ temp_norm, data = dat))
 
 
 
