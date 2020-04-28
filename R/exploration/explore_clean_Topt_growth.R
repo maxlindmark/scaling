@@ -1,7 +1,8 @@
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # 2019.05.02: Max Lindmark
 #
-# - Explore optimum growth temperature data
+# - Explore optimum growth temperature data. See "explore_clean_growth" for 
+#   addition biological data 
 # 
 # A. Load libraries & read data
 #
@@ -24,6 +25,7 @@ library(ggplot2)
 library(viridis)
 library(RColorBrewer)
 library(magrittr)
+library(readr)
 # devtools::install_github("thomasp85/patchwork")
 library(patchwork)
 
@@ -39,7 +41,7 @@ dat <- read_excel("data/growth_data_Topt.xlsx")
 glimpse(dat)
 
 # Which cols to make numeric?
-cols = c(18, 19, 20, 21)
+cols = c(15:21)
 dat[,cols] %<>% lapply(function(x) as.numeric(as.character(x)))
 
 glimpse(dat)
@@ -90,12 +92,6 @@ ggplot(dat, aes(median_temp, fill = common_name)) +
   coord_cartesian(expand = 0) +
   theme_classic() +
   NULL
-
-# Convert experimental to Arrhenius scale:
-dat$temp_arr <- 1/((dat$temp_c + 273.15) * 8.617332e-05)
-
-# Standardize temperatures to median-reference temperature on C scale
-dat$temp_norm <- dat$temp_c - dat$median_temp
 
 # Calculate mean optimum temperature within species
 dat$mean_opt_temp_c <- ave(dat$opt_temp_c, dat$common_name)
