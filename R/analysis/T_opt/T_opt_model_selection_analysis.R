@@ -17,6 +17,8 @@
 # F. Plot predictions
 #
 # G. Additional calculations on the posterior
+# 
+# H. Plot temperature data
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # A. LOAD LIBRARIES ================================================================
@@ -465,3 +467,214 @@ js2 = jags.samples(jm2,
 
 ecdf(js2$b1)(0) 
 # [1] 0.9943333
+
+
+# H. PLOT TEMPERATURE DATA =========================================================
+# Plot optimum growth compared to experimental and environmental temperature
+# Read in growth data as that has experimental temperature
+dat2 <- 
+  read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/growth_analysis.csv"))
+
+dat2$env_temp_max <- as.numeric(as.character(dat2$env_temp_max))
+dat2$env_temp_min <- as.numeric(as.character(dat2$env_temp_min))
+
+specs <- sort(unique(dat2$species_ab))
+dat2$env_temp_min
+
+# Separate environmental temperature sources (temperature in habitat or preferred)
+dat2$temp_source <- 1
+
+dat2$env_temp_min[is.na(dat2$env_temp_min)] <- -9
+
+dat2$temp_source <- ifelse(dat2$env_temp_min == -9,
+                           2,
+                           dat2$temp_source)
+
+unique(filter(dat2, env_temp_min == -9)$species_ab)
+
+# In the data set I defined min and max of the environent temperatures as the ones
+# describing the environment they live in (from Fishbase). For many species, this 
+# information did not exist. For those species, I instead here use the minimum and 
+# maximum temperature of the preffered temperatures, also from FishBase. These values
+# where double checked 2020.04.28, prior to pre-print submission.
+# Environmental temperature from Joh et al. (2013). 
+dat2$env_temp_min <- ifelse(dat2$species_ab == "P.yokohamae",
+                            3,
+                            dat2$env_temp_min)
+# Environmental temperature from Joh et al. (2013). 
+dat2$env_temp_max <- ifelse(dat2$species_ab == "P.yokohamae",
+                            24,
+                            dat2$env_temp_max)
+
+dat2$env_temp_min <- ifelse(dat2$species_ab == "C.lumpus",
+                            0.6,
+                            dat2$env_temp_min)
+dat2$env_temp_max <- ifelse(dat2$species_ab == "C.lumpus",
+                            11.4,
+                            dat2$env_temp_max)
+
+dat2$env_temp_min <- ifelse(dat2$species_ab == "P.olivaceus",
+                            8.6,
+                            dat2$env_temp_min)
+dat2$env_temp_max <- ifelse(dat2$species_ab == "P.olivaceus",
+                            25,
+                            dat2$env_temp_max)
+
+dat2$env_temp_min <- ifelse(dat2$species_ab == "H.hippoglossus",
+                            0.4,
+                            dat2$env_temp_min)
+dat2$env_temp_max <- ifelse(dat2$species_ab == "H.hippoglossus",
+                            7.9,
+                            dat2$env_temp_max)
+
+dat2$env_temp_min <- ifelse(dat2$species_ab == "S.maximus",
+                            5.9,
+                            dat2$env_temp_min)
+dat2$env_temp_max <- ifelse(dat2$species_ab == "S.maximus",
+                            11.9,
+                            dat2$env_temp_max)
+
+dat2$env_temp_min <- ifelse(dat2$species_ab == "A.minor",
+                            0.6,
+                            dat2$env_temp_min)
+dat2$env_temp_max <- ifelse(dat2$species_ab == "A.minor",
+                            7.6,
+                            dat2$env_temp_max)
+
+
+# Prepare experimental data and convert to long data frame with "source"
+# indicating if it's experimental or environmental temperature
+sub <- dat2 %>% 
+  select(temp_c, median_temp, species_ab, log_mass, temp_source) %>% 
+  gather(source, temp, 1:2) %>%
+  ungroup()
+
+filter(sub, species_ab == "A.minor")
+
+# Raw T_opt data (using the data set we fitted models to in this script)
+sub2 <- dat %>% 
+  mutate(source = "Optimum (data)",
+         temp = opt_temp_c,
+         log_mass = log(mass_g)) %>% 
+  select(temp, species_ab, source, log_mass)
+
+head(sub2)
+head(sub)
+
+# Now combine the environmental and optimum growth data
+sub <- bind_rows(sub2, sub)
+
+# Change labels for plotting
+sub$source <- ifelse(sub$source == "temp_c",
+                     "Experimental\ntemperature",
+                     sub$source)
+
+sub$source <- ifelse(sub$source == "median_temp",
+                     "Mid-point env. temperature",
+                     sub$source)
+
+# Because this plot will overplot, I order the sources as I want them using
+# a new column with that info
+sub$source2 <- 1
+sub$source2 <- ifelse(sub$source == "Optimum (data)", 3, sub$source2)
+sub$source2 <- ifelse(sub$source == "Mid-point env. temperature", 2, sub$source2)
+
+str(dat2)
+
+# Now I need to summarize the data so that one row = one species
+dat3 <- dat2 %>% 
+  group_by(species_ab) %>% 
+  tidyr::drop_na(env_temp_max) %>% 
+  tidyr::drop_na(env_temp_min) %>% 
+  summarise(upper = mean(env_temp_max), 
+            lower = mean(env_temp_min),
+            temp = mean(temp_c),
+            temp_source = mean(temp_source)) %>% 
+  ungroup() %>% 
+  arrange(species_ab)
+
+dat3
+
+# ... And do the same for T_opt data
+sub3 <- dat %>%
+  group_by(species_ab) %>%
+  summarize(temp_opt = mean(opt_temp_c),
+            source   = "Optimum (data)") %>%
+  ungroup()
+
+sub3
+
+dat4 <- full_join(sub3, dat3) %>% drop_na() %>% arrange()
+
+dat4
+
+# Hard to choose which variable to sort the plot on.. doing a manual one here
+unique(dat4$species_ab)
+dat4$sort <- 1
+dat4$sort <- ifelse(dat4$species_ab == "A.minor", 2, dat4$sort)
+dat4$sort <- ifelse(dat4$species_ab == "H.hippoglossus", 3, dat4$sort)
+dat4$sort <- ifelse(dat4$species_ab == "C.lumpus", 4, dat4$sort)
+dat4$sort <- ifelse(dat4$species_ab == "S.salar", 5, dat4$sort)
+dat4$sort <- ifelse(dat4$species_ab == "G.morhua", 6, dat4$sort)
+dat4$sort <- ifelse(dat4$species_ab == "S.alpinus", 7, dat4$sort)
+dat4$sort <- ifelse(dat4$species_ab == "S.maximus", 8, dat4$sort)
+dat4$sort <- ifelse(dat4$species_ab == "P.yokohamae", 9, dat4$sort)
+dat4$sort <- ifelse(dat4$species_ab == "P.olivaceus", 10, dat4$sort)
+dat4$sort <- ifelse(dat4$species_ab == "P.fulvidraco", 11, dat4$sort)
+dat4$sort <- ifelse(dat4$species_ab == "L.calcarifer", 12, dat4$sort)
+dat4$sort <- ifelse(dat4$species_ab == "R.canadum", 13, dat4$sort)
+
+sub$sort <- 1
+sub$sort <- ifelse(sub$species_ab == "A.minor", 2, sub$sort)
+sub$sort <- ifelse(sub$species_ab == "H.hippoglossus", 3, sub$sort)
+sub$sort <- ifelse(sub$species_ab == "C.lumpus", 4, sub$sort)
+sub$sort <- ifelse(sub$species_ab == "S.salar", 5, sub$sort)
+sub$sort <- ifelse(sub$species_ab == "G.morhua", 6, sub$sort)
+sub$sort <- ifelse(sub$species_ab == "S.alpinus", 7, sub$sort)
+sub$sort <- ifelse(sub$species_ab == "S.maximus", 8, sub$sort)
+sub$sort <- ifelse(sub$species_ab == "P.yokohamae", 9, sub$sort)
+sub$sort <- ifelse(sub$species_ab == "P.olivaceus", 10, sub$sort)
+sub$sort <- ifelse(sub$species_ab == "P.fulvidraco", 11, sub$sort)
+sub$sort <- ifelse(sub$species_ab == "L.calcarifer", 12, sub$sort)
+sub$sort <- ifelse(sub$species_ab == "R.canadum", 13, sub$sort)
+
+# Plot
+pal2 <- RColorBrewer::brewer.pal("Dark2", n = 5)
+
+p9 <- ggplot() +
+  geom_point(data = sub, aes(x = reorder(species_ab, sort), y = temp,
+                              fill = source, alpha = source), size = 3,
+             shape = 21, color = "white", position = position_dodge(width = 1)) +
+  geom_point(data = sub, aes(x = reorder(species_ab, sort), y = temp,
+                             fill = source, alpha = source), size = 3,
+             shape = 21, color = "white", position = position_dodge(width = 1)) +
+  coord_flip() +
+  geom_point(data = filter(sub, temp_source == 1 & source == "Mid-point env. temperature"),
+             aes(x = reorder(species_ab, sort), y = temp),
+             size = 3.5, shape = 25, fill = pal2[1], color = "white", position = position_dodge(width = 1)) +
+  geom_errorbar(data = dat4, aes(x = reorder(species_ab, sort),
+                                 ymin = lower, ymax = upper, linetype = factor(temp_source)),
+                width = 0.5, color = pal2[1], shape = 23) +
+  geom_count(data = filter(sub, source == "Optimum (data)"),
+             aes(x = reorder(species_ab, sort), y = temp),
+             alpha = 0.8, shape = 21, color = pal2[2], fill = pal2[2]) +
+  scale_fill_manual(values = c("grey75", pal2[1], pal2[2], pal2[2])) +
+  scale_alpha_manual(values = c(0.8, 0.8, 0)) +
+  scale_linetype_manual(values = c(1,1)) +
+  scale_size_area(max_size = 5) +
+  guides(fill = guide_legend(override.aes = list(alpha = c(1,1,1),
+                                                 color = "white")),
+         linetype = FALSE,
+         shape = FALSE) +
+  xlab("") + 
+  scale_size_area(max_size = 6) +
+  ylab(expression(paste("Temperature [", degree*C, "]"))) + 
+  NULL 
+
+pWord9 <- p9 + theme_classic() + theme(legend.position = "bottom",
+                                       legend.direction = "vertical",
+                                       axis.text.y = element_text(face = "italic"),
+                                       legend.text = element_text(size = 10),
+                                       aspect.ratio = 6/7,
+                                       text = element_text(size = 12))
+ggsave("figures/supp/T_opt/env_exp_temp.png", width = 6.5, height = 6.5, dpi = 600)

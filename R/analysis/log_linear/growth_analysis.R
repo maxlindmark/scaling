@@ -374,7 +374,7 @@ cs_fit_df <- data.frame(as.matrix(cs_fit))
 n_bins <- round(1 + 3.2*log(nrow(cs_fit_df)))
 
 # Growth
-p1 <- ggplot(cs_fit_df, aes(mean_y_sim)) + 
+p10 <- ggplot(cs_fit_df, aes(mean_y_sim)) + 
   geom_histogram(bins = n_bins) +
   geom_vline(xintercept = cs_fit_df$mean_y, color = "white", 
              linetype = 2, size = 0.4) +
@@ -383,13 +383,12 @@ p1 <- ggplot(cs_fit_df, aes(mean_y_sim)) +
   annotate("text", -Inf, Inf, size = 4, hjust = -0.2, vjust = 3.3,
            label = paste("P =", round(mean(cs_fit_df$p_mean), digits = 3))) +
   labs(x = "Mean simulated growth", y = "count") +
-  theme(aspect.ratio = 1) +
   coord_cartesian(expand = 0) + 
   NULL
-pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
+pWord10 <- p10 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
 
 
-p2 <- ggplot(cs_fit_df, aes(cv_y_sim)) + 
+p11 <- ggplot(cs_fit_df, aes(cv_y_sim)) + 
   geom_histogram(bins = n_bins) +
   geom_vline(xintercept = cs_fit_df$cv_y, color = "white", 
              linetype = 2, size = 0.4) +
@@ -401,8 +400,8 @@ p2 <- ggplot(cs_fit_df, aes(cv_y_sim)) +
   coord_cartesian(expand = 0) +
   NULL
 
-pWord2 <- p2 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
-pWord1 + pWord2
+pWord11 <- p11 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
+pWord10 + pWord11
 ggsave("figures/supp/log_linear_model/growth/fit_gro_mean_cv.png", width = 6.5, height = 6.5, dpi = 600)
 
 
@@ -442,7 +441,7 @@ colourCount = length(unique(dat$species))
 getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
 pal <- getPalette(colourCount)
 
-p1 <- ggplot(pred_df, aes(mass_g, median)) +
+p12 <- ggplot(pred_df, aes(mass_g, median)) +
   geom_ribbon(data = pred_df, aes(x = mass_g, ymin = lwr_95, ymax = upr_95), 
               size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
   geom_ribbon(data = pred_df, aes(x = mass_g, ymin = lwr_80, ymax = upr_80), 
@@ -461,7 +460,7 @@ p1 <- ggplot(pred_df, aes(mass_g, median)) +
   # annotate("text", -Inf, Inf, label = "A", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) + # This solution doesn't play with the ln axis...
   NULL
-pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 12))
+pWord12 <- p12 + theme_classic() + theme(text = element_text(size = 12))
 
 # Add posterior distributions of parameters
 cs = coda.samples(jm,
@@ -480,7 +479,7 @@ color_scheme_set("gray")
 sum_dat <- data.frame(summary(cs)[1])
 
 # Mass-coefficient
-p2 <- cs %>% 
+p13 <- cs %>% 
   mcmc_dens(pars = "mu_b1") +
   geom_vline(xintercept = sum_dat[2, 1], color = "white", size = 0.6, linetype = 2) +
   scale_y_continuous(expand = c(0,0)) +
@@ -488,10 +487,10 @@ p2 <- cs %>%
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
   labs(x = "Mass-exponent") +
   NULL
-pWord2 <- p2 + theme_classic() + theme(text = element_text(size = 12))
+pWord13 <- p13 + theme_classic() + theme(text = element_text(size = 12))
 
 # Temperature-coefficient
-p3 <- cs %>% 
+p14 <- cs %>% 
   mcmc_dens(pars = "mu_b2") +
   geom_vline(xintercept = sum_dat[3, 1], color = "white", size = 0.6, linetype = 2) +
   scale_y_continuous(expand = c(0,0)) +
@@ -499,11 +498,11 @@ p3 <- cs %>%
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
   labs(x = "Temperature coefficient") +
   NULL
-pWord3 <- p3 + theme_classic() + theme(text = element_text(size = 12))
+pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 12))
 
 
 # Mass-temperature interaction
-p4 <- cs %>%
+p15 <- cs %>%
   mcmc_dens(pars = "mu_b3") +
   geom_vline(xintercept = 0, color = "red", size = 0.6, linetype = 1) +
   geom_vline(xintercept = sum_dat[4, 1], color = "white", size = 0.6, linetype = 2) +
@@ -513,13 +512,12 @@ p4 <- cs %>%
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
   labs(x = "M*T interaction") +
   NULL
-pWord4 <- p4 + theme_classic() + theme(text = element_text(size = 12))
+pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 12))
 
 # Plot all together
-pWord1 / (pWord2 + pWord3 + pWord4) + plot_layout(heights = c(2.5, 1, 1, 1))
+pWord12 / (pWord13 + pWord14 + pWord15) + plot_layout(heights = c(2.5, 1, 1, 1))
 
 ggsave("figures/pred_gro.png", width = 6.5, height = 6.5, dpi = 600)
-
 
 
 # G. ADDITINAL CALCULATIONS ON THE POSTERIOR =======================================

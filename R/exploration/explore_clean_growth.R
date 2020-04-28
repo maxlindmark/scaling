@@ -275,5 +275,5 @@ ggsave("figures/supp/data/growth_rate_temp_mass.png", width = 6.5, height = 6.5,
 glimpse(dat)
 dat %>%
   select(y, `growth_rate_%/day`, geom_mean_mass_g, size_group, mass_g, log_mass, mass_norm, log_mass_norm, 
-         temp_c, temp_arr, median_temp, above_optimum, common_name, species, species_ab) %>%
+         temp_c, temp_arr, median_temp, above_optimum, common_name, species, species_ab, env_temp_min, env_temp_max) %>%
   write_csv(., "data/growth_analysis.csv", ";")
