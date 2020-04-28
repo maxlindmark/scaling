@@ -643,7 +643,7 @@ pal2 <- RColorBrewer::brewer.pal("Dark2", n = 5)
 
 p9 <- ggplot() +
   geom_point(data = sub, aes(x = reorder(species_ab, sort), y = temp,
-                              fill = source, alpha = source), size = 3,
+                              fill = source, alpha = source), size = 1,
              shape = 21, color = "white", position = position_dodge(width = 1)) +
   geom_point(data = sub, aes(x = reorder(species_ab, sort), y = temp,
                              fill = source, alpha = source), size = 3,
@@ -661,13 +661,12 @@ p9 <- ggplot() +
   scale_fill_manual(values = c("grey75", pal2[1], pal2[2], pal2[2])) +
   scale_alpha_manual(values = c(0.8, 0.8, 0)) +
   scale_linetype_manual(values = c(1,1)) +
-  scale_size_area(max_size = 5) +
+  #scale_size_area() +
   guides(fill = guide_legend(override.aes = list(alpha = c(1,1,1),
                                                  color = "white")),
          linetype = FALSE,
          shape = FALSE) +
   xlab("") + 
-  scale_size_area(max_size = 6) +
   ylab(expression(paste("Temperature [", degree*C, "]"))) + 
   NULL 
 
