@@ -62,6 +62,7 @@ con$species_n <- as.numeric(as.factor(con$species_ab))
 # Mean-center predictor variables
 met$log_mass_ct <- met$log_mass - mean(met$log_mass)
 met$temp_arr_ct <- met$temp_arr - mean(met$temp_arr)
+
 con$log_mass_ct <- con$log_mass - mean(con$log_mass)
 con$temp_arr_ct <- con$temp_arr - mean(con$temp_arr)
 
@@ -94,8 +95,7 @@ met_data = list(
   mass = met$log_mass_ct,
   temp = met$temp_arr_ct,
   mass_pred = mass_pred_met,
-  temp_pred = temp_pred_met
-)
+  temp_pred = temp_pred_met)
 
 # Data in list-format for JAGS
 con_data = list(
@@ -105,8 +105,7 @@ con_data = list(
   mass = con$log_mass_ct,
   temp = con$temp_arr_ct,
   mass_pred = mass_pred_con,
-  temp_pred = temp_pred_con
-)
+  temp_pred = temp_pred_con)
 
 
 # C. FIT MODELS ====================================================================
@@ -221,6 +220,15 @@ cs_met <- coda.samples(jm_met,
                        n.iter = n.iter, 
                        thin = thin)
 
+# summary(cs_met)
+#           Mean    
+# ...
+# b3        0.014371
+# mu_b0    -2.172633
+# mu_b1    -0.204993
+# mu_b2    -0.614078
+
+
 # Convert to ggplottable data frame
 cs_met_df <- ggs(cs_met)
 
@@ -254,12 +262,11 @@ p2a <- cs_met_df %>%
   scale_color_brewer(palette = "Dark2") + 
   labs(x = "Iteration", y = "Value", color = "Chain #") +
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  theme(axis.text.x = element_text(size = 6)) +
   NULL
 pWord2a <- p2a + theme_classic() + theme(text = element_text(size = 8),
                                          axis.text = element_text(size = 5))
 pWord1a + pWord2a
-ggsave("figures/supp/log_linear_model/met_con/validation_met_intercepts_1.2.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/validation_met_intercepts_1.2.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Species intercepts (2/2 because to many species) =============================
@@ -294,12 +301,11 @@ p2b <- cs_met_df %>%
   scale_color_brewer(palette = "Dark2") + 
   labs(x = "Iteration", y = "Value", color = "Chain #") +
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  theme(axis.text.x = element_text(size = 6)) +
   NULL
 pWord2b <- p2b + theme_classic() + theme(text = element_text(size = 8),
                                          axis.text = element_text(size = 5))
 pWord1b + pWord2b
-ggsave("figures/supp/log_linear_model/met_con/validation_met_intercepts_2.2.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/validation_met_intercepts_2.2.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Species mass-effects (1/2 because to many species) ===========================
@@ -331,12 +337,11 @@ p4a <- cs_met_df %>%
   scale_color_brewer(palette = "Dark2") + 
   labs(x = "Iteration", y = "Value", color = "Chain #") +
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  theme(axis.text.x = element_text(size = 6)) +
   NULL
 pWord4a <- p4a + theme_classic() + theme(text = element_text(size = 8),
                                          axis.text = element_text(size = 5))
 pWord3a + pWord4a
-ggsave("figures/supp/log_linear_model/met_con/validation_met_mass_1.2.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/validation_met_mass_1.2.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Species mass-effects (2/2 because to many species) ===========================
@@ -369,12 +374,11 @@ p4b <- cs_met_df %>%
   scale_color_brewer(palette = "Dark2") + 
   labs(x = "Iteration", y = "Value", color = "Chain #") +
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  theme(axis.text.x = element_text(size = 6)) +
   NULL
 pWord4b <- p4b + theme_classic() + theme(text = element_text(size = 8),
                                          axis.text = element_text(size = 5))
 pWord3b + pWord4b
-ggsave("figures/supp/log_linear_model/met_con/validation_met_mass_2.2.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/validation_met_mass_2.2.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Species temperature-effects (1/2 because to many species) ====================
@@ -405,12 +409,11 @@ p6a <- cs_met_df %>%
   scale_color_brewer(palette = "Dark2") + 
   labs(x = "Iteration", y = "Value", color = "Chain #") +
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  theme(axis.text.x = element_text(size = 6)) +
   NULL
 pWord6a <- p6a + theme_classic() + theme(text = element_text(size = 8),
                                          axis.text = element_text(size = 5))
 pWord5a + pWord6a
-ggsave("figures/supp/log_linear_model/met_con/validation_met_temp_1.2.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/validation_met_temp_1.2.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Species temperature-effects (2/2 because to many species) ====================
@@ -443,12 +446,11 @@ p6b <- cs_met_df %>%
   scale_color_brewer(palette = "Dark2") + 
   labs(x = "Iteration", y = "Value", color = "Chain #") +
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  theme(axis.text.x = element_text(size = 6)) +
   NULL
 pWord6b <- p6b + theme_classic() + theme(text = element_text(size = 8),
                                          axis.text = element_text(size = 5))
 pWord5b + pWord6b
-ggsave("figures/supp/log_linear_model/met_con/validation_met_temp_2.2.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/validation_met_temp_2.2.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Group-level means ============================================================
@@ -477,12 +479,11 @@ p8 <- cs_met_df %>%
   scale_color_brewer(palette = "Dark2") + 
   labs(x = "Iteration", y = "Value", color = "Chain #") +
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  theme(axis.text.x = element_text(size = 6)) +
   NULL
 pWord8 <- p8 + theme_classic() + theme(text = element_text(size = 10),
                                        axis.text = element_text(size = 5))
 pWord7 + pWord8
-ggsave("figures/supp/log_linear_model/met_con/validation_met.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/validation_met.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Chain convergencve (Rhat) ====================================================
@@ -491,11 +492,10 @@ p9 <- cs_met_df %>%
   xlab("R_hat") +
   xlim(0.999, 1.004) +
   geom_point(size = 1) +
-  theme(aspect.ratio = 1) +
   NULL
 pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 10),
                                        axis.text = element_text(size = 5))
-ggsave("figures/supp/log_linear_model/met_con/validation_rhat_met.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/validation_rhat_met.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Prior vs posterior ===========================================================
@@ -526,7 +526,7 @@ b3 <- rnorm(25000, 0, sqrt(1/tau))
 PR <- as.matrix(cbind(mu_b0, mu_b1, mu_b2, b3))
 
 # This is not a ggplot...
-png(file = "/Users/maxlindmark/Desktop/R_STUDIO_PROJECTS/scaling/figures/supp/log_linear_model/met_con/validation_prior_post_met.png", 
+png(file = "/Users/maxlindmark/Desktop/R_STUDIO_PROJECTS/scaling/figures/supp/log_linear/met_con/validation_prior_post_met.png", 
     units = "px", width = 1800, height = 1800, res = 300)
 
 MCMCtrace(cs_met,
@@ -584,12 +584,11 @@ p2 <- cs_con_df %>%
   scale_color_brewer(palette = "Dark2") + 
   labs(x = "Iteration", y = "Value", color = "Chain #") +
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  theme(axis.text.x = element_text(size = 6)) +
   NULL
 pWord2 <- p2 + theme_classic() + theme(text = element_text(size = 8),
                                        axis.text = element_text(size = 5))
 pWord1 + pWord2
-ggsave("figures/supp/log_linear_model/met_con/validation_con_intercepts.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/validation_con_intercepts.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Species mass-effects =========================================================
@@ -621,12 +620,11 @@ p4 <- cs_con_df %>%
   scale_color_brewer(palette = "Dark2") + 
   labs(x = "Iteration", y = "Value", color = "Chain #") +
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  theme(axis.text.x = element_text(size = 6)) +
   NULL
 pWord4 <- p4 + theme_classic() + theme(text = element_text(size = 8),
                                        axis.text = element_text(size = 5))
 pWord3 + pWord4
-ggsave("figures/supp/log_linear_model/met_con/validation_con_mass.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/validation_con_mass.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Species temperature-effects ==================================================
@@ -657,12 +655,11 @@ p6 <- cs_con_df %>%
   scale_color_brewer(palette = "Dark2") + 
   labs(x = "Iteration", y = "Value", color = "Chain #") +
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  theme(axis.text.x = element_text(size = 6)) +
   NULL
 pWord6 <- p6 + theme_classic() + theme(text = element_text(size = 8),
                                        axis.text = element_text(size = 5))
 pWord5 + pWord6
-ggsave("figures/supp/log_linear_model/met_con/validation_con_temp.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/validation_con_temp.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Group-level means ============================================================
@@ -691,12 +688,11 @@ p8 <- cs_con_df %>%
   scale_color_brewer(palette = "Dark2") + 
   labs(x = "Iteration", y = "Value", color = "Chain #") +
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  theme(axis.text.x = element_text(size = 6)) +
   NULL
 pWord8 <- p8 + theme_classic() + theme(text = element_text(size = 10),
                                        axis.text = element_text(size = 5))
 pWord7 + pWord8
-ggsave("figures/supp/log_linear_model/met_con/validation_con.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/validation_con.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Chain convergencve (Rhat) ====================================================
@@ -705,11 +701,10 @@ p9 <- cs_con_df %>%
   xlab("R_hat") +
   xlim(0.999, 1.003) +
   geom_point(size = 1) +
-  theme(aspect.ratio = 1)+
   NULL
 pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 10),
                                        axis.text = element_text(size = 5))
-ggsave("figures/supp/log_linear_model/met_con/validation_rhat_con.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/validation_rhat_con.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Prior vs posterior ===========================================================
@@ -737,7 +732,7 @@ mu_b2 <- rnorm(25000, -0.6, sqrt(1/tau))
 PR <- as.matrix(cbind(mu_b0, mu_b1, mu_b2))
 
 # This is not a ggplot...
-png(file = "/Users/maxlindmark/Desktop/R_STUDIO_PROJECTS/scaling/figures/supp/log_linear_model/met_con/validation_prior_post_con.png", 
+png(file = "/Users/maxlindmark/Desktop/R_STUDIO_PROJECTS/scaling/figures/supp/log_linear/met_con/validation_prior_post_con.png", 
     units = "px", width = 1800, height = 1800, res = 300)
 
 MCMCtrace(cs_con,
@@ -845,7 +840,7 @@ pWord13 <- p13 + theme_classic() + theme(text = element_text(size = 12), aspect.
 
 
 (pWord10 + pWord11) / (pWord12 + pWord13)
-ggsave("figures/supp/log_linear_model/met_con/fit_con_met_mean_cv.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/fit_con_met_mean_cv.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 # F. PLOT PREDICTIONS ==============================================================
@@ -909,7 +904,7 @@ pal <- getPalette(colourCount)
 
 p14 <- ggplot(m_pred_df, aes(mass_g, median)) +
   geom_point(data = met, aes(mass_g, log(met$y_spec), fill = species_ab),
-             size = 2.8, shape = 21, alpha = 0.8, color = "white") +
+             size = 2, shape = 21, alpha = 0.8, color = "white") +
   geom_ribbon(data = m_pred_df, aes(x = mass_g, ymin = lwr_95, ymax = upr_95), 
               size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
   geom_ribbon(data = m_pred_df, aes(x = mass_g, ymin = lwr_80, ymax = upr_80), 
@@ -934,7 +929,7 @@ pal <- getPalette(colourCount)
 
 p15 <- ggplot(c_pred_df, aes(mass_g, median)) +
   geom_point(data = con, aes(mass_g, log(con$y_spec), fill = species_ab),
-             size = 2.8, shape = 21, alpha = 0.8, color = "white") +
+             size = 2, shape = 21, alpha = 0.8, color = "white") +
   geom_ribbon(data = c_pred_df, aes(x = mass_g, ymin = lwr_95, ymax = upr_95), 
               size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
   geom_ribbon(data = c_pred_df, aes(x = mass_g, ymin = lwr_80, ymax = upr_80), 
@@ -1211,7 +1206,7 @@ pWord21 <- p21 + theme_classic() + theme(text = element_text(size = 12),
 
 pWord17 + pWord18 + pWord19 + pWord20 + pWord21 + plot_layout(ncol = 3)
 
-ggsave("figures/supp/log_linear_model/met_con/posterior_main_param.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/posterior_main_param.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 # G. ADDITINAL CALCULATIONS ON THE POSTERIOR =======================================

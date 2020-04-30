@@ -576,3 +576,4 @@ cat(
   tau_b3 <- 1/sigma_b3^2
   
 }", fill = TRUE, file = "R/analysis/JAGS_models/log_linear/selected_models/m1_pred_fit.txt")
+

@@ -1,0 +1,41 @@
+model{
+  
+  for(i in 1:n_obs){
+    y[i] ~ dnorm(mu[i], tau)
+    mu[i] <- 
+      b0[species_n[i]] +           # varying intercept 
+      b1[species_n[i]]*mass[i] +   # varying mass-exponent
+      b2[species_n[i]]*temp[i] +   # varying temperature coefficient
+      b3*mass[i]*temp[i]           # non-varying M*T interaction
+  }
+  
+  # Second level (species-level effects)
+  for(j in 1:max(species_n)){
+    b0[j] ~ dnorm(mu_b0, tau_b0)
+    b1[j] ~ dnorm(mu_b1, tau_b1)
+    b2[j] ~ dnorm(mu_b2, tau_b2)
+  }
+  
+  # Predictions
+  for(k in 1:length(temp_pred)){
+      
+    pred_small[k] <- mu_b0 + mu_b1*mass_pred_s + mu_b2*temp_pred[k] + b3*temp_pred[k]*mass_pred_s
+    pred_large[k] <- mu_b0 + mu_b1*mass_pred_l + mu_b2*temp_pred[k] + b3*temp_pred[k]*mass_pred_l
+    
+  } 
+
+  #-- Priors	
+  b3 ~ dnorm(0, 0.001)         
+  mu_b0 ~ dnorm(0, 0.001)      
+  mu_b1 ~ dnorm(-0.25, 0.001)  
+  mu_b2 ~ dnorm(-0.6, 0.001)   
+  sigma ~ dunif(0, 10) 
+  sigma_b0 ~ dunif(0, 10)
+  sigma_b1 ~ dunif(0, 10)
+  sigma_b2 ~ dunif(0, 10)
+  tau <- 1/sigma^2
+  tau_b0 <- 1/sigma_b0^2
+  tau_b1 <- 1/sigma_b1^2
+  tau_b2 <- 1/sigma_b2^2
+  
+  }

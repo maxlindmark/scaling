@@ -1,350 +1,235 @@
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# 2019.12.06: Max Lindmark
+# 2020.04.29: Max Lindmark
 #
-# Code to fit quadratic model for a species with good data to exemplify difference
-# between Cmax (this model) and the general Arrhenius equation
+# - Code to exemplify the different temperature dependencies of metabolism and 
+#   conumsumption using already fitted models. Note that the models for metabolism
+#   and consumption differ a lot in what variables go in (consumption uses
+#   normalized consumption ~ mass_g and centered temperature in Celcius, whereas 
+#   metabolism is modelled as log(y) ~ log(centered mass) + Arrhenius temperature)
+#
+#   I have therefore plotted normalized rates (0:1 within each rate), to illustrate 
+#   the curves
 # 
 # A. Load libraries
 #
-# B. Read Cmax data
+# B. Generate data
 #
-# C. Define quadratic model for Cmax 
+# D. Plot
 #
-# D. Simulate data for plotting, 
-#
-# E. Plot
-# 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # A. LOAD LIBRARIES ================================================================
 rm(list = ls())
 
 # Load libraries, install if needed
-library(rjags)
 library(RColorBrewer)
-library(ggmcmc)
 library(RCurl)
 library(readxl)
 library(magrittr)
 library(viridis)
 library(patchwork)
-library(bayesplot)
-
-# other attached packages:
-# [1] bayesplot_1.7.1    patchwork_0.0.1    viridis_0.5.1      viridisLite_0.3.0  magrittr_1.5       
-# readxl_1.3.1      [7] RCurl_1.95-4.12    bitops_1.0-6       ggmcmc_1.3         ggplot2_3.2.1
-# tidyr_1.0.0        dplyr_0.8.3       [13] RColorBrewer_1.1-2 rjags_4-10         coda_0.19-3    
-
-
-# B. READ IN DATA ==================================================================
-# Read in your data file(s)
-con <- read.csv("data/con_analysis.csv")
-
-# There is a lot of variation in rates between species (see exploratory script. 
-# Instead of fitting an hierarchial model here (for now at least), we will fit models
-# of relative rates, i.e. relative to max for that species
-
-# Create abbreviated species name for plotting. Get first part of name
-sp1 <- substring(con$species, 1, 1)
-
-# Get species name
-sp2 <- gsub( ".*\\s", "", con$species )
-
-con$species_ab <- paste(sp1, sp2, sep = ".")
-
-con <- con %>% 
-  dplyr::group_by(species) %>% 
-  dplyr::mutate(y_norm = y/mean(y)) %>% 
-  dplyr::mutate(log_mass_ct = log(mass_g) - mean(log(mass_g))) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(temp_norm_ct = temp_norm - mean(temp_norm))
-
-ggplot(con, aes(log_mass_ct)) + 
-  geom_histogram() + 
-  facet_wrap(~species)
-
-# Which species have data above optimum?
-spec <- unique(filter(con, above_optimum == "Y"))$species
-
-con %>% 
-  filter(species %in% spec) %>% 
-  #ggplot(., aes(temp_norm_ct, y_norm, color = species)) +
-  ggplot(., aes(temp_norm_ct, y, color = species)) + 
-  theme_classic(base_size = 12) +
-  geom_point(size = 1, alpha = 0.8) +
-  stat_smooth(se = FALSE) +
-  labs(x = "Rescaled temperature", y = "Rescaled consumption") +
-  scale_color_viridis(discrete = TRUE, option = "magma") +
-  NULL
-
-con %>% 
-  filter(species %in% spec) %>% 
-  #ggplot(., aes(temp_norm_ct, y_norm, color = log_mass_norm)) +
-  ggplot(., aes(temp_norm_ct, y, color = log_mass_norm)) + 
-  #ggplot(., aes(temp_norm, y_norm, color = log_mass_norm)) + 
-  theme_classic(base_size = 12) +
-  geom_point(size = 1, alpha = 0.8) +
-  stat_smooth(se = FALSE) +
-  labs(x = "Rescaled temperature", y = "Rescaled consumption") +
-  scale_color_viridis(option = "magma") +
-  facet_wrap(~ species, scales = "free") +
-  NULL
-
-con <- con %>% filter(species %in% spec)
+library(scales)
+library(tidylog)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
 
 
-# C. DEFINE MODEL =================================================================
-# See non_linear_model.R
+# B. GENERATE DATA =================================================================
+# First read in data so that we can take the means etc
+met <- 
+  read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/met_analysis.csv"))
 
-nl_model = "R/analysis/non-linear model/non-linear model.txt"
-
-df <- filter(con, species_ab == "C.argus")
-  
-  jdat = list(
-    y = df$y_norm,
-    n_obs = length(df$y), 
-    mass = df$log_mass_ct,
-    temp = df$temp_norm_ct,
-    temp_pred = seq(min(df$temp_norm_ct), max(df$temp_norm_ct), 0.1))
-  
-  jm = jags.model(nl_model,
-                  data = jdat, 
-                  n.adapt = 5000,
-                  n.chains = 3) 
-  
-  burn.in = 10000
-  
-  update(jm, n.iter = burn.in) 
-  
-# Create list from data-frame
-pred_dat_df <- dplyr::bind_rows(pred_dat)
+con <- 
+  read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/con_analysis.csv"))
 
 
-# Plot "raw" predictions
-pred_dat_df %>% 
-  ggplot(., aes(temp, median)) +
-  geom_point(data = con, aes(temp_norm_ct, y_norm),
-             size = 3, alpha = 0.8, shape = 21, fill = "grey20", color = "white") +
-  geom_line(size = 1, alpha = 0.6) +
-  geom_ribbon(data = filter(pred_dat_df, median > 0), 
-              aes(x = temp, ymax = upr_80, ymin = lwr_80), 
-              size = 1, alpha = 0.25, fill = "red") +
-  theme_classic(base_size = 14) + 
-  guides(fill = FALSE) +
-  labs(x = "Rescaled temperature",
-       y = "Rescaled consumption rate",
-       color = "Species") +
-  theme(aspect.ratio = 3/4,
-        legend.position = c(0.13, 0.75),
-        legend.text = element_text(size = 8),
-        legend.title = element_text(size = 12)) +
-  NULL
+#*** Metabolism ====================================================================
+# This is what the model is fitted to:
+# data = list(
+#   y = log(dat$y_spec),
+#   n_obs = length(dat$y),
+#   species_n = dat$species_n,
+#   mass = dat$log_mass_ct,
+#   temp = dat$temp_arr_ct
+# )
 
-# Now check parameter estimates:
+# Find out which log_mass_ct correpond to 10 and 100 g
+met$log_mass_ct <- met$log_mass - mean(met$log_mass)
 
-summary(cs)
-              # Mean  SD        Naive SE       Time-series SE
-# b0          0.82444 0.0773428 9.985e-04      1.050e-03
-# b1          0.45867 0.0841213 1.086e-03      1.086e-03
-# b2          0.11493 0.0134257 1.733e-04      2.768e-04
-# b3         -0.00502 0.0009126 1.178e-05      1.902e-05
+log_mass_ct <- c(filter(met, mass_g == 10)$log_mass_ct[1], 
+                 filter(met, mass_g == 100)$log_mass_ct[1])
+
+# Set temperature range. Use a little bit longer range than in consumption
+# In order to more easily merge data later, use the same temperature vector.
+# This vector should cover the ranges we use more than enough
+temp_c_ct <- seq(-20, 30, 0.1)
+
+# Now calcualte the corresponding non-centered temperature for the metabolism case.
+# This will not be used for the last plot though, there I'll only use the centered data
+# because consumption data is already centered in the model fitting within species
+temp_c <- temp_c_ct + mean(met$temp_c)
+
+# Create new prediction data frame
+met_pred <- data.frame(expand.grid(log_mass_ct = log_mass_ct,
+                                   temp_c = temp_c))
+
+# Add which rate it is
+met_pred$rate <- "Metabolism"
+
+# Mean-center temperature (across species) (for plotting later!)
+met_pred$temp_c_ct <- met_pred$temp_c - mean(met_pred$temp_c)
+
+# Convert non-centered temperature to Arrhenius scale for calculating rates
+met_pred$temp_arr <- 1/((met_pred$temp_c + 273.15) * 8.617332e-05)
+
+# Mean center Arrhenius temperature (which is what went in the model)
+met_pred$temp_arr_ct <- met_pred$temp_arr - mean(met_pred$temp_arr)
+
+# Add log_mass (non centered) by adding back mean
+met_pred$log_mass <- met_pred$log_mass_ct + mean(met$log_mass)
+
+# Add mass in grams
+met_pred$mass_g <- exp(met_pred$log_mass)
+
+# Calculate log metabolic rate
+# Regression coefficients
+mu_b0 <- -2.172633
+mu_b1 <- -0.204993
+mu_b2 <- -0.614078
+b3 <- 0.014371
+
+met_pred$log_y <- mu_b0 + mu_b1*met_pred$log_mass_ct + mu_b2*met_pred$temp_arr_ct + b3*met_pred$temp_arr_ct*met_pred$log_mass_ct
+
+# Exponentiate prediction - Note it's mass-specific
+met_pred$y_spec <- exp(met_pred$log_y)
+
+# To get it into a comparable scale as consumption, standardize to max
+met_pred <- met_pred %>% mutate(y_stand = y_spec/max(y_spec))
+
+# The common temperature column will be named Temperature
+met_pred$temperature <- met_pred$temp_c_ct
 
 
-# D. SIMULATE DATA FOR PLITTING ====================================================
-summary(df$log_mass_ct)
-summary(df$temp_norm_ct)
+#*** Consumption ===================================================================
+# This is what the model is fitted to:
+# data = list(
+#   y = con$y_ct, 
+#   n_obs = length(con$y_ct), 
+#   species_n = con$species_n,
+#   temp = con$temp_env_ct,
+#   temp_pred = temp_pred,
+#   mass = con$mass_g_ct)
 
-mass <- c(0, 0.5)
-temp <- seq(-10, 20, 0.1)
+# Find out which mass_g_c correpond to 10 and 100 g
+con$mass_g_ct <- con$mass_g - mean(con$mass_g)
 
-# What is 0.5 here?
-#filter(df, log_mass_ct, log_mass_ct > 0.4 & log_mass_ct < 0.6)
-ggplot(df, aes(log_mass_ct, mass_g)) + 
-  geom_line() +
-  coord_cartesian(xlim = c(0, 0.5)) +
-  NULL
+mass_g_ct <- c(10 - mean(con$mass_g),
+               100 - mean(con$mass_g))
 
-dat <- expand.grid(mass = mass,
-                   temp = temp)
+# Range in Celcius
+# Note that 0 in the non-linear model corresponds to the median environmental temperature,
+# so it's calculated by species. I cannot recreate that here in this data frame, because I
 
-# Because we use different body masses for fitting the model, the mean-centered mass differes in unit g. 
-# See code below for how I came up with these values corresponding to ~200 and ~400g
-dat$mass_meta <- 1.6
+# Use the ones in metabolism... But note it has a different interpretation here!
+# That's why i keep caliing it "temp_env_ct"  in the new data frame
+temp_c_ct <- seq(-20, 30, 0.1)
 
-dat$mass_meta <- ifelse(dat$mass == 0.5, 2.25, dat$mass_meta)
+# Create new prediction data frame
+con_pred <- data.frame(expand.grid(mass_g_ct = mass_g_ct,
+                                   temp_env_ct = temp_c_ct))
 
-dat$temp_arr <- 1/((dat$temp + 273.15) * 8.617332e-05)
+# Add which rate it is
+con_pred$rate <- "Maximum consumption"
 
-dat$cmax <- 0.82444 + 0.45867*dat$mass + 0.11493*dat$temp -0.00502*dat$temp*dat$temp
+# Add mass in grams
+con_pred$mass_g <- con_pred$mass_g_ct + mean(con$mass_g)
 
-dat$log_met <- 1.59 + 0.77*dat$mass_meta -0.61*dat$temp_arr + 0.017*dat$temp_arr*dat$mass_meta
+# Calculate response variable
+# Regression coefficients
+b1 <- -1.976e-03
+b2 <- 5.572e-02
+b3 <- -6.094e-05
+b4 <- -6.231e-05
+mu_b0 <- 7.552e-01
 
-dat$met <- exp(dat$log_met)
+con_pred$y_ct <- mu_b0 + 
+                 b1 * con_pred$mass_g_ct + 
+                 b2 * con_pred$temp_env_ct + 
+                 b3 * con_pred$temp_env_ct*con_pred$temp_env_ct + 
+                 b4 * con_pred$temp_env_ct*con_pred$temp_env_ct*con_pred$temp_env_ct
 
-dat$met_stand <- dat$met/max(dat$met)
-dat$cmax_stand <- dat$cmax/max(dat$cmax)
+# Divide by maximum 
+con_pred <- con_pred %>% mutate(y_stand = y_ct/max(y_ct))
 
-dat$diff <- dat$cmax_stand - dat$met_stand 
+# The common temperature column will be named Temperature
+con_pred$temperature <- con_pred$temp_env_ct
 
+#*** Plot ==========================================================================
+# Both response variables have been predicted for body masses 10 and 100 g
 
-# E. PLOT ==========================================================================
-dat2 <- dat %>% 
-  select(mass, temp, met_stand, cmax_stand, diff) %>% 
-  pivot_longer(cols = 3:5)
+# The temperature variable differ however. In the consumption data, the regression
+# coefficients correspond to temperature centered WITHIN species, by subtracting
+# the mean temperature in the environment. 0 is this the mean habitat temperature.
+# This is because the peak occurs at an optimum, and each species has been measured 
+# at a different distance from that optimum. 
+# For metabolism, the temperature is centered ACROSS species, such that 0 represents 
+# the mean temperature in the experiments.
 
-T_opt_s <- dat2 %>% 
+# The response variable in metabolism is the metabolic rate, here rescaled by 
+# dividing it with the maximum. Again, an ACROSS rescaling.
+# The consumption model is fitted to data dividied by mean within species (and then
+# divided by mas. So it's fitted to rescaled data WITHIN species.
+
+summary(con_pred$temperature)
+summary(met_pred$temperature)
+
+# Metabolism
+ggplot(met_pred, aes(temp_c_ct, y_stand, linetype = factor(mass_g))) + 
+  geom_line()
+
+ggplot(con_pred, aes(temp_env_ct, y_stand, linetype = factor(mass_g))) + 
+  geom_line()
+
+# Combine data
+met_pred_sub <- met_pred %>% select(y_stand, mass_g, temperature, rate) %>% arrange(temperature)
+con_pred_sub <- con_pred %>% select(y_stand, mass_g, temperature, rate) %>% arrange(temperature)
+
+diff <- con_pred_sub$y_stand - met_pred_sub$y_stand
+
+dat <- data.frame(mass = rep(met_pred_sub$mass_g, 3),
+                  temperature = rep(met_pred_sub$temperature, 3),
+                  rate = rep(c("metabolism", "consumption", "diff"), each = nrow(met_pred_sub)),
+                  y_stand = c(met_pred_sub$y_stand, con_pred_sub$y_stand, diff))
+
+# Find peak temperature
+peak <- dat %>% 
   group_by(mass) %>% 
-  filter(name == "diff") %>% 
-  filter(value == max(value))
+  filter(rate == "diff") %>% 
+  filter(y_stand == max(y_stand))
 
-dat2$name <- factor(dat2$name, levels = c("cmax_stand", "met_stand", "diff"))
-
+# Set palette
 pal <- RColorBrewer::brewer.pal("Dark2", n = 3)
 
-ggplot(dat2, aes(temp, value, color = factor(name), linetype = factor(mass), alpha = factor(name))) +
-  geom_line(size = 1) +
-  coord_cartesian(ylim = c(0, 1.1),
-                  xlim = c(-5, 20), 
-                  expand = 0) + 
-  theme_classic(base_size = 14) + 
-  scale_color_manual(values = c(pal[1], pal[3], pal[2]),
-                     labels = c("Consumption", "Metabolism", "Consumption-Metabolism")) +
-  scale_linetype_manual(values = c(1, 2), 
-                        labels = c("Small", "Large")) +
-  scale_alpha_manual(values = c(0.75, 0.75, 1)) +
-  labs(x = expression(paste("Rescaled temperature [", degree*C, "]")),
-       y = "Rescaled rates",
-       color = "Rate",
-       linetype = "Rescaled mass") +
-  geom_segment(data = T_opt_s, aes(x = temp, xend = temp, y = c(T_opt_s$value[1], T_opt_s$value[2]), yend = 0),
-               size = 1, arrow = arrow(length = unit(0.35, "cm")), show.legend = FALSE) +
-  guides(alpha = FALSE,
-         linetype = guide_legend(override.aes = list(size = 0.5))) +
-  theme(aspect.ratio = 3/4,
-        #legend.text = element_text(size = 8),
-        legend.title = element_text(size = 12)) +
-  NULL
-
-#ggsave("figures/concept.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm", dpi = 300)
-
-
-# Version where I scaled within body mass. It looks strange that the small fish have a higher net differennce, I think it's beacuse of the rescaling.
-# Which sizes to use?
-ggplot(df, aes(log_mass_ct, mass_g)) + 
-  geom_line() +
-  coord_cartesian(xlim = c(-2, 5)) +
-  NULL
-
-# Ill use -1 and 1 for growth, corresponding roughly to 100 and 500 g
-
-# what about metabolism?
-met <- read.csv("data/met_analysis.csv")
-
-ggplot(met, aes(log_mass_ct, mass_g)) + 
-  geom_line() +
-  coord_cartesian(xlim = c(0.3, 3.25),
-                  ylim = c(100, 500)) +
-  NULL
-
-# For metabolism I'll use 1 and 2.5
-
-mass <- c(-1, 1)
-temp <- seq(-10, 20, 0.1)
-
-dat <- expand.grid(mass = mass,
-                   temp = temp)
-
-
-# Because we use different body masses for fitting the model, the mean-centered mass differes in unit g. 
-# See meta_model_validation for how I came up with these values corresponding to ~200 and ~400g
-dat$mass_meta <- 1
-
-dat$mass_meta <- ifelse(dat$mass == 1, 2.5, dat$mass_meta)
-
-dat$temp_arr <- 1/((dat$temp + 273.15) * 8.617332e-05)
-
-dat$cmax <- 0.82444 + 0.45867*dat$mass + 0.11493*dat$temp -0.00502*dat$temp*dat$temp
-
-dat$log_met <- 1.59 + 0.77*dat$mass_meta -0.61*dat$temp_arr + 0.017*dat$temp_arr*dat$mass_meta
-
-dat$met <- exp(dat$log_met)
-
-# Standardize within size-group
-dat <- dat %>% 
-  group_by(factor(mass)) %>% 
-  mutate(met_stand = met/max(met),
-         cmax_stand = cmax/max(cmax),
-         diff = cmax_stand - met_stand) %>% 
-  ungroup()
-
-dat2 <- dat %>% 
-  select(mass, temp, met_stand, cmax_stand, diff) %>% 
-  pivot_longer(cols = 3:5)
-
-T_opt_s <- dat2 %>% 
-  group_by(mass) %>% 
-  filter(name == "diff") %>% 
-  filter(value == max(value))
-
-dat2$name <- factor(dat2$name, levels = c("cmax_stand", "met_stand", "diff"))
-
-ggplot(dat2, aes(temp, value, color = factor(name), linetype = factor(mass), alpha = factor(name))) +
+# Now plot all 6 curves
+p1 <- ggplot(dat, aes(temperature, y_stand, color = factor(rate), linetype = factor(mass))) +
   geom_line(size = 1.2) +
   coord_cartesian(ylim = c(0, 1.1),
                   xlim = c(-5, 20), 
                   expand = 0) + 
-  theme_classic(base_size = 18) + 
   scale_color_manual(values = c(pal[1], pal[3], pal[2]),
-                     labels = c("Consumption", "Metabolism", "Consumption-Metabolism")) +
+                     labels = c("Consumption", "Consumption-Metabolism", "Metabolism")) +
   scale_linetype_manual(values = c(1, 2), 
-                        labels = c("100g", "500g")) +
+                        labels = c("10g", "100g")) +
   scale_alpha_manual(values = c(0.75, 0.75, 1)) +
   labs(x = expression(paste("Rescaled temperature [", degree*C, "]")),
        y = "Rescaled rates",
        color = "Rate",
        linetype = "Mass") +
-  geom_segment(data = T_opt_s, aes(x = temp, xend = temp, y = c(T_opt_s$value[1], T_opt_s$value[2]), yend = 0),
+  geom_segment(data = peak, aes(x = temperature, xend = temperature, y = c(peak$y_stand[1], peak$y_stand[2]), yend = 0),
                size = 1, arrow = arrow(length = unit(0.35, "cm")), show.legend = FALSE) +
-  guides(alpha = FALSE,
-         linetype = guide_legend(override.aes = list(size = 0.5))) +
-  theme(aspect.ratio = 3/4,
-        legend.position = "bottom", 
-        legend.direction="vertical",
-        #legend.text = element_text(size = 8),
-        legend.title = element_text(size = 12)) +
   NULL
 
-#ggsave("figures/concept_stand.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm", dpi = 300)
-
-###### FOR VIVA PRESENTATION
-ggplot(dat2, aes(temp, value, color = factor(name), linetype = factor(mass), alpha = factor(name))) +
-  geom_line(size = 1.2) +
-  coord_cartesian(ylim = c(0, 1.1),
-                  xlim = c(-5, 20), 
-                  expand = 0) + 
-  theme_classic(base_size = 18) + 
-  scale_color_manual(values = c(pal[1], pal[3], pal[2]),
-                     labels = c("Consumption", "Metabolism", "Consumption-Metabolism")) +
-  scale_linetype_manual(values = c(1, 2), 
-                        labels = c("100g", "500g")) +
-  scale_alpha_manual(
-    values = c(0.75, 0.75, 1)
-    #values = c(0.75, 0.2, 0.2)
-    #values = c(0.2, 0.75, 0.2)
-    #values = c(0.3, 0.3, 1)
-    ) +
-  labs(x = expression(paste("Rescaled temperature [", degree*C, "]")),
-       y = "Rescaled rates",
-       color = "Rate",
-       linetype = "Mass") +
-  geom_segment(data = T_opt_s, aes(x = temp, xend = temp, y = c(T_opt_s$value[1], T_opt_s$value[2]), yend = 0),
-               size = 1, arrow = arrow(length = unit(0.35, "cm")), show.legend = FALSE) +
-  guides(alpha = FALSE,
-         linetype = guide_legend(override.aes = list(size = 0.5))) +
-  theme(aspect.ratio = 3/4,
-        legend.position = "bottom", 
-        legend.direction="vertical",
-        #legend.text = element_text(size = 8),
-        legend.title = element_text(size = 12)) +
-  NULL
-
-#ggsave("figures/concept_stand_NET.pdf", plot = last_plot(), scale = 1, width = 20, height = 20, units = "cm", dpi = 300)
+pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 12),
+                                       aspect.ratio = 1,
+                                       legend.title = element_text(size = 10))
+ggsave("figures/concept.png", width = 6.5, height = 6.5, dpi = 600)

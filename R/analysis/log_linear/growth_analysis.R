@@ -188,12 +188,11 @@ p2 <- cs_df %>%
   scale_color_brewer(palette = "Dark2") + 
   labs(x = "Iteration", y = "Value", color = "Chain #") +
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  theme(axis.text.x = element_text(size = 6)) +
   NULL
 pWord2 <- p2 + theme_classic() + theme(text = element_text(size = 10),
                                        axis.text = element_text(size = 5))
 pWord1 + pWord2
-ggsave("figures/supp/log_linear_model/growth/validation_gro_intercepts.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/growth/validation_gro_intercepts.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Species mass-effects =========================================================
@@ -223,12 +222,11 @@ p4 <- cs_df %>%
   scale_color_brewer(palette = "Dark2") + 
   labs(x = "Iteration", y = "Value", color = "Chain #") +
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  theme(axis.text.x = element_text(size = 6)) +
   NULL
 pWord4 <- p4 + theme_classic() + theme(text = element_text(size = 10),
                                        axis.text = element_text(size = 5))
 pWord3 + pWord4
-ggsave("figures/supp/log_linear_model/growth/validation_gro_mass.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/growth/validation_gro_mass.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Species temperature-effects ==================================================
@@ -257,12 +255,11 @@ p6 <- cs_df %>%
   scale_color_brewer(palette = "Dark2") + 
   labs(x = "Iteration", y = "Value", color = "Chain #") +
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  theme(axis.text.x = element_text(size = 6)) +
   NULL
 pWord6 <- p6 + theme_classic() + theme(text = element_text(size = 10),
                                        axis.text = element_text(size = 5))
 pWord5 + pWord6
-ggsave("figures/supp/log_linear_model/growth/validation_gro_temp.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/growth/validation_gro_temp.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Group-level means ============================================================
@@ -291,12 +288,11 @@ p8 <- cs_df %>%
   scale_color_brewer(palette = "Dark2") + 
   labs(x = "Iteration", y = "Value", color = "Chain #") +
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  theme(axis.text.x = element_text(size = 6)) +
   NULL
 pWord8 <- p8 + theme_classic() + theme(text = element_text(size = 10),
                                        axis.text = element_text(size = 5))
 pWord7 + pWord8
-ggsave("figures/supp/log_linear_model/growth/validation_gro.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/growth/validation_gro.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Chain convergencve (Rhat) ====================================================
@@ -305,11 +301,10 @@ p9 <- cs_df %>%
   xlab("R_hat") +
   xlim(0.999, 1.003) +
   geom_point(size = 2) +
-  theme(aspect.ratio = 1)+
   NULL
 pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 10),
                                        axis.text = element_text(size = 5))
-ggsave("figures/supp/log_linear_model/growth/validation_rhat_gro.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/growth/validation_rhat_gro.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Prior vs posterior ===========================================================
@@ -339,7 +334,7 @@ mu_b3 <- rnorm(25000, 0, sqrt(1/tau))
 PR <- as.matrix(cbind(mu_b0, mu_b1, mu_b2, mu_b3))
 
 # This is not a ggplot...
-png(file = "/Users/maxlindmark/Desktop/R_STUDIO_PROJECTS/scaling/figures/supp/log_linear_model/growth/validation_prior_post_growth.png", 
+png(file = "/Users/maxlindmark/Desktop/R_STUDIO_PROJECTS/scaling/figures/supp/log_linear/growth/validation_prior_post_growth.png", 
     units = "px", width = 1800, height = 1800, res = 300)
 
 MCMCtrace(cs,
@@ -402,7 +397,7 @@ p11 <- ggplot(cs_fit_df, aes(cv_y_sim)) +
 
 pWord11 <- p11 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
 pWord10 + pWord11
-ggsave("figures/supp/log_linear_model/growth/fit_gro_mean_cv.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/growth/fit_gro_mean_cv.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 # F. PLOT PREDICTIONS ==============================================================

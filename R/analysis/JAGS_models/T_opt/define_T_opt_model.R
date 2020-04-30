@@ -52,10 +52,6 @@ cat(
   mean_y_sim <- mean(y_sim[])
   p_mean <- step(mean_y_sim - mean_y) # Proportion of data above and below 
   
-  cv_y <- sd(y[])/mean(y[])
-  cv_y_sim <- sd(y_sim[])/max(-1E11, mean(y_sim[])) # Not to divide by 0
-  p_cv <- step(cv_y_sim - cv_y)
-
   #-- Priors	
   mu_b0 ~ dnorm(0, 0.04)    
   mu_b1 ~ dnorm(0, 0.04)    
@@ -106,10 +102,6 @@ cat(
   mean_y_sim <- mean(y_sim[])
   p_mean <- step(mean_y_sim - mean_y) # Proportion of data above and below 
   
-  cv_y <- sd(y[])/mean(y[])
-  cv_y_sim <- sd(y_sim[])/max(-1E11, mean(y_sim[])) # Not to divide by 0
-  p_cv <- step(cv_y_sim - cv_y)
-
   #-- Priors	
   mu_b0 ~ dnorm(0, 0.04)    
   b1 ~ dnorm(0, 0.04)       

@@ -248,7 +248,6 @@ p2 <- cs_df %>%
   scale_color_brewer(palette = "Dark2") + 
   labs(x = "Iteration", y = "Value", color = "Chain #") +
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  theme(axis.text.x = element_text(size = 6)) +
   NULL
 pWord2 <- p2 + theme_classic() + theme(text = element_text(size = 10),
                                        axis.text = element_text(size = 5))
@@ -282,7 +281,6 @@ p4 <- cs_df %>%
   scale_color_brewer(palette = "Dark2") + 
   labs(x = "Iteration", y = "Value", color = "Chain #") +
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  theme(axis.text.x = element_text(size = 6)) +
   NULL
 pWord4 <- p4 + theme_classic() + theme(text = element_text(size = 10),
                                        axis.text = element_text(size = 5))
@@ -296,7 +294,6 @@ p5 <- cs_df %>%
   xlab("R_hat") +
   xlim(0.999, 1.002) +
   geom_point(size = 2) +
-  theme(aspect.ratio = 1)+
   NULL
 pWord5 <- p5 + theme_classic() + theme(text = element_text(size = 10),
                                        axis.text = element_text(size = 5))
@@ -307,10 +304,10 @@ ggsave("figures/supp/T_opt/validation_rhat_topt.png", width = 6.5, height = 6.5,
 # https://cran.r-project.org/web/packages/MCMCvis/vignettes/MCMCvis.html
 
 # Priors from JAGS
-# mu_b0 ~ dnorm(0, 0.04)   # mean of all species intercept
-# mu_b1 ~ dnorm(-0.25, 1)  # mean of all species mass-exponent
-# mu_b2 ~ dnorm(-0.6, 1)   # mean of all species temperature coefficient
-# mu_b3 ~ dnorm(0, 1)      # mean of all species interaction
+# mu_b0 ~ dnorm(0, 0.04)    
+# b1 ~ dnorm(0, 0.04)       
+# sigma ~ dunif(0, 10) 
+# sigma_b0 ~ dunif(0, 10)
 
 # Remember: distributions in JAGS have arguments mean and precision (inverse of variance)
 # tau = 1/variance
@@ -350,10 +347,7 @@ dev.off()
 cs_fit = coda.samples(jm2,
                       variable.names = c("mean_y",
                                          "mean_y_sim", 
-                                         "p_mean",
-                                         "cv_y",
-                                         "cv_y_sim",
-                                         "p_cv"), 
+                                         "p_mean"), 
                       n.iter = n.iter, 
                       thin = thin)
 
@@ -364,7 +358,7 @@ cs_fit_df <- data.frame(as.matrix(cs_fit))
 # General formula for number of bins..
 n_bins <- round(1 + 3.2*log(nrow(cs_fit_df)))
 
-# Growth
+# Optimum temperature fits
 p6 <- ggplot(cs_fit_df, aes(mean_y_sim)) + 
   geom_histogram(bins = n_bins) +
   geom_vline(xintercept = cs_fit_df$mean_y, color = "white", 
@@ -414,9 +408,7 @@ p7 <- ggplot(pred_df, aes(mass, median)) +
               size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
   geom_line(size = 1, alpha = 1, col = "black") +
   geom_point(data = dat, aes(log_mass_norm_mat, opt_temp_c_ct, fill = species, size = mass_g),
-             shape = 21, 
-             alpha = 0.8, 
-             color = "white") +
+             shape = 21, alpha = 0.8, color = "white") +
   scale_fill_manual(values = pal) +
   scale_size(range = c(2, 8), breaks = c(0, 1, 10, 100, 1000)) +
   guides(fill = FALSE,
