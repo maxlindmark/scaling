@@ -476,7 +476,8 @@ p7 <- ggplot(pred_df, aes(temp_pred, median)) +
                                                  color = "black"))) +
   labs(x = "Rescaled temperature",
        y = "ln(rescaled consumptium rate)",
-       fill = "Species") +
+       fill = "Species",
+       linetype = "Size (g)") +
   NULL
 
 pWord7 <- p7 + theme_classic() + theme(text = element_text(size = 12),
@@ -484,5 +485,4 @@ pWord7 <- p7 + theme_classic() + theme(text = element_text(size = 12),
                                        legend.position = "bottom", 
                                        legend.title = element_text(size = 10))
 ggsave("figures/supp/non_linear/non_linear_con.png", width = 6.5, height = 6.5, dpi = 600)
-
 
