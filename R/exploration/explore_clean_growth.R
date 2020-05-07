@@ -240,7 +240,7 @@ ggsave("figures/supp/data/species_plots/growth/growth.png", width = 6.5, height 
 dat$sample_size <- paste("n=", nrow(dat), sep = "")
 
 # As a function of temperature
-p8 <- dat %>% filter(y > 0) %>% 
+p9 <- dat %>% filter(y > 0) %>% 
   ggplot(., aes(x = temp_arr, y = y, fill = log10(mass_g))) + 
   geom_point(size = 3, alpha = 0.8, color = "white", shape = 21) +
   theme_classic(base_size = 11) +
@@ -251,10 +251,10 @@ p8 <- dat %>% filter(y > 0) %>%
   geom_text(aes(x = Inf, y = Inf, label = sample_size, hjust = 1.05, vjust = 1.5), 
             color = "black") + 
   NULL
-pWord8 <- p8 + theme_classic() + theme(text = element_text(size = 12))
+pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 12))
 
 # As a function of mass
-p9 <- dat %>% filter(y > 0) %>% 
+p10 <- dat %>% filter(y > 0) %>% 
   ggplot(., aes(x = mass_g, y = y, fill = temp_arr)) + 
   geom_point(size = 3, alpha = 0.8, color = "white", shape = 21) +
   theme_classic(base_size = 11) +
@@ -266,8 +266,8 @@ p9 <- dat %>% filter(y > 0) %>%
   geom_text(aes(x = Inf, y = Inf, label = sample_size, hjust = 1.05, vjust = 1.5), 
             color = "black") +
   NULL
-pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 12))
-pWord8 / pWord9
+pWord10 <- p10 + theme_classic() + theme(text = element_text(size = 12))
+pWord9 / pWord10
 ggsave("figures/supp/data/growth_rate_temp_mass.png", width = 6.5, height = 6.5, dpi = 600)
 
 
@@ -275,5 +275,5 @@ ggsave("figures/supp/data/growth_rate_temp_mass.png", width = 6.5, height = 6.5,
 glimpse(dat)
 dat %>%
   select(y, `growth_rate_%/day`, geom_mean_mass_g, size_group, mass_g, log_mass, mass_norm, log_mass_norm, 
-         temp_c, temp_arr, median_temp, above_optimum, common_name, species, species_ab, env_temp_min, env_temp_max) %>%
+         temp_c, temp_arr, median_temp, above_peak_temp, common_name, species, species_ab, env_temp_min, env_temp_max) %>%
   write_csv(., "data/growth_analysis.csv", ";")

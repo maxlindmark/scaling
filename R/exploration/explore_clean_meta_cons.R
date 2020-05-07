@@ -233,20 +233,20 @@ ggsave("figures/supp/data/meta_cons_lifestyle.png", width = 6.5, height = 6.5, d
 # Consumption
 dat %>% filter(rate == "consumption") %>% 
   ggplot(., aes(temp_c, y)) + 
-  geom_point(size = 3, alpha = 0.3) +
+  geom_point(size = 2, alpha = 0.3) +
   facet_wrap(~species, scales = "free") +
   theme_classic(base_size = 11) +
-  stat_smooth(se = F) +
+  #stat_smooth(se = F) +
   guides(color = F) +
   NULL
 
 # Metabolism
 dat %>% filter(rate == "metabolism") %>% 
   ggplot(., aes(temp_c, y)) + 
-  geom_point(size = 3, alpha = 0.3) +
+  geom_point(size = 2, alpha = 0.3) +
   facet_wrap(~species, scales = "free") +
   theme_classic(base_size = 11) +
-  stat_smooth(se = F) +
+#  stat_smooth(se = F) +
   guides(color = F) +
   NULL
 
@@ -294,6 +294,27 @@ p9 <- ggplot(dat, aes(x = mass_g, y = y_spec, fill = temp_arr)) +
   NULL
 pWord <- p9 + theme_classic() + theme(text = element_text(size = 12))
 ggsave("figures/supp/data/meta_cons_rate_mass.png", width = 6.5, height = 6.5, dpi = 600)
+
+
+# As functions of mass - color by species
+dat %>% filter(rate == "consumption" 
+               #& mass_g < 3
+               & above_peak_temp == "N"
+               ) %>% 
+  ggplot(., aes(x = mass_g, y = y_spec, fill = species)) + 
+  geom_point(size = 2, alpha = 1, color = "white", shape = 21) +
+  facet_wrap(~rate2, scales = "free", nrow = 2) +
+  theme_classic(base_size = 11) +
+  labs(y = "mass-specific rate",
+       x = "mass [g]") +
+  scale_fill_viridis(#option = "magma", 
+                     name = "Arrhenius\ntemperature\n[1/kT]", discrete = TRUE) +
+  scale_y_log10() +
+  scale_x_log10() +
+  geom_text(aes(x = Inf, y = Inf, label = sample_size, hjust = 1.05, vjust = 1.5), 
+            color = "black") + 
+  NULL
+
 
 
 #** Loop through species and save plots ==========================================================
@@ -353,14 +374,14 @@ for(i in unique(s_datm$common_name)) {
 glimpse(s_datm)
 s_datm %>%
  select(y, mass_g, log_mass, mass_norm, log_mass_norm, temp_c, temp_arr, median_temp, 
-        above_optimum, common_name, species, species_ab, unit, type) %>%
+        above_peak_temp, common_name, species, species_ab, unit, type) %>%
 write_csv(., "data/met_analysis.csv", ";")
 
 
 glimpse(s_datc) 
 s_datc %>%
   select(y, mass_g, log_mass, mass_norm, log_mass_norm, temp_c, temp_arr, median_temp, 
-         above_optimum, common_name, species, species_ab, unit, type) %>%
+         above_peak_temp, common_name, species, species_ab, unit, type) %>%
 write_csv(., "data/con_analysis.csv", ";")
 
 
