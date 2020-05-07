@@ -52,8 +52,8 @@ con <-
   read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/con_analysis.csv"))
 
 # Filter data points at below optimum temperatures
-met <- met %>% filter(above_optimum == "N")
-con <- con %>% filter(above_optimum == "N")
+met <- met %>% filter(above_peak_temp == "N")
+con <- con %>% filter(above_peak_temp == "N")
 
 # Rename species factor for JAGS (must be numbered 1:n)
 met$species_n <- as.numeric(as.factor(met$species_ab))

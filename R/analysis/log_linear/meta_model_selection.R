@@ -40,7 +40,7 @@ dat <-
 str(dat)
 
 # Filter data points at below optimum temperatures
-dat <- dat %>% filter(above_optimum == "N")
+dat <- dat %>% filter(above_peak_temp == "N")
 
 # Rename species factor for JAGS (must be numbered 1:n)
 str(dat)
@@ -672,24 +672,24 @@ waic_m7
 # WAIC suggests model 2, closely followed by model 1
 
 # WAIC
-#   > waic_m1
-# [1] 301.9007
+# > waic_m1
+# [1] 271.8839
 # > waic_m2
-# [1] 301.8823
+# [1] 271.3093
 # > waic_m3a
-# [1] 594.714
+# [1] 577.3281
 # > waic_m3b
-# [1] 669.1251
+# [1] 659.88
 # > waic_m4
-# [1] 922.8293
+# [1] 923.6273
 # > waic_m5
-# [1] 307.6701
+# [1] 277.645
 # > waic_m6a
-# [1] 633.1002
+# [1] 619.0858
 # > waic_m6b
-# [1] 670.3108
+# [1] 661.8143
 # > waic_m7
-# [1] 953.6218
+# [1] 955.9337
 
 # Calculate delta WAIC
 waic_m1 - waic_m2

@@ -49,7 +49,7 @@ dat <-
 str(dat)
 
 # Filter data points at below optimum temperatures
-dat <- dat %>% filter(above_optimum == "N")
+dat <- dat %>% filter(above_peak_temp == "N")
 
 # Rename species factor for JAGS (must be numbered 1:n)
 str(dat)
