@@ -44,7 +44,7 @@ con <-
   read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/con_analysis.csv"))
 
 # Which species have data above optimum?
-spec <- unique(filter(con, above_optimum == "Y"))$species
+spec <- unique(filter(con, above_peak_temp == "Y"))$species
 
 con <- con %>% filter(species %in% spec) %>% droplevels()
 
@@ -95,6 +95,7 @@ data = list(
   mass_pred_s = mass_pred_s,
   mass_pred_l = mass_pred_l)
 
+#length(unique(con$species))
 
 # C. MODEL SELECTION ===============================================================
 # Some settings:
@@ -120,8 +121,8 @@ inits = list(
   list(
     mu_b0 = 1,
     b1 = 1,
-    b2 = 2,
-    b3 = 0.1,
+    b2 = 1,
+    b3 = 1,
     sigma = 1,
     sigma_b0 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
@@ -130,7 +131,7 @@ inits = list(
     mu_b0 = 0.001,
     b1 = 0.001,
     b2 = 0.001,
-    b3 = 0.1,
+    b3 = 0.001,
     sigma = 0.001,
     sigma_b0 = 0.001,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
@@ -180,9 +181,9 @@ inits = list(
   list(
     mu_b0 = 1,
     b1 = 1,
-    b2 = 2,
-    b3 = 2,
-    b4 = 0.1,
+    b2 = 1,
+    b3 = 1,
+    b4 = 1,
     sigma = 1,
     sigma_b0 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
@@ -192,7 +193,7 @@ inits = list(
     b1 = 0.001,
     b2 = 0.001,
     b3 = 0.001,
-    b4 = 0.1,
+    b4 = 0.001,
     sigma = 0.001,
     sigma_b0 = 0.001,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
@@ -228,11 +229,12 @@ waic_m2 <- lppd2 + 2*pd.WAIC2
 waic_m1
 waic_m2
 
-# > waic_m1
-# [1] 577.529
-# > waic_m2
-# [1] 570.9192
+waic_m1 - waic_m2
 
+# > waic_m1
+# [1] 719.6066
+# > waic_m2
+# [1] 718.3259
 
 # D. MODEL VALIDATION ==============================================================
 # CODA - Nice for getting the raw posteriors
@@ -246,12 +248,11 @@ cs <- coda.samples(jm2,
 #summary(cs)
 #           Mean        
 #...
-# b1       -1.976e-03
-# b2        5.572e-02
-# b3       -6.094e-05
-# b4       -6.231e-05
-# mu_b0     7.552e-01
-
+# b1       -0.00190553
+# b2        0.04812750
+# b3       -0.00022713
+# b4       -0.00003802
+# mu_b0     0.83201273
 
 #** Evaluate convergence ===========================================================
 # Convert to ggplottable data frame

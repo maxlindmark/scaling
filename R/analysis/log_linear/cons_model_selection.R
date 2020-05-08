@@ -232,6 +232,13 @@ pd.WAIC2 <- sum((summary(zj2$log_pd, sd)$stat)^2) # Penalty
 waic_m2 <- lppd2 + 2*pd.WAIC2
 
 
+# test <- coda.samples(jm2,
+#                      variable.names = c("b3"), 
+#                      n.iter = n.iter, 
+#                      thin = thin)
+# 
+# summary(test)
+
 #**** M3a ==========================================================================
 # M3a - intercept and mass vary by species
 

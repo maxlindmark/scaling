@@ -51,6 +51,14 @@ met <-
 con <- 
   read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/con_analysis.csv"))
 
+# Count data
+length(unique(met$common_name))
+length(unique(con$common_name))
+nrow(met)
+nrow(con)
+mean(met$temp_c)
+mean(con$temp_c)
+
 # Filter data points at below optimum temperatures
 met <- met %>% filter(above_peak_temp == "N")
 con <- con %>% filter(above_peak_temp == "N")
@@ -223,10 +231,10 @@ cs_met <- coda.samples(jm_met,
 # summary(cs_met)
 #           Mean    
 # ...
-# b3        0.014371
-# mu_b0    -2.172633
-# mu_b1    -0.204993
-# mu_b2    -0.614078
+# b3        0.0139866
+# mu_b0    -2.1669819
+# mu_b1    -0.2042507
+# mu_b2    -0.6121238
 
 
 # Convert to ggplottable data frame
@@ -551,6 +559,11 @@ cs_con <- coda.samples(jm_con,
                    n.iter = n.iter, 
                    thin = thin)
 
+# summary(cs_con)
+# mu_b0    -2.9634
+# mu_b1    -0.3722
+# mu_b2    -0.6937
+
 # Convert to ggplottable data frame
 cs_con_df <- ggs(cs_con)
 
@@ -561,7 +574,7 @@ unique(cs_con_df$Parameter)
 p1 <- cs_con_df %>% 
   filter(Parameter %in% c("b0[1]", "b0[2]", "b0[3]", "b0[4]", "b0[5]", "b0[6]", "b0[7]", 
                           "b0[8]", "b0[9]", "b0[10]", "b0[11]", "b0[12]", "b0[13]",
-                          "b0[14]", "b0[15]", "b0[16]", "b0[17]", "b0[18]", "b0[19]")) %>% 
+                          "b0[14]", "b0[15]", "b0[16]", "b0[17]", "b0[18]", "b0[19]", "b0[20]")) %>% 
   ggs_density(.) + 
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_density(alpha = 0.05) +
@@ -577,7 +590,7 @@ pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 8),
 p2 <- cs_con_df %>% 
   filter(Parameter %in% c("b0[1]", "b0[2]", "b0[3]", "b0[4]", "b0[5]", "b0[6]", "b0[7]", 
                           "b0[8]", "b0[9]", "b0[10]", "b0[11]", "b0[12]", "b0[13]",
-                          "b0[14]", "b0[15]", "b0[16]", "b0[17]", "b0[18]", "b0[19]")) %>% 
+                          "b0[14]", "b0[15]", "b0[16]", "b0[17]", "b0[18]", "b0[19]", "b0[20]")) %>% 
   ggs_traceplot(.) +
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_line(alpha = 0.3) +
@@ -596,7 +609,7 @@ ggsave("figures/supp/log_linear/met_con/validation_con_intercepts.png", width = 
 p3 <- cs_con_df %>% 
   filter(Parameter %in% c("b1[1]", "b1[2]", "b1[3]", "b1[4]", "b1[5]", "b1[6]", "b1[7]", 
                           "b1[8]", "b1[9]", "b1[10]", "b1[11]", "b1[12]", "b1[13]",
-                          "b1[14]", "b1[15]", "b1[16]", "b1[17]", "b1[18]", "b1[19]")) %>% 
+                          "b1[14]", "b1[15]", "b1[16]", "b1[17]", "b1[18]", "b1[19]", "b0[20]")) %>% 
   ggs_density(.) + 
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_density(alpha = 0.05) +
@@ -613,7 +626,7 @@ pWord3 <- p3 + theme_classic() + theme(text = element_text(size = 8),
 p4 <- cs_con_df %>% 
   filter(Parameter %in% c("b1[1]", "b1[2]", "b1[3]", "b1[4]", "b1[5]", "b1[6]", "b1[7]", 
                           "b1[8]", "b1[9]", "b1[10]", "b1[11]", "b1[12]", "b1[13]",
-                          "b1[14]", "b1[15]", "b1[16]", "b1[17]", "b1[18]", "b1[19]")) %>% 
+                          "b1[14]", "b1[15]", "b1[16]", "b1[17]", "b1[18]", "b1[19]", "b0[20]")) %>% 
   ggs_traceplot(.) +
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_line(alpha = 0.3) +
@@ -632,7 +645,7 @@ ggsave("figures/supp/log_linear/met_con/validation_con_mass.png", width = 6.5, h
 p5 <- cs_con_df %>% 
   filter(Parameter %in% c("b2[1]", "b2[2]", "b2[3]", "b2[4]", "b2[5]", "b2[6]", "b2[7]", 
                           "b2[8]", "b2[9]", "b2[10]", "b2[11]", "b2[12]", "b2[13]",
-                          "b2[14]", "b2[15]", "b2[16]", "b2[17]", "b2[18]", "b2[19]")) %>% 
+                          "b2[14]", "b2[15]", "b2[16]", "b2[17]", "b2[18]", "b2[19]", "b0[20]")) %>% 
   ggs_density(.) + 
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_density(alpha = 0.05) +
@@ -648,7 +661,7 @@ pWord5 <- p5 + theme_classic() + theme(text = element_text(size = 8),
 p6 <- cs_con_df %>% 
   filter(Parameter %in% c("b2[1]", "b2[2]", "b2[3]", "b2[4]", "b2[5]", "b2[6]", "b2[7]", 
                           "b2[8]", "b2[9]", "b2[10]", "b2[11]", "b2[12]", "b2[13]",
-                          "b2[14]", "b2[15]", "b2[16]", "b2[17]", "b2[18]", "b2[19]")) %>% 
+                          "b2[14]", "b2[15]", "b2[16]", "b2[17]", "b2[18]", "b2[19]", "b0[20]")) %>% 
   ggs_traceplot(.) +
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_line(alpha = 0.3) +
@@ -847,6 +860,9 @@ ggsave("figures/supp/log_linear/met_con/fit_con_met_mean_cv.png", width = 6.5, h
 #** Fits and data ==================================================================
 # jags.samples - Nice for summaries and predictions
 # Extract the prediction at each x including credible interaval
+# For nice labels and ln-axis:
+# https://stackoverflow.com/questions/14255533/pretty-ticks-for-log-normal-scale-using-ggplot2-dynamic-not-manual
+
 # Metabolism
 js_met = jags.samples(jm_met, 
                       variable.names = "pred", 
@@ -1211,15 +1227,15 @@ ggsave("figures/supp/log_linear/met_con/posterior_main_param.png", width = 6.5, 
 
 # G. ADDITINAL CALCULATIONS ON THE POSTERIOR =======================================
 # Calculate the proportion of the posterior of activation energy that is less than zero
-# js = jags.samples(jm_met, 
-#                   variable.names = c("mu_b2", "b3"), 
-#                   n.iter = n.iter, 
-#                   thin = thin)
+js = jags.samples(jm_met,
+                  variable.names = c("mu_b1", "mu_b2", "b3"),
+                  n.iter = n.iter,
+                  thin = thin)
 
-#ecdf(js$mu_b2)(-0.65) 
+ecdf(js$mu_b1)(-0.25) 
 # [1] 0.8321111
 
-#ecdf(js$b3)(0) # how much is below?
+1-ecdf(js$b3)(0) # how much is below?
 
 # How much does the mass exponent decline per change in unit T?
 #summary(cs)
@@ -1232,6 +1248,32 @@ ggsave("figures/supp/log_linear/met_con/posterior_main_param.png", width = 6.5, 
 
 # Now fit the same exponents to C
 #summary(lm(b_a ~ temp_norm, data = dat))
+
+
+
+# Calculate the proportion of the posterior of activation energy that is less than zero
+js = jags.samples(jm_con,
+                  variable.names = c("mu_b1", "mu_b2"),
+                  n.iter = n.iter,
+                  thin = thin)
+
+ecdf(js$mu_b1)(-0.25) 
+# [1] 0.8321111
+
+#ecdf(js$b3)(0) # how much is below?
+
+# How much does the mass exponent decline per change in unit C?
+#summary(cs)
+
+dat <- data.frame(temp = seq(0, 20, 1))
+dat$temp_arr <- 1/((dat$temp + 273.15) * 8.617332e-05)
+
+# Coefficient is 0.014. It means per unit Arrhenius temp, the exponent declines with 0.014
+dat$b_a <- 0.75 + (0.014 * dat$temp_arr)
+summary(lm(b_a ~ temp_arr, data = dat))
+
+# Now fit the same exponents to C
+summary(lm(b_a ~ temp, data = dat))
 
 
 

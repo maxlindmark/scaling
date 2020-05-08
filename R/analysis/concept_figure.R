@@ -92,11 +92,11 @@ met_pred$log_mass <- met_pred$log_mass_ct + mean(met$log_mass)
 met_pred$mass_g <- exp(met_pred$log_mass)
 
 # Calculate log metabolic rate
-# Regression coefficients
-mu_b0 <- -2.172633
-mu_b1 <- -0.204993
-mu_b2 <- -0.614078
-b3 <- 0.014371
+# Regression coefficients: see meta_cons_analysis.R
+b3 <- 0.0139866
+mu_b0<- -2.1669819
+mu_b1 <- -0.2042507
+mu_b2 <- -0.6121238
 
 met_pred$log_y <- mu_b0 + mu_b1*met_pred$log_mass_ct + mu_b2*met_pred$temp_arr_ct + b3*met_pred$temp_arr_ct*met_pred$log_mass_ct
 
@@ -146,11 +146,11 @@ con_pred$mass_g <- con_pred$mass_g_ct + mean(con$mass_g)
 
 # Calculate response variable
 # Regression coefficients
-b1 <- -1.976e-03
-b2 <- 5.572e-02
-b3 <- -6.094e-05
-b4 <- -6.231e-05
-mu_b0 <- 7.552e-01
+b1 <- -0.00190553
+b2 <- 0.04812750
+b3 <- -0.00022713
+b4 <- -0.00003802
+mu_b0 <- 0.83201273
 
 con_pred$y_ct <- mu_b0 + 
                  b1 * con_pred$mass_g_ct + 
@@ -227,6 +227,7 @@ p1 <- ggplot(dat, aes(temperature, y_stand, color = factor(rate), linetype = fac
        linetype = "Mass") +
   geom_segment(data = peak, aes(x = temperature, xend = temperature, y = c(peak$y_stand[1], peak$y_stand[2]), yend = 0),
                size = 1, arrow = arrow(length = unit(0.35, "cm")), show.legend = FALSE) +
+  guides(linetype = guide_legend(override.aes = list(size = 0.6))) +
   NULL
 
 pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 12),

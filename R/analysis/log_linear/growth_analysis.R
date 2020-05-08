@@ -48,6 +48,10 @@ dat <-
 
 str(dat)
 
+# Count data
+length(unique(dat$common_name))
+nrow(dat)
+
 # Filter data points at below optimum temperatures
 dat <- dat %>% filter(above_peak_temp == "N")
 
@@ -88,6 +92,7 @@ data = list(
   temp_pred = temp_pred
 )
 
+mean(dat$temp_c)
 
 # C. FIT MODELS ====================================================================
 # Some settings:
@@ -155,6 +160,8 @@ cs <- coda.samples(jm,
                                       "sigma"), 
                    n.iter = n.iter, 
                    thin = thin)
+
+summary(cs)
 
 #** Evaluate convergence ===========================================================
 # Convert to ggplottable data frame
@@ -403,6 +410,8 @@ ggsave("figures/supp/log_linear/growth/fit_gro_mean_cv.png", width = 6.5, height
 # F. PLOT PREDICTIONS ==============================================================
 # jags.samples - Nice for summaries and predictions
 # Extract the prediction at each x including credible interaval
+# For nice labels and ln-axis:
+# https://stackoverflow.com/questions/14255533/pretty-ticks-for-log-normal-scale-using-ggplot2-dynamic-not-manual
 js = jags.samples(jm, 
                   variable.names = c("pred"), 
                   n.iter = n.iter, 
@@ -435,6 +444,27 @@ pred_df$mass_g <- exp(pred_df$mass_non_ct)
 colourCount = length(unique(dat$species))
 getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
 pal <- getPalette(colourCount)
+
+#------------------------------------------------------------------------------------------ 
+#TEST
+# ggplot(pred_df, aes(log(mass_g), median)) +
+#   # geom_ribbon(data = pred_df, aes(x = mass_g, ymin = lwr_95, ymax = upr_95), 
+#   #           size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
+#   # geom_ribbon(data = pred_df, aes(x = mass_g, ymin = lwr_80, ymax = upr_80), 
+#   #             size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
+#   geom_line(size = 0.8, alpha = 0.8) +
+#   geom_point(data = dat, aes(log(mass_g), log(dat$y), fill = species_ab),
+#              size = 2.8, shape = 21, alpha = 0.8, color = "white") +
+#   scale_fill_manual(values = pal) +
+#   # scale_x_continuous(trans = scales::log_trans(),
+#   #                    labels = scales::number_format(accuracy = 1)) +
+#   guides(fill = FALSE) +
+#   labs(x = "mass [g]",
+#        y = "ln(growth rate [%/day])") +
+#   annotate("text", 0.2, 3.2, label = "A", size = 4, 
+#            fontface = "bold", hjust = -0.5, vjust = 1.3) +
+#   NULL
+#------------------------------------------------------------------------------------------
 
 p12 <- ggplot(pred_df, aes(mass_g, median)) +
   geom_ribbon(data = pred_df, aes(x = mass_g, ymin = lwr_95, ymax = upr_95), 
