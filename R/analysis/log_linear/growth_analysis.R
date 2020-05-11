@@ -162,6 +162,13 @@ cs <- coda.samples(jm,
                    thin = thin)
 
 summary(cs)
+# 2. Quantiles for each variable:
+#   
+#           2.5%      25%       50%      75%      97.5%
+# mu_b0    -0.109336  0.31772  0.497634  0.68120  1.0670192
+# mu_b1    -0.504104 -0.40497 -0.362649 -0.32064 -0.2281844
+# mu_b2    -0.948409 -0.80570 -0.739995 -0.67379 -0.5311737
+# mu_b3    -0.063643 -0.01721  0.004598  0.02689  0.0746968
 
 #** Evaluate convergence ===========================================================
 # Convert to ggplottable data frame
@@ -476,7 +483,7 @@ p12 <- ggplot(pred_df, aes(mass_g, median)) +
              size = 2.8, shape = 21, alpha = 0.8, color = "white") +
   scale_fill_manual(values = pal) +
   scale_x_continuous(trans = scales::log_trans(),
-                     labels = scales::number_format(accuracy = 1)) +
+                     labels = scales::number_format(accuracy = 0.1)) +
   guides(fill = FALSE) +
   labs(x = "mass [g]",
        y = "ln(growth rate [%/day])") +

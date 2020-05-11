@@ -223,6 +223,12 @@ cs <- coda.samples(jm1,
                    thin = thin)
 
 summary(cs)
+# 2. Quantiles for each variable:
+#   
+#          2.5%     25%      50%      75%    97.5%
+# mu_b0    -0.62893 -0.2653 -0.07414  0.11706  0.48268
+# mu_b1    -0.75438 -0.4495 -0.31358 -0.18053  0.15475
+
 
 #** Evaluate convergence ===========================================================
 # Convert to ggplottable data frame

@@ -46,6 +46,8 @@ con <-
 # Which species have data above optimum?
 spec <- unique(filter(con, above_peak_temp == "Y"))$species
 
+# length(unique(spec))
+
 con <- con %>% filter(species %in% spec) %>% droplevels()
 
 # Rename species factor for JAGS (must be numbered 1:n)
@@ -246,13 +248,15 @@ cs <- coda.samples(jm2,
                    thin = thin)
 
 #summary(cs)
-#           Mean        
-#...
-# b1       -0.00190553
-# b2        0.04812750
-# b3       -0.00022713
-# b4       -0.00003802
-# mu_b0     0.83201273
+# 2. Quantiles for each variable:
+#   
+#          2.5%        25%        50%        75%      97.5%
+# b1       -2.455e-03 -2.091e-03 -1.908e-03 -1.723e-03 -0.0013428
+# b2        3.722e-02  4.435e-02  4.819e-02  5.190e-02  0.0588881
+# b3       -1.098e-03 -5.240e-04 -2.262e-04  6.801e-05  0.0006295
+# b4       -8.669e-05 -5.501e-05 -3.774e-05 -2.094e-05  0.0000112
+# mu_b0     6.731e-01  7.837e-01  8.320e-01  8.808e-01  0.9895431
+
 
 #** Evaluate convergence ===========================================================
 # Convert to ggplottable data frame

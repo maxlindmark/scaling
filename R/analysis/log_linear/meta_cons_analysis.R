@@ -52,12 +52,16 @@ con <-
   read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/con_analysis.csv"))
 
 # Count data
-length(unique(met$common_name))
-length(unique(con$common_name))
-nrow(met)
-nrow(con)
-mean(met$temp_c)
-mean(con$temp_c)
+# length(unique(met$common_name))
+# length(unique(con$common_name))
+# nrow(met)
+# nrow(con)
+# mean(met$temp_c)
+# mean(con$temp_c)
+# n_stand <- nrow(filter(met, type == "Standard"))
+# n_rout_rest <- nrow(filter(met, type %in% c("Resting", "Routine")))
+# n_stand / (n_stand + n_rout_rest)
+# 1 - (n_stand / (n_stand + n_rout_rest))
 
 # Filter data points at below optimum temperatures
 met <- met %>% filter(above_peak_temp == "N")
@@ -229,12 +233,13 @@ cs_met <- coda.samples(jm_met,
                        thin = thin)
 
 # summary(cs_met)
-#           Mean    
-# ...
-# b3        0.0139866
-# mu_b0    -2.1669819
-# mu_b1    -0.2042507
-# mu_b2    -0.6121238
+# 2. Quantiles for each variable:
+#   
+#           2.5%       25%        50%      75%     97.5%
+# b3        0.003867  0.010427  0.0139547  0.01757  0.024181
+# mu_b0    -2.364561 -2.233227 -2.1672409 -2.10229 -1.969999
+# mu_b1    -0.254998 -0.221676 -0.2039408 -0.18716 -0.152763
+# mu_b2    -0.666476 -0.629984 -0.6118622 -0.59380 -0.560223
 
 
 # Convert to ggplottable data frame
@@ -560,9 +565,12 @@ cs_con <- coda.samples(jm_con,
                    thin = thin)
 
 # summary(cs_con)
-# mu_b0    -2.9634
-# mu_b1    -0.3722
-# mu_b2    -0.6937
+# 2. Quantiles for each variable:
+#   
+#          2.5%     25%     50%     75%    97.5%
+# mu_b0    -3.46443 -3.1237 -2.9576 -2.7944 -2.44343
+# mu_b1    -0.45399 -0.3997 -0.3750 -0.3489 -0.29574
+# mu_b2    -0.84680 -0.7429 -0.6945 -0.6430 -0.54058
 
 # Convert to ggplottable data frame
 cs_con_df <- ggs(cs_con)
@@ -914,36 +922,11 @@ c_pred_df$mass_g <- exp(c_pred_df$mass_con_non_ct)
 
 # Plot data and predictions with 95% credible interval (at each x, plot as ribbon)
 # Expand color palette
-colourCount = length(unique(met$species))
+colourCount = length(unique(con$species))
 getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
 pal <- getPalette(colourCount)
 
-p14 <- ggplot(m_pred_df, aes(mass_g, median)) +
-  geom_point(data = met, aes(mass_g, log(met$y_spec), fill = species_ab),
-             size = 2, shape = 21, alpha = 0.8, color = "white") +
-  geom_ribbon(data = m_pred_df, aes(x = mass_g, ymin = lwr_95, ymax = upr_95), 
-              size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
-  geom_ribbon(data = m_pred_df, aes(x = mass_g, ymin = lwr_80, ymax = upr_80), 
-              size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
-  geom_line(size = 0.8, alpha = 0.8) +
-  scale_fill_manual(values = pal) +
-  scale_x_continuous(trans = scales::log_trans(),
-                     labels = scales::number_format(accuracy = 1)) +
-  guides(fill = FALSE) +
-  labs(x = "mass [g]",
-       y = "ln(metabolic rate [mg 02/g/day])") +
-  annotate("text", 0.022, 0.3, label = "A", size = 4, 
-           fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  # annotate("text", -Inf, Inf, label = "A", size = 4, 
-  #          fontface = "bold", hjust = -0.5, vjust = 1.3) + # This solution doesn't play with the ln axis...
-  NULL
-pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 12))
-
-colourCount = length(unique(met$species))
-getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
-pal <- getPalette(colourCount)
-
-p15 <- ggplot(c_pred_df, aes(mass_g, median)) +
+p14 <- ggplot(c_pred_df, aes(mass_g, median)) +
   geom_point(data = con, aes(mass_g, log(con$y_spec), fill = species_ab),
              size = 2, shape = 21, alpha = 0.8, color = "white") +
   geom_ribbon(data = c_pred_df, aes(x = mass_g, ymin = lwr_95, ymax = upr_95), 
@@ -953,11 +936,38 @@ p15 <- ggplot(c_pred_df, aes(mass_g, median)) +
   geom_line(size = 0.8, alpha = 0.8) +
   scale_fill_manual(values = pal) +
   scale_x_continuous(trans = scales::log_trans(),
-                     labels = scales::number_format(accuracy = 1)) +
+                     labels = scales::number_format(accuracy = 0.1)) +
   guides(fill = FALSE) +
   labs(x = "mass [g]",
        y = "ln(maximum consumption rate [g/g/day])") +
-  annotate("text", 0.05, 1.2, label = "B", size = 4, 
+  annotate("text", 0.05, 1.2, label = "A", size = 4, 
+           fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  # annotate("text", -Inf, Inf, label = "B", size = 4, 
+  #          fontface = "bold", hjust = -0.5, vjust = 1.3) + # This solution doesn't play with the ln axis...
+  NULL
+
+pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 12))
+
+
+colourCount = length(unique(met$species))
+getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
+pal <- getPalette(colourCount)
+
+p15 <- ggplot(m_pred_df, aes(mass_g, median)) +
+  geom_point(data = met, aes(mass_g, log(met$y_spec), fill = species_ab),
+             size = 2, shape = 21, alpha = 0.8, color = "white") +
+  geom_ribbon(data = m_pred_df, aes(x = mass_g, ymin = lwr_95, ymax = upr_95), 
+              size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
+  geom_ribbon(data = m_pred_df, aes(x = mass_g, ymin = lwr_80, ymax = upr_80), 
+              size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
+  geom_line(size = 0.8, alpha = 0.8) +
+  scale_fill_manual(values = pal) +
+  scale_x_continuous(trans = scales::log_trans(),
+                     labels = scales::number_format(accuracy = 0.1)) +
+  guides(fill = FALSE) +
+  labs(x = "mass [g]",
+       y = "ln(metabolic rate [mg 02/g/day])") +
+  annotate("text", 0.022, 0.3, label = "B", size = 4, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
   # annotate("text", -Inf, Inf, label = "A", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) + # This solution doesn't play with the ln axis...
