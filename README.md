@@ -1,7 +1,7 @@
 # Scaling of growth, metabolism and maximum consumption with temperature and body size within species of fish
 Project investigating the intraspecific temperature- and size dependence of these rates using data from a systematic literature search.
 
-**Authors:** Max Lindmark, Jan Ohlberger, Anna Gårdmark
+**Authors:** Max Lindmark, [Jan Ohlberger](http://janohlberger.com/Homepage/), Anna Gårdmark
 
 This repository contains all data and code used for analyses and figures from Lindmark et al (20XX). 
 
