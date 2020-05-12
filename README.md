@@ -12,6 +12,8 @@ This repository contains all data and code used for analyses and figures from Li
 
 `R/exploration`: Code for exploring growth, consumption and metabolism data, filtering data and exporting for model fitting scripts ( as .csv).
 
+`data/lists_of_papers_from_lit_search`: .txt files containing all articles found through the literature search, before applying selection criteria.
+
 ### Analysis
 `R/analysis`: Code for all analysis (defining models, model selection & validation, prediciton and fit) and corresponding figures.
 
