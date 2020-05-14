@@ -127,13 +127,13 @@ dat$log_mass_norm <- log(dat$mass_norm)
 # Test which sizes I use
 p1 <- ggplot(dat, aes(mass_norm, fill = species)) + 
   geom_histogram() + 
-  facet_wrap(~ rate, scales = "free_y") +
+  facet_wrap(~ rate, nrow = 2, scales = "free_y") +
   scale_fill_viridis(discrete = TRUE, option = "magma") +
   coord_cartesian(expand = 0) + 
   labs(x = "Mass/Max mass") +
   guides(fill = FALSE) +
   NULL
-pWord <- p1 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
+pWord <- p1 + theme_classic() + theme(text = element_text(size = 12))
 ggsave("figures/supp/data/meta_cons_size_range.png", width = 6.5, height = 6.5, dpi = 600)
 
 
@@ -167,7 +167,7 @@ p3 <- ggplot(dat) +
                  y = env_temp_min, color = "Environment (min)"), size = 1, alpha = 0.6) +
   scale_color_manual(values = rev(pal), name = "Temperature") +
   xlab("") + 
-  ylab("Temperature [C]") + 
+  ylab(expression(paste("Temperature [", degree*C, "]"))) + 
   facet_wrap(~ rate) +
   NULL 
 pWord <- p3 + theme_classic() + theme(text = element_text(size = 12),

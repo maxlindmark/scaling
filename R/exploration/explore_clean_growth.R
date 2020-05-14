@@ -121,30 +121,33 @@ dat$log_mass_norm <- log(dat$mass_norm)
 
 #** Plot general data ==============================================================
 # Plot env. temperature (Fishbase) compared to experimental temperature range
-# Test which sizes I use
-p1 <- ggplot(dat, aes(mass_norm, fill = species)) + 
-  geom_histogram() + 
-  scale_fill_viridis(discrete = TRUE, option = "magma") +
-  coord_cartesian(expand = 0) + 
-  labs(x = "Mass/Max mass") +
-  guides(fill = FALSE) +
-  NULL
-pWord <- p1 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
-ggsave("figures/supp/data/growth_size_range.png", width = 6.5, height = 6.5, dpi = 600)
-
 
 # Trophic level
-p2 <- ggplot(dat, aes(x = reorder(species, trophic_level), y = trophic_level)) +
+p1 <- ggplot(dat, aes(x = reorder(species, trophic_level), y = trophic_level)) +
   geom_point(stat = 'identity', size = 2) +
-  scale_fill_manual(name = "trophic_level") + 
   guides(colour = FALSE) +
   xlab("") + 
   ylab("Trophic level") + 
   coord_flip() +
   NULL 
-pWord <- p2 + theme_classic() + theme(text = element_text(size = 12),
-                                      axis.text.y = element_text(size = 8))
-ggsave("figures/supp/data/growth_trophic_level.png", width = 6.5, height = 6.5, dpi = 600)
+pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 12),
+                                       axis.text.y = element_text(size = 8))
+
+# Max. published weight
+p2 <- ggplot(dat, aes(x = reorder(species, w_maturation_g), y = w_maturation_g)) +
+  geom_point(stat = 'identity', size = 2) +
+  guides(colour = FALSE) +
+  xlab("") + 
+  ylab("Mass at maturation [g]") + 
+  scale_y_continuous(trans = 'log10') +
+  coord_flip() +
+  NULL 
+pWord2 <- p2 + theme_classic() + theme(text = element_text(size = 12),
+                                       axis.text.y = element_text(size = 8))
+
+pWord1 / pWord2
+
+ggsave("figures/supp/data/growth_tl_mass.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 # Mid env. temperature (Fishbase) compared to experimental temperature range
@@ -162,37 +165,37 @@ p3 <- ggplot(dat) +
                  y = env_temp_min, color = "Environment (min)"), size = 1.5, alpha = 0.6) +
   scale_color_manual(values = rev(pal), name = "Temperature") +
   xlab("") + 
-  ylab("Temperature [C]") + 
+  ylab(expression(paste("Temperature [", degree*C, "]"))) + 
   NULL 
 pWord <- p3 + theme_classic() + theme(text = element_text(size = 12),
                                       axis.text = element_text(size = 8))
 ggsave("figures/supp/data/growth_temperatures.png", width = 6.5, height = 6.5, dpi = 600)
 
 
-# Max. published weight
-p4 <- ggplot(dat, aes(x = reorder(species, w_max_published_g), y = w_max_published_g)) +
-  geom_point(stat = 'identity', size = 2) +
-  scale_fill_manual(name = "w_max_published_g") + 
-  guides(colour = FALSE) +
-  xlab("") + 
-  ylab("max published weight [g]") + 
-  scale_y_continuous(trans = 'log10') +
-  coord_flip() +
-  NULL 
-pWord <- p4 + theme_classic() + theme(text = element_text(size = 12),
-                                      axis.text.y = element_text(size = 8))
-ggsave("figures/supp/data/growth_max_weight.png", width = 6.5, height = 6.5, dpi = 600)
-
-
 # Phylogeny
-p5 <- dat %>% dplyr::distinct(common_name, .keep_all = TRUE) %>% 
+p4 <- dat %>% dplyr::distinct(common_name, .keep_all = TRUE) %>% 
   ggplot(., aes(order, fill = family)) +
   geom_bar() +
   scale_fill_viridis(discrete = TRUE, option = "magma") +
   NULL
-pWord <- p5 + theme_classic() + theme(text = element_text(size = 12),
-                                      axis.text.x = element_text(angle = 60, hjust = 1, size = 8))
-ggsave("figures/supp/data/growth_phylogeny.png", width = 6.5, height = 6.5, dpi = 600)
+pWord4 <- p4 + theme_classic() + theme(text = element_text(size = 12),
+                                       axis.text.x = element_text(angle = 30, hjust = 1, size = 8),
+                                       legend.text = element_text(size = 6),
+                                       legend.key.size = unit(0.4, "cm"))
+
+# Lifestyle
+p5 <- dat %>% 
+  dplyr::distinct(common_name, .keep_all = TRUE) %>% 
+  ggplot(., aes(habitat, fill  = lifestyle)) +
+  geom_bar() +
+  scale_fill_viridis(discrete = TRUE, option = "magma") +
+  NULL
+pWord5 <- p5 + theme_classic() + theme(text = element_text(size = 12),
+                                       axis.text.x = element_text(angle = 30, hjust = 1),
+                                       legend.text = element_text(size = 6),
+                                       legend.key.size = unit(0.4, "cm"))
+(pWord4 / pWord5) 
+ggsave("figures/supp/data/growth_life_phylo.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 # Biogeography
@@ -202,21 +205,21 @@ p6 <- dat %>% dplyr::distinct(common_name, .keep_all = TRUE) %>%
   scale_fill_viridis(discrete = TRUE, option = "magma") +
   guides(fill = FALSE) +
   NULL
-pWord <- p6 + theme_classic() + theme(text = element_text(size = 12),
-                                      axis.text.x = element_text(angle = 0, hjust = 1))
-ggsave("figures/supp/data/growth_biogeography.png", width = 6.5, height = 6.5, dpi = 600)
+pWord6 <- p6 + theme_classic() + theme(text = element_text(size = 12),
+                                       axis.text.x = element_text(angle = 0, hjust = 1))
 
-
-# Lifestyle
-p7 <- dat %>% 
-  dplyr::distinct(common_name, .keep_all = TRUE) %>% 
-  ggplot(., aes(habitat, fill  = lifestyle)) +
-  geom_bar() +
+# Test which sizes I use
+p7 <- ggplot(dat, aes(mass_norm, fill = species)) + 
+  geom_histogram() + 
   scale_fill_viridis(discrete = TRUE, option = "magma") +
+  coord_cartesian(expand = 0) + 
+  labs(x = "Mass/Max mass") +
+  guides(fill = FALSE) +
   NULL
-pWord <- p7 + theme_classic() + theme(text = element_text(size = 12),
-                                      axis.text.x = element_text(angle = 50, hjust = 1))
-ggsave("figures/supp/data/growth_lifestyle.png", width = 6.5, height = 6.5, dpi = 600)
+pWord7 <- p7 + theme_classic() + theme(text = element_text(size = 12),
+                                       legend.text = element_text(size = 8))
+pWord6 / pWord7
+ggsave("figures/supp/data/growth_bio_mass.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #** Plot response variable =========================================================

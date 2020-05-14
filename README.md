@@ -25,7 +25,7 @@ This repository contains all data and code used for analyses and figures from Li
 
 `R/analysis/T_opt`: Scripts for linear model of optimum growth temperature as a funciton of body mass (model selection, validation, fit and prediction).
 
-`R/analysis/concept_figure`: Conceptual figure on bioenergetics of growth using parameters estimated in this study.
+`R/analysis/concept_model`: Conceptual figure on bioenergetics of growth using parameters estimated in this study.
 
 `R/analysis/growth`: Hierarchical Multiple Regression model in JAGS for mass and temperature dependence of growth at sub-optimum temperatures. Code for specifying JAGS models, perform model selection, validation, predictions and evalute model fit.
 
