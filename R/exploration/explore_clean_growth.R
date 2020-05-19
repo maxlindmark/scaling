@@ -113,7 +113,7 @@ dat$mass_g <- ifelse(dat$mass_g == -9,
 dat$log_mass <- log(dat$mass_g)
 
 # Normalize mass with respect to max mass
-dat$mass_norm <- dat$mass_g / dat$w_max_published_g
+dat$mass_norm <- dat$mass_g / dat$w_maturation_g
 
 # Calculate log normalized mass
 dat$log_mass_norm <- log(dat$mass_norm)
@@ -213,7 +213,7 @@ p7 <- ggplot(dat, aes(mass_norm, fill = species)) +
   geom_histogram() + 
   scale_fill_viridis(discrete = TRUE, option = "magma") +
   coord_cartesian(expand = 0) + 
-  labs(x = "Mass/Max mass") +
+  labs(x = "Mass/Maturation mass") +
   guides(fill = FALSE) +
   NULL
 pWord7 <- p7 + theme_classic() + theme(text = element_text(size = 12),

@@ -813,7 +813,6 @@ p10 <- ggplot(cs_fit_df_met, aes(mean_y_sim)) +
            label = paste("P =", round(mean(cs_fit_df_met$p_mean), digits = 3))) +
   labs(x = "Mean simulated metabolism", y = "count") +
   coord_cartesian(expand = 0) + 
-  ggtitle("Metabolism") +
   NULL
 pWord10 <- p10 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
 
@@ -830,6 +829,9 @@ p11 <- ggplot(cs_fit_df_met, aes(cv_y_sim)) +
   NULL
 pWord11 <- p11 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
 
+pWord10 + pWord11
+ggsave("figures/supp/log_linear/met_con/fit_met_mean_cv.png", width = 6.5, height = 6.5, dpi = 600)
+
 
 # Consumption
 n_bins <- round(1 + 3.2*log(nrow(cs_fit_df_con)))
@@ -838,13 +840,12 @@ p12 <- ggplot(cs_fit_df_con, aes(mean_y_sim)) +
   geom_histogram(bins = n_bins) +
   geom_vline(xintercept = cs_fit_df_con$mean_y, color = "white", 
              linetype = 2, size = 0.4) +
-  annotate("text", -Inf, Inf, label = "C", size = 4, 
+  annotate("text", -Inf, Inf, label = "A", size = 4, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
   annotate("text", -Inf, Inf, size = 4, hjust = -0.2, vjust = 3.3,
            label = paste("P =", round(mean(cs_fit_df_con$p_mean), digits = 3))) +
   labs(x = "Mean simulated consumption", y = "count") +
   coord_cartesian(expand = 0) + 
-  ggtitle("Consumption") +
   NULL
 pWord12 <- p12 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
 
@@ -853,7 +854,7 @@ p13 <- ggplot(cs_fit_df_con, aes(cv_y_sim)) +
   geom_histogram(bins = n_bins) +
   geom_vline(xintercept = cs_fit_df_con$cv_y, color = "white", 
              linetype = 2, size = 0.4) +
-  annotate("text", -Inf, Inf, label = "D", size = 4, 
+  annotate("text", -Inf, Inf, label = "B", size = 4, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
   annotate("text", -Inf, Inf, size = 4, hjust = -2, vjust = 3.3, 
            label = paste("P =", round(mean(cs_fit_df_con$p_cv), digits = 3))) +
@@ -863,8 +864,8 @@ p13 <- ggplot(cs_fit_df_con, aes(cv_y_sim)) +
 pWord13 <- p13 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
 
 
-(pWord10 + pWord11) / (pWord12 + pWord13)
-ggsave("figures/supp/log_linear/met_con/fit_con_met_mean_cv.png", width = 6.5, height = 6.5, dpi = 600)
+pWord12 + pWord13
+ggsave("figures/supp/log_linear/met_con/fit_con_mean_cv.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 # F. PLOT PREDICTIONS ==============================================================
