@@ -37,7 +37,7 @@ model{
   p_mean <- step(mean_y_sim - mean_y) # Proportion of data above and below 
   
   cv_y <- sd(y[])/mean(y[])
-  cv_y_sim <- sd(y_sim[])/max(0.0000001, mean(y_sim[])) # Not to divide by 0
+  cv_y_sim <- sd(y_sim[])/max(-1e11, mean(y_sim[])) # Not to divide by 0
   p_cv <- step(cv_y_sim - cv_y)
   
   #-- Priors	
