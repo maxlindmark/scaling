@@ -10,13 +10,11 @@
 #
 # C. Fit models
 #
-# D. Model validation (convergence)
+# D. Model validation (convergence, fit, residuals)
 # 
-# E. Evaluate model fit
-#
-# F. Plot predictions
+# E. Plot predictions
 # 
-# G. Additional calculations on the posterior
+# F. Additional calculations on the posterior
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # A. LOAD LIBRARIES ================================================================
@@ -94,7 +92,7 @@ data = list(
 
 mean(dat$temp_c)
 
-# C. FIT MODELS ====================================================================
+# C. FIT MODEL =====================================================================
 # Some settings:
 burn.in <- 15000 # Length of burn-in
 n.iter <- 15000  # Number of samples
@@ -363,58 +361,64 @@ MCMCtrace(cs,
 dev.off()
 
 
-# E. EVALUATE MODEL FIT ============================================================
-# CODA - Nice for getting the raw posteriors
-cs_fit = coda.samples(jm,
-                      variable.names = c("mean_y",
-                                         "mean_y_sim", 
-                                         "p_mean",
-                                         "cv_y",
-                                         "cv_y_sim",
-                                         "p_cv"), 
-                      n.iter = n.iter, 
-                      thin = thin)
+#** Evaluate model fit & residuals =================================================
+# https://rpubs.com/Niko/332320
+
+# Extract generated data and data
+cs_fit = coda.samples(jm, n.iter = n.iter, thin = thin,
+                      variable.names = c("mean_y", "mean_y_sim", "p_mean"))
 
 # Convert to data frames
 cs_fit_df <- data.frame(as.matrix(cs_fit))
 
-# Plot mean y and mean cv at each iteration and compare to data
-# General formula for number of bins..
-n_bins <- round(1 + 3.2*log(nrow(cs_fit_df)))
-
-# Growth
-p10 <- ggplot(cs_fit_df, aes(mean_y_sim)) + 
-  geom_histogram(bins = n_bins) +
+# Model fit
+p_fit <- ggplot(cs_fit_df, aes(mean_y_sim)) + 
+  coord_cartesian(expand = 0) +
+  geom_histogram(bins = round(1 + 3.2*log(nrow(cs_fit_df)))) +
+  geom_histogram() +
   geom_vline(xintercept = cs_fit_df$mean_y, color = "white", 
              linetype = 2, size = 0.4) +
-  annotate("text", -Inf, Inf, label = "A", size = 4, 
-           fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", -Inf, Inf, size = 4, hjust = -0.2, vjust = 3.3,
-           label = paste("P =", round(mean(cs_fit_df$p_mean), digits = 3))) +
-  labs(x = "Mean simulated growth", y = "count") +
-  coord_cartesian(expand = 0) + 
-  NULL
-pWord10 <- p10 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
-
-
-p11 <- ggplot(cs_fit_df, aes(cv_y_sim)) + 
-  geom_histogram(bins = n_bins) +
-  geom_vline(xintercept = cs_fit_df$cv_y, color = "white", 
-             linetype = 2, size = 0.4) +
-  annotate("text", -Inf, Inf, label = "B", size = 4, 
-           fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", -Inf, Inf, size = 4, hjust = -0.2, vjust = 3.3, 
-           label = paste("P =", round(mean(cs_fit_df$p_cv), digits = 3))) +
-  labs(x = "cv simulated growth", y = "") +
-  coord_cartesian(expand = 0) +
+  labs(x = "mean simulated data", y = "count") +
+  theme_classic() +
+  theme(text = element_text(size = 12), aspect.ratio = 1) +
   NULL
 
-pWord11 <- p11 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
-pWord10 + pWord11
-ggsave("figures/supp/log_linear/growth/fit_gro_mean_cv.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/growth/fit_gro_mean.png", width = 6.5, height = 6.5, dpi = 600)
 
 
-# F. PLOT PREDICTIONS ==============================================================
+# Residuals
+# Extract posteriors for each data point for calculation of residuals
+resid <- coda.samples(jm, variable.names = c("y_sim"), n.iter = n.iter, thin = thin, )
+
+# Tidy-up
+resid_df <- ggs(resid)
+
+resid_df <- resid_df %>%
+  ungroup() %>%
+  group_by(Parameter) %>%
+  summarize(median = median(value)) %>% 
+  rename("yhat" = "median") %>% 
+  mutate(y = data$y,
+         resid = y - yhat)
+
+# Check linearity
+p_lin <- ggplot(resid_df, aes(yhat, resid)) +
+  geom_point() +
+  ggtitle("Linearity")
+
+# Check normality
+p_qq <- ggplot(resid_df, aes(sample = resid)) +
+  stat_qq() +
+  stat_qq_line(col = "red") +
+  ggtitle("QQ")
+
+p_combo <- (p_lin + p_qq) + plot_annotation(title = 'Log-linear growth')
+p_combo & theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
+
+ggsave("figures/supp/log_linear/growth/resid_growth.png", width = 6.5, height = 6.5, dpi = 600)
+
+
+# E. PLOT PREDICTIONS ==============================================================
 # jags.samples - Nice for summaries and predictions
 # Extract the prediction at each x including credible interaval
 # For nice labels and ln-axis:
@@ -552,7 +556,7 @@ pWord12 / (pWord13 + pWord14 + pWord15) + plot_layout(heights = c(2.5, 1, 1, 1))
 ggsave("figures/pred_gro.png", width = 6.5, height = 6.5, dpi = 600)
 
 
-# G. ADDITINAL CALCULATIONS ON THE POSTERIOR =======================================
+# F. ADDITINAL CALCULATIONS ON THE POSTERIOR =======================================
 # Calculate the proportion of the posterior of activation energy that is less than zero
 js = jags.samples(jm, 
                   variable.names = c("mu_b2", "mu_b3"), 

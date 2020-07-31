@@ -1,0 +1,50 @@
+model{
+  
+  for(i in 1:n_obs){
+  
+  # Likelihood  
+    y[i] ~ dnorm(mu[i], tau[i])
+    mu[i] <- b0[species_n[i]] + b1*mass[i] + b2*temp[i] + b3*temp[i]*temp[i]
+    sigma[i] <- alpha.sigma + b1.sigma*temp[i]
+    
+    tau[i] <- 1/sigma[i]^2
+
+  # Simulate for comparison with data
+    y_sim[i] ~ dnorm(mu[i], tau[i])
+  
+  # Add log likelihood computation for each observation
+    pd[i] <- dnorm(y[i], mu[i], tau[i])
+  
+  # Calculates the log PPD
+    log_pd[i] <- log(dnorm(y[i], mu[i], tau[i]))
+  }
+  
+  # Second level (species-level effects)
+  for(j in 1:max(species_n)){
+    b0[j] ~ dnorm(mu_b0, tau_b0)
+  }
+    
+  # Predictions
+  for(k in 1:length(temp_pred)){
+    pred_large[k] <- mu_b0 + b1*mass_pred_l + b2*temp_pred[k] + b3*temp_pred[k]*temp_pred[k]
+    pred_small[k] <- mu_b0 + b1*mass_pred_s + b2*temp_pred[k] + b3*temp_pred[k]*temp_pred[k]
+  } 
+
+  # Model fit
+    mean_y <- mean(y[])
+    mean_y_sim <- mean(y_sim[])
+    p_mean <- step(mean_y_sim - mean_y) # Proportion of data above and below 
+  
+  # Priors	
+    mu_b0 ~ dnorm(0, 0.04)
+    b1 ~ dnorm(0, 0.04)
+    b2 ~ dnorm(0, 0.04)
+    b3 ~ dnorm(0, 0.04)
+    sigma_b0 ~ dunif(0, 10)
+    alpha.sigma ~ dgamma(0.001, 0.001) # intercept in model of sigma
+    b1.sigma ~ dnorm(0, 0.01)
+
+  # Derived quantiles
+    tau_b0 <- 1/(sigma_b0*sigma_b0)
+    
+  }

@@ -1,7 +1,7 @@
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # 2019.12.02: Max Lindmark
 #
-# - Code to fit hierarchicals model to growth rate using a log-linear model 
+# - Code to fit hierarchical model to growth rate using a log-linear model 
 # inspired by the MTE, and perform model selection using WAIC
 # 
 # A. Load libraries

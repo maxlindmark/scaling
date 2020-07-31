@@ -9,11 +9,9 @@
 #
 # C. Model selection
 #
-# D. Model validation
-#
-# E. Model fit
+# D. Model validation (convergence, fit, residuals)
 # 
-# F. Plot predictions
+# E. Plot predictions
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # A. LOAD LIBRARIES ================================================================
@@ -64,7 +62,7 @@ con$temp_env_ct <- con$temp_c - con$median_temp
 # Mean-center mass
 con$mass_g_ct <- con$mass_g - mean(con$mass_g)
 
-# Add mass-specific consumptio
+# Add mass-specific consumption
 con$y_spec <- con$y / con$mass_g
 
 # Express consumption rate as fraction of mean within species
@@ -79,9 +77,27 @@ temp_pred = seq(from = min(con$temp_env_ct),
 
 summary(con$mass_g_ct)
 
-# Note this is on centered scale
-mass_pred_s = -100 
-mass_pred_l = 100 
+# Mass-range for prediction (note this is on centered scale)
+summary(con$mass_g)
+mass_pred_s = -118
+mass_pred_l = 77 
+
+# Plot to compare with real scale
+ggplot(con, aes(mass_g_ct, mass_g)) +
+  geom_point() +
+  geom_hline(yintercept = 200) +
+  geom_hline(yintercept = 2) +
+  geom_vline(xintercept = -118) +
+  geom_vline(xintercept = 77) +
+  NULL
+
+#con %>% filter(mass_g_ct > -117 & mass_g_ct < -113)  
+
+# Inspect data final time before fitting (this was spotted when looking the residuals)
+ggplot(con, aes(mass_g_ct, y_ct)) + geom_point()
+
+# Remove outlier
+con <- con %>% filter(y_ct < 4)
 
 # Prepare data for JAGS
 data = NULL # Clear any old data lists that might confuse things
@@ -145,7 +161,7 @@ jm1 = jags.model(model1,
                  n.chains = 3,
                  inits = inits)
 
-update(jm1, n.iter = n.iter) 
+update(jm1, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj1 = jags.samples(jm1, 
@@ -163,6 +179,174 @@ pd.WAIC1 <- sum((summary(zj1$log_pd, sd)$stat)^2) # Penalty
 
 # WAIC = model fit + 2*penalty
 waic_m1 <- lppd1 + 2*pd.WAIC1
+
+
+#**** M1b: 2nd degree polynomial with sigma increasing with mass ===================
+model1b = "R/analysis/JAGS_models/non_linear_model/non_linear_model1b.txt"
+
+# Manually set initial values, because otherwise all the chains get the same
+inits = list(
+  list(
+    mu_b0 = 0.1,
+    b1 = 0.1,
+    b2 = 0.1,
+    b3 = 0.1,
+    sigma_b0 = 0.1,
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples
+  ),
+  list(
+    mu_b0 = 1,
+    b1 = 1,
+    b2 = 1,
+    b3 = 1,
+    sigma_b0 = 1,
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2
+  ),
+  list(
+    mu_b0 = 0.001,
+    b1 = 0.001,
+    b2 = 0.001,
+    b3 = 0.001,
+    sigma_b0 = 0.001,
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2
+  ))
+
+jm1b = jags.model(model1b,
+                  data = data, 
+                  n.adapt = 5000, 
+                  n.chains = 3,
+                  inits = inits)
+
+update(jm1b, n.iter = burn.in) 
+
+# Monitor the likelihood to calculate WAIC
+zj1b = jags.samples(jm1b, 
+                    variable.names = c("pd", "log_pd"), 
+                    n.iter = n.iter, 
+                    thin = thin)
+
+# Calculate model fit by summing over the log of means of the posterior distribution of 
+# the PPD and multiply by -2 (i.e. negative log likelihood).
+lppd1b <- -2*sum(log(summary(zj1b$pd, mean)$stat))
+
+# Calculate penalty (i.e. the number of parameters) as the variance of
+# the log of PPD. Do this by squaring the standard deviation.
+pd.WAIC1b <- sum((summary(zj1b$log_pd, sd)$stat)^2) # Penalty
+
+# WAIC = model fit + 2*penalty
+waic_m1b <- lppd1b + 2*pd.WAIC1b
+
+
+#**** M1c: 2nd degree polynomial with sigma increasing with temp ===================
+model1c = "R/analysis/JAGS_models/non_linear_model/non_linear_model1c.txt"
+
+# Manually set initial values, because otherwise all the chains get the same
+inits = list(
+  list(
+    mu_b0 = 0.1,
+    b1 = 0.1,
+    b2 = 0.1,
+    b3 = 0.1,
+    sigma_b0 = 0.1,
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples
+  ),
+  list(
+    mu_b0 = 1,
+    b1 = 1,
+    b2 = 1,
+    b3 = 1,
+    sigma_b0 = 1,
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2
+  ),
+  list(
+    mu_b0 = 0.001,
+    b1 = 0.001,
+    b2 = 0.001,
+    b3 = 0.001,
+    sigma_b0 = 0.001,
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2
+  ))
+
+jm1c = jags.model(model1c,
+                  data = data, 
+                  n.adapt = 5000, 
+                  n.chains = 3,
+                  inits = inits)
+
+update(jm1c, n.iter = burn.in) 
+
+# Monitor the likelihood to calculate WAIC
+zj1c = jags.samples(jm1c, 
+                    variable.names = c("pd", "log_pd"), 
+                    n.iter = n.iter, 
+                    thin = thin)
+
+# Calculate model fit by summing over the log of means of the posterior distribution of 
+# the PPD and multiply by -2 (i.e. negative log likelihood).
+lppd1c <- -2*sum(log(summary(zj1c$pd, mean)$stat))
+
+# Calculate penalty (i.e. the number of parameters) as the variance of
+# the log of PPD. Do this by squaring the standard deviation.
+pd.WAIC1c <- sum((summary(zj1c$log_pd, sd)$stat)^2) # Penalty
+
+# WAIC = model fit + 2*penalty
+waic_m1c <- lppd1c + 2*pd.WAIC1c
+
+
+#**** M1d: 2nd degree polynomial with sigma increasing with mass & temp ============
+model1d = "R/analysis/JAGS_models/non_linear_model/non_linear_model1d.txt"
+
+# Manually set initial values, because otherwise all the chains get the same
+inits = list(
+  list(
+    mu_b0 = 0.1,
+    b1 = 0.1,
+    b2 = 0.1,
+    b3 = 0.1,
+    sigma_b0 = 0.1,
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples
+  ),
+  list(
+    mu_b0 = 1,
+    b1 = 1,
+    b2 = 1,
+    b3 = 1,
+    sigma_b0 = 1,
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2
+  ),
+  list(
+    mu_b0 = 0.001,
+    b1 = 0.001,
+    b2 = 0.001,
+    b3 = 0.001,
+    sigma_b0 = 0.001,
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2
+  ))
+
+jm1d = jags.model(model1d,
+                  data = data, 
+                  n.adapt = 5000, 
+                  n.chains = 3,
+                  inits = inits)
+
+update(jm1d, n.iter = burn.in) 
+
+# Monitor the likelihood to calculate WAIC
+zj1d = jags.samples(jm1d, 
+                    variable.names = c("pd", "log_pd"), 
+                    n.iter = n.iter, 
+                    thin = thin)
+
+# Calculate model fit by summing over the log of means of the posterior distribution of 
+# the PPD and multiply by -2 (i.e. negative log likelihood).
+lppd1d <- -2*sum(log(summary(zj1d$pd, mean)$stat))
+
+# Calculate penalty (i.e. the number of parameters) as the variance of
+# the log of PPD. Do this by squaring the standard deviation.
+pd.WAIC1d <- sum((summary(zj1d$log_pd, sd)$stat)^2) # Penalty
+
+# WAIC = model fit + 2*penalty
+waic_m1d <- lppd1d + 2*pd.WAIC1d
 
 
 #**** M2: 3rd degree polynomial ====================================================
@@ -227,35 +411,50 @@ pd.WAIC2 <- sum((summary(zj2$log_pd, sd)$stat)^2) # Penalty
 waic_m2 <- lppd2 + 2*pd.WAIC2
 
 
-#**** Compare both WAIC ============================================================
+#**** Compare WAIC =================================================================
 waic_m1
+waic_m1b
+waic_m1c
+waic_m1d
 waic_m2
 
-waic_m1 - waic_m2
-
 # > waic_m1
-# [1] 719.6066
+# [1] 619.5119
+# > waic_m1b
+# [1] 593.4074
+# > waic_m1c
+# [1] 588.1218
+# > waic_m1d
+# [1] 1829.666
 # > waic_m2
-# [1] 718.3259
+# [1] 615.7727
+
+waic_m1-waic_m1c
+waic_m1b-waic_m1c
+waic_m1c-waic_m1c
+waic_m1d-waic_m1c
+waic_m2-waic_m1c
+
 
 # D. MODEL VALIDATION ==============================================================
 # CODA - Nice for getting the raw posteriors
-cs <- coda.samples(jm2,
-                   variable.names = c("b0", "b1", "b2", "b3", "b4",
-                                      "mu_b0", 
-                                      "sigma_b0", "sigma"), 
-                   n.iter = n.iter, 
-                   thin = thin)
 
-#summary(cs)
+cs <- coda.samples(jm1c, n.iter = n.iter, thin = thin,
+                   variable.names = c("mu_b0", "b0", "b1", "b2", "b3",
+                                      "sigma_b0", "alpha.sigma", "b1.sigma"))
+
+summary(cs)
 # 2. Quantiles for each variable:
 #   
-#           2.5%        25%        50%        75%      97.5%
-# b1       -2.455e-03 -2.091e-03 -1.908e-03 -1.723e-03 -0.0013428
-# b2        3.722e-02  4.435e-02  4.819e-02  5.190e-02  0.0588881
-# b3       -1.098e-03 -5.240e-04 -2.262e-04  6.801e-05  0.0006295
-# b4       -8.669e-05 -5.501e-05 -3.774e-05 -2.094e-05  0.0000112
-# mu_b0     6.731e-01  7.837e-01  8.320e-01  8.808e-01  0.9895431
+#              2.5%       25%        50%        75%        97.5%
+# alpha.sigma  0.369307  0.3858199  0.3951141  4.049e-01  0.4257428
+# ...
+# b1          -0.002087 -0.0017880 -0.0016305 -1.479e-03 -0.0011969
+# b1.sigma     0.008750  0.0111996  0.0124513  1.360e-02  0.0156307
+# b2           0.036207  0.0399303  0.0419299  4.393e-02  0.0479142
+# b3          -0.000756 -0.0004276 -0.0002519 -8.267e-05  0.0002351
+# mu_b0        0.694740  0.7750862  0.8097589  8.454e-01  0.9266065
+# sigma_b0     0.060548  0.1142524  0.1483631  1.887e-01  0.3053840
 
 
 #** Evaluate convergence ===========================================================
@@ -294,14 +493,14 @@ p2 <- cs_df %>%
 pWord2 <- p2 + theme_classic() + theme(text = element_text(size = 10),
                                        axis.text = element_text(size = 5))
 pWord1 + pWord2
-ggsave("figures/supp/non_linear/validation_non_linear_intercepts.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/non_linear/validation_non_linear_intercepts_sigma.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Group-level means ============================================================
 # Plot posterior densities of group-level means and standard deviations
 p3 <- cs_df %>% 
-  filter(Parameter %in% c("mu_b0", "b1", "b2", "b3", "b4",
-                          "sigma_b0", "sigma")) %>% 
+  filter(Parameter %in% c("mu_b0", "b1", "b2", "b3",
+                          "sigma_b0", "alpha.sigma", "b1.sigma")) %>% 
   ggs_density(.) + 
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_density(alpha = 0.05) +
@@ -315,8 +514,8 @@ pWord3 <- p3 + theme_classic() + theme(text = element_text(size = 10),
 
 # Traceplot for evaluating chain convergence
 p4 <- cs_df %>% 
-  filter(Parameter %in% c("mu_b0", "b1", "b2", "b3", "b4",
-                          "sigma_b0", "sigma")) %>% 
+  filter(Parameter %in% c("mu_b0", "b1", "b2", "b3", 
+                          "sigma_b0", "alpha.sigma", "b1.sigma")) %>% 
   ggs_traceplot(.) +
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_line(alpha = 0.3) +
@@ -327,7 +526,7 @@ p4 <- cs_df %>%
 pWord4 <- p4 + theme_classic() + theme(text = element_text(size = 10),
                                        axis.text = element_text(size = 5))
 pWord3 + pWord4
-ggsave("figures/supp/non_linear/validation_non_linear.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/non_linear/validation_non_linear_sigma.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Chain convergencve (Rhat) ====================================================
@@ -339,7 +538,8 @@ p5 <- cs_df %>%
   NULL
 pWord5 <- p5 + theme_classic() + theme(text = element_text(size = 10),
                                        axis.text = element_text(size = 5))
-ggsave("figures/supp/non_linear/validation_rhat_non_linear.png", width = 6.5, height = 6.5, dpi = 600)
+
+ggsave("figures/supp/non_linear/validation_rhat_non_linear_sigma.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Prior vs posterior ===========================================================
@@ -350,7 +550,6 @@ ggsave("figures/supp/non_linear/validation_rhat_non_linear.png", width = 6.5, he
 # b1 ~ dnorm(0, 0.04)
 # b2 ~ dnorm(0, 0.04)
 # b3 ~ dnorm(0, 0.04)
-# b4 ~ dnorm(0, 0.04)
 
 # Remember: distributions in JAGS have arguments mean and precision (inverse of variance)
 # tau = 1/variance
@@ -365,16 +564,17 @@ mu_b0 <- rnorm(25000, 0, sqrt(1/tau))
 b1 <- rnorm(25000, 0, sqrt(1/tau))
 b2 <- rnorm(25000, 0, sqrt(1/tau))
 b3 <- rnorm(25000, 0, sqrt(1/tau))
-b4 <- rnorm(25000, 0, sqrt(1/tau))
 
-PR <- as.matrix(cbind(mu_b0, b1, b2, b3, b4))
+PR <- as.matrix(cbind(mu_b0, b1, b2, b3))
+
+PR <- as.matrix(cbind(mu_b0, b2, b3))
 
 # This is not a ggplot...
-png(file = "/Users/maxlindmark/Desktop/R_STUDIO_PROJECTS/scaling/figures/supp/non_linear/validation_prior_post_non_linear.png", 
+png(file = "/Users/maxlindmark/Desktop/R_STUDIO_PROJECTS/scaling/figures/supp/non_linear/validation_prior_post_non_linear_sigma.png", 
     units = "px", width = 1800, height = 1800, res = 300)
 
 MCMCtrace(cs,
-          params = c("mu_b0", "b1", "b2", "b3", "b4"),
+          params = c("mu_b0", "b2", "b3"),
           ISB = FALSE,
           priors = PR,
           pdf = FALSE,
@@ -384,46 +584,88 @@ MCMCtrace(cs,
 
 dev.off()
 
+# Some bug here, can't use b1????
 
-# E. EVALUATE MODEL FIT ============================================================
-# * Note I'm not plotting how the cv's compare in data and simulations, because
-# I use centered data, the cv's are extremely large...
-# CODA - Nice for getting the raw posteriors
-cs_fit = coda.samples(jm2,
-                      variable.names = c("mean_y",
-                                         "mean_y_sim", 
-                                         "p_mean"), 
-                      n.iter = n.iter, 
-                      thin = thin)
+
+#** Evaluate model fit & residuals =================================================
+# https://rpubs.com/Niko/332320
+
+# Extract generated data and data
+cs_fit = coda.samples(jm1c, n.iter = n.iter, thin = thin,
+                      variable.names = c("mean_y", "mean_y_sim", "p_mean"))
 
 # Convert to data frames
 cs_fit_df <- data.frame(as.matrix(cs_fit))
 
-# Plot mean y and mean cv at each iteration and compare to data
-# General formula for number of bins..
-n_bins <- round(1 + 3.2*log(nrow(cs_fit_df)))
-
-# Non linear consumption fits
-p6 <- ggplot(cs_fit_df, aes(mean_y_sim)) + 
-  geom_histogram(bins = n_bins) +
+# Model fit
+p_fit <- ggplot(cs_fit_df, aes(mean_y_sim)) + 
+  coord_cartesian(expand = 0) +
+  geom_histogram(bins = round(1 + 3.2*log(nrow(cs_fit_df)))) +
+  geom_histogram() +
   geom_vline(xintercept = cs_fit_df$mean_y, color = "white", 
              linetype = 2, size = 0.4) +
-  annotate("text", -Inf, Inf, label = "A", size = 4, 
-           fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", -Inf, Inf, size = 4, hjust = -0.2, vjust = 3.3,
-           label = paste("P =", round(mean(cs_fit_df$p_mean), digits = 3))) +
-  labs(x = "Mean simulated consumption", y = "count") +
-  coord_cartesian(expand = 0) + 
+  labs(x = "mean simulated data", y = "count") +
+  theme_classic() +
+  theme(text = element_text(size = 12), aspect.ratio = 1) +
   NULL
-pWord6 <- p6 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
-ggsave("figures/supp/non_linear/fit_non_linear_mean.png", width = 6.5, height = 6.5, dpi = 600)
+
+ggsave("figures/supp/non_linear/fit_nonlinear_sigma.png", width = 6.5, height = 6.5, dpi = 600)
 
 
-# F. PLOT PREDICTIONS ==============================================================
+# Residuals
+# Extract posteriors for each data point for calculation of residuals
+resid <- coda.samples(jm1c, variable.names = c("y_sim"), n.iter = n.iter, thin = thin, )
+
+# Tidy-up
+resid_df <- ggs(resid)
+
+resid_df <- resid_df %>%
+  ungroup() %>%
+  group_by(Parameter) %>%
+  summarize(median = median(value),
+            sd = sd(value)) %>% 
+  rename("yhat" = "median") %>% 
+  mutate(y = data$y,
+         resid = y - yhat)
+
+# Now we in addition need to calculate the standardized residuals, else we cant detect any improvements
+# I simply calculate them as the residual divided by the standard deviation. https://www.isixsigma.com/dictionary/standardized-residual/
+# Because sigma depends on mass, we now need add mass in the data
+# Here are the median estimates for the intercept and slope for the model sigma ~ mass
+sigma_pars <- coda.samples(jm1c, n.iter = n.iter, thin = thin, variable.names = c("alpha.sigma", "b1.sigma"))
+
+# Get coefficients from quantiles 
+alpha.sigma <- data.frame(summary(sigma_pars)[2])$quantiles.50.[1]
+b1.sigma <- data.frame(summary(sigma_pars)[2])$quantiles.50.[2]
+
+# Now add in the standardized residuals
+resid_df <- resid_df %>% 
+  mutate(temp = data$temp, # First we need to add temp, so that we can calculate the true sigma  
+         sigma = alpha.sigma + temp*b1.sigma, # calculate sigma given mass
+         resid_st = resid/sigma) # calculate standardized resid
+
+# Check linearity
+p_lin <- ggplot(resid_df, aes(yhat, resid_st)) + # NOTE STANDARDIZED RESID! CHANGE IF ANOTHER MODEL
+  geom_point() +
+  ggtitle("Linearity")
+
+# Check normality
+p_qq <- ggplot(resid_df, aes(sample = resid_st)) + # NOTE STANDARDIZED RESID! CHANGE IF ANOTHER MODEL
+  stat_qq() +
+  stat_qq_line(col = "red") +
+  ggtitle("QQ")
+
+p_combo <- (p_lin + p_qq) + plot_annotation(title = 'Non-linear consumption')
+p_combo & theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
+
+ggsave("figures/supp/non_linear/resid_non_linear_sigma.png", width = 6.5, height = 6.5, dpi = 600)
+
+
+# E. PLOT PREDICTIONS ==============================================================
 #** Fits and data ==================================================================
 # jags.samples - Nice for summaries and predictions
-# Extract the prediction at each x including credible interaval
-js = jags.samples(jm2, 
+# Extract the prediction at each x including credible interval
+js = jags.samples(jm1c, 
                   variable.names = c("pred_small",
                                      "pred_large"), 
                   n.iter = n.iter, 
@@ -440,7 +682,7 @@ pred_s_df <- data.frame(lwr_95 = pred_s[1, ],
                         upr_80 = pred_s[4, ],
                         upr_95 = pred_s[5, ],
                         temp_pred = temp_pred,
-                        size = 10) 
+                        size = 2) 
 
 pred_l_df <- data.frame(lwr_95 = pred_l[1, ],
                         lwr_80 = pred_l[2, ],
@@ -448,7 +690,7 @@ pred_l_df <- data.frame(lwr_95 = pred_l[1, ],
                         upr_80 = pred_l[4, ],
                         upr_95 = pred_l[5, ],
                         temp_pred = temp_pred,
-                        size = 100) 
+                        size = 200) 
 
 pred_df <- rbind(pred_l_df, pred_s_df)
 
@@ -459,13 +701,13 @@ getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
 pal <- getPalette(colourCount)
 
 p7 <- ggplot(pred_df, aes(temp_pred, median)) +
-  geom_ribbon(data = filter(pred_df, size == 10), aes(x = temp_pred, ymin = lwr_95, ymax = upr_95),
+  geom_ribbon(data = filter(pred_df, size == 2), aes(x = temp_pred, ymin = lwr_95, ymax = upr_95),
               size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
-  geom_ribbon(data = filter(pred_df, size == 10), aes(x = temp_pred, ymin = lwr_80, ymax = upr_80),
+  geom_ribbon(data = filter(pred_df, size == 2), aes(x = temp_pred, ymin = lwr_80, ymax = upr_80),
               size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
-  geom_ribbon(data = filter(pred_df, size == 100), aes(x = temp_pred, ymin = lwr_95, ymax = upr_95),
+  geom_ribbon(data = filter(pred_df, size == 200), aes(x = temp_pred, ymin = lwr_95, ymax = upr_95),
               size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
-  geom_ribbon(data = filter(pred_df, size == 100), aes(x = temp_pred, ymin = lwr_80, ymax = upr_80),
+  geom_ribbon(data = filter(pred_df, size == 200), aes(x = temp_pred, ymin = lwr_80, ymax = upr_80),
               size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
   geom_line(data = pred_df, aes(temp_pred, median, linetype = factor(size)), size = 1, alpha = 1, col = "black") +
   geom_point(data = con, aes(temp_env_ct, y_ct, fill = species),
@@ -473,10 +715,13 @@ p7 <- ggplot(pred_df, aes(temp_pred, median)) +
              size = 2, 
              alpha = 0.8, 
              color = "white") +
-  ylim(0, 3.3) +
-  scale_fill_manual(values = pal) +
+  #ylim(0, 3.3) +
+  coord_cartesian(ylim = c(0, 3.3)) +
+  scale_fill_manual(values = pal, guide = guide_legend(label.theme = element_text(angle = 0,
+                                                                                  face = "italic",
+                                                                                  size = 8))) +
   scale_size(range = c(2, 8), breaks = c(0, 1, 10, 100, 1000)) +
-  guides(fill = FALSE,
+  guides(#fill = FALSE,
          size = guide_legend(override.aes = list(fill = "black",
                                                  color = "black"))) +
   labs(x = "Rescaled temperature",
@@ -487,7 +732,11 @@ p7 <- ggplot(pred_df, aes(temp_pred, median)) +
 
 pWord7 <- p7 + theme_classic() + theme(text = element_text(size = 12),
                                        aspect.ratio = 4/5,
-                                       legend.position = "bottom", 
-                                       legend.title = element_text(size = 10))
+                                       #legend.position = "bottom", 
+                                       legend.title = element_text(size = 9),
+                                       legend.text = element_text(size = 8))
+
+pWord7
+
 ggsave("figures/supp/non_linear/non_linear_con.png", width = 6.5, height = 6.5, dpi = 600)
 

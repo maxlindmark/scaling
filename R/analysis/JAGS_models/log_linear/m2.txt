@@ -1,17 +1,16 @@
 model{
   
   for(i in 1:n_obs){
+  
+  # Likelihood
     y[i] ~ dnorm(mu[i], tau)
-    mu[i] <- 
-      b0[species_n[i]] +           # varying intercept 
-      b1[species_n[i]]*mass[i] +   # varying mass-exponent
-      b2[species_n[i]]*temp[i] +   # varying temperature coefficient
-      b3*mass[i]*temp[i]           # non-varying M*T interaction
+    mu[i] <- b0[species_n[i]] + b1[species_n[i]]*mass[i] + b2[species_n[i]]*temp[i] + b3*mass[i]*temp[i]
+  
   # Add log likelihood computation for each observation
-  pd[i] <- dnorm(y[i], mu[i], tau)
+    pd[i] <- dnorm(y[i], mu[i], tau)
   
   # Calculates the log PPD
-  log_pd[i] <- log(dnorm(y[i], mu[i], tau))
+    log_pd[i] <- log(dnorm(y[i], mu[i], tau))
   }
   
   # Second level (species-level effects)
@@ -21,18 +20,20 @@ model{
     b2[j] ~ dnorm(mu_b2, tau_b2)
   }
   
-  #-- Priors	
-  b3 ~ dnorm(0, 1)         
-  mu_b0 ~ dnorm(0, 0.04)      
-  mu_b1 ~ dnorm(-0.25, 1)  
-  mu_b2 ~ dnorm(-0.6, 1)   
-  sigma ~ dunif(0, 10) 
-  sigma_b0 ~ dunif(0, 10)
-  sigma_b1 ~ dunif(0, 10)
-  sigma_b2 ~ dunif(0, 10)
-  tau <- 1/sigma^2
-  tau_b0 <- 1/sigma_b0^2
-  tau_b1 <- 1/sigma_b1^2
-  tau_b2 <- 1/sigma_b2^2
+  # Priors	
+    b3 ~ dnorm(0, 1)         
+    mu_b0 ~ dnorm(0, 0.04)      
+    mu_b1 ~ dnorm(-0.25, 1)  
+    mu_b2 ~ dnorm(-0.6, 1)   
+    sigma ~ dunif(0, 10) 
+    sigma_b0 ~ dunif(0, 10)
+    sigma_b1 ~ dunif(0, 10)
+    sigma_b2 ~ dunif(0, 10)
+  
+  # Derived quantiles
+    tau <- 1/(sigma*sigma)
+    tau_b0 <- 1/(sigma_b0*sigma_b0)
+    tau_b1 <- 1/(sigma_b1*sigma_b1)
+    tau_b2 <- 1/(sigma_b2*sigma_b2)
   
   }

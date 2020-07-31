@@ -11,14 +11,12 @@
 # C. Fit models 
 #    - After this section you can run the others separately
 #
-# D. Model validation (convergence)
+# D. Model validation (convergence, fit, residuals)
 #    - This part is LONG and contains lots of big plots. Skip if you don't want that
 # 
-# E. Evaluate model fit
-#
-# F. Plot predictions
+# E. Plot predictions
 # 
-# G. Additional calculations on the posterior
+# F. Additional calculations on the posterior
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # A. LOAD LIBRARIES ================================================================
@@ -42,7 +40,7 @@ library(scales)
 # [1] scales_1.1.0       MCMCvis_0.14.0     bayesplot_1.7.1    patchwork_0.0.1   
 # [5] viridis_0.5.1      viridisLite_0.3.0  magrittr_1.5       readxl_1.3.1      
 # [9] RCurl_1.95-4.12    bitops_1.0-6       ggmcmc_1.3         ggplot2_3.2.1     
-# [13] tidyr_1.0.0        dplyr_0.8.3        RColorBrewer_1.1-2 rjags_4-10        
+# [13] tidyr_1.0.0       dplyr_0.8.3        RColorBrewer_1.1-2 rjags_4-10        
 # [17] coda_0.19-3    
 
 
@@ -55,16 +53,20 @@ con <-
   read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/con_analysis.csv"))
 
 # Count data
-# length(unique(met$common_name))
-# length(unique(con$common_name))
-# nrow(met)
-# nrow(con)
-# mean(met$temp_c)
-# mean(con$temp_c)
-# n_stand <- nrow(filter(met, type == "Standard"))
-# n_rout_rest <- nrow(filter(met, type %in% c("Resting", "Routine")))
-# n_stand / (n_stand + n_rout_rest)
-# 1 - (n_stand / (n_stand + n_rout_rest))
+length(unique(met$common_name))
+length(unique(con$common_name))
+nrow(met)
+nrow(con)
+mean(met$temp_c)
+mean(con$temp_c)
+n_stand <- nrow(filter(met, type == "Standard"))
+n_rout_rest <- nrow(filter(met, type %in% c("Resting", "Routine")))
+n_stand / (n_stand + n_rout_rest)
+1 - (n_stand / (n_stand + n_rout_rest))
+
+summary(met$mass_g)
+summary(con$mass_g)
+
 
 # Filter data points at below optimum temperatures
 met <- met %>% filter(above_peak_temp == "N")
@@ -771,104 +773,121 @@ MCMCtrace(cs_con,
 dev.off()
 
 
-# E. EVALUATE MODEL FIT ============================================================
-# CODA - Nice for getting the raw posteriors
-cs_fit_met = coda.samples(jm_met,
-                          variable.names = c("mean_y",
-                                             "mean_y_sim", 
-                                             "p_mean",
-                                             "cv_y",
-                                             "cv_y_sim",
-                                             "p_cv"), 
-                          n.iter = n.iter, 
-                          thin = thin)
+# Evaluate model fit & residuals ===================================================
+# https://rpubs.com/Niko/332320
 
-cs_fit_con = coda.samples(jm_con,
-                          variable.names = c("mean_y",
-                                             "mean_y_sim", 
-                                             "p_mean",
-                                             "cv_y",
-                                             "cv_y_sim",
-                                             "p_cv"), 
-                          n.iter = n.iter, 
-                          thin = thin)
+#**** Metabolism ===================================================================
+# Extract generated data and data
+cs_fit_met = coda.samples(jm_met, n.iter = n.iter, thin = thin,
+                          variable.names = c("mean_y", "mean_y_sim", "p_mean"))
 
 # Convert to data frames
 cs_fit_df_met <- data.frame(as.matrix(cs_fit_met))
-cs_fit_df_con <- data.frame(as.matrix(cs_fit_con))
 
-# Plot mean y and mean cv at each iteration and compare to data
-
-
-# Metabolism
-n_bins <- round(1 + 3.2*log(nrow(cs_fit_df_met)))
-
-p10 <- ggplot(cs_fit_df_met, aes(mean_y_sim)) + 
-  geom_histogram(bins = n_bins) +
+# Model fit
+p_fit_m <- ggplot(cs_fit_df_met, aes(mean_y_sim)) + 
+  coord_cartesian(expand = 0) +
+  geom_histogram(bins = round(1 + 3.2*log(nrow(cs_fit_df_met)))) +
+  geom_histogram() +
   geom_vline(xintercept = cs_fit_df_met$mean_y, color = "white", 
              linetype = 2, size = 0.4) +
-  annotate("text", -Inf, Inf, label = "A", size = 4, 
-           fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", -Inf, Inf, size = 4, hjust = -0.2, vjust = 3.3,
-           label = paste("P =", round(mean(cs_fit_df_met$p_mean), digits = 3))) +
-  labs(x = "Mean simulated metabolism", y = "count") +
-  coord_cartesian(expand = 0) + 
+  labs(x = "mean simulated data", y = "count") +
+  theme_classic() +
+  theme(text = element_text(size = 12), aspect.ratio = 1) +
   NULL
-pWord10 <- p10 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
 
-p11 <- ggplot(cs_fit_df_met, aes(cv_y_sim)) + 
-  geom_histogram(bins = n_bins) +
-  # geom_vline(xintercept = cs_fit_df_met$cv_y, color = "white", 
-  #            linetype = 2, size = 0.4) +
-  annotate("text", -Inf, Inf, label = "B", size = 4,
-           fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", -Inf, Inf, size = 4, hjust = -0.2, vjust = 3.3,
-           label = paste("P =", round(mean(cs_fit_df_met$p_cv), digits = 3))) +
-  labs(x = "cv simulated metabolism", y = "") +
+ggsave("figures/supp/log_linear/met_con/fit_met_mean.png", width = 6.5, height = 6.5, dpi = 600)
+
+# Residuals
+# Extract posteriors for each data point for calculation of residuals
+resid <- coda.samples(jm_met, variable.names = c("y_sim"), n.iter = n.iter, thin = thin, )
+
+# Tidy-up
+resid_df <- ggs(resid)
+
+resid_df <- resid_df %>%
+  ungroup() %>%
+  group_by(Parameter) %>%
+  summarize(median = median(value)) %>% 
+  rename("yhat" = "median") %>% 
+  mutate(y = met_data$y,
+         resid = y - yhat)
+
+# Check linearity
+p_lin <- ggplot(resid_df, aes(yhat, resid)) +
+  geom_point() +
+  ggtitle("Linearity")
+
+# Check normality
+p_qq <- ggplot(resid_df, aes(sample = resid)) +
+  stat_qq() +
+  stat_qq_line(col = "red") +
+  ggtitle("QQ")
+
+p_combo <- (p_lin + p_qq) + plot_annotation(title = 'Log-linear metabolism')
+p_combo & theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
+
+ggsave("figures/supp/log_linear/met_con/resid_met.png", width = 6.5, height = 6.5, dpi = 600)
+
+
+#**** Consumption ===================================================================
+# Extract generated data and data
+cs_fit_con = coda.samples(jm_con, n.iter = n.iter, thin = thin,
+                          variable.names = c("mean_y", "mean_y_sim", "p_mean"))
+
+# Convert to data frames
+cs_fit_df_con <- data.frame(as.matrix(cs_fit_con))
+
+# Model fit
+p_fit_c <- ggplot(cs_fit_df_con, aes(mean_y_sim)) + 
   coord_cartesian(expand = 0) +
-  NULL
-pWord11 <- p11 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
-
-pWord10 + pWord11
-ggsave("figures/supp/log_linear/met_con/fit_met_mean_cv.png", width = 6.5, height = 6.5, dpi = 600)
-
-
-# Consumption
-n_bins <- round(1 + 3.2*log(nrow(cs_fit_df_con)))
-
-p12 <- ggplot(cs_fit_df_con, aes(mean_y_sim)) + 
-  geom_histogram(bins = n_bins) +
+  geom_histogram(bins = round(1 + 3.2*log(nrow(cs_fit_df_con)))) +
+  geom_histogram() +
   geom_vline(xintercept = cs_fit_df_con$mean_y, color = "white", 
              linetype = 2, size = 0.4) +
-  annotate("text", -Inf, Inf, label = "A", size = 4, 
-           fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", -Inf, Inf, size = 4, hjust = -0.2, vjust = 3.3,
-           label = paste("P =", round(mean(cs_fit_df_con$p_mean), digits = 3))) +
-  labs(x = "Mean simulated consumption", y = "count") +
-  coord_cartesian(expand = 0) + 
+  labs(x = "mean simulated data", y = "count") +
+  theme_classic() +
+  theme(text = element_text(size = 12), aspect.ratio = 1) +
   NULL
-pWord12 <- p12 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
+
+ggsave("figures/supp/log_linear/met_con/fit_con_mean.png", width = 6.5, height = 6.5, dpi = 600)
+
+# Residuals
+# Extract posteriors for each data point for calculation of residuals
+resid <- coda.samples(jm_con, variable.names = c("y_sim"), n.iter = n.iter, thin = thin, )
+
+# Tidy-up
+resid_df <- ggs(resid)
+
+resid_df <- resid_df %>%
+  ungroup() %>%
+  group_by(Parameter) %>%
+  summarize(median = median(value)) %>% 
+  rename("yhat" = "median") %>% 
+  mutate(y = con_data$y,
+         resid = y - yhat)
+
+# Check linearity
+p_lin <- ggplot(resid_df, aes(yhat, resid)) +
+  geom_point() +
+  ggtitle("Linearity")
+
+# Check normality
+p_qq <- ggplot(resid_df, aes(sample = resid)) +
+  stat_qq() +
+  stat_qq_line(col = "red") +
+  ggtitle("QQ")
+
+p_combo <- (p_lin + p_qq) + plot_annotation(title = 'Log-linear consumption')
+p_combo & theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
+
+ggsave("figures/supp/log_linear/met_con/resid_con.png", width = 6.5, height = 6.5, dpi = 600)
 
 
-p13 <- ggplot(cs_fit_df_con, aes(cv_y_sim)) + 
-  geom_histogram(bins = n_bins) +
-  geom_vline(xintercept = cs_fit_df_con$cv_y, color = "white", 
-             linetype = 2, size = 0.4) +
-  annotate("text", -Inf, Inf, label = "B", size = 4, 
-           fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", -Inf, Inf, size = 4, hjust = -2, vjust = 3.3, 
-           label = paste("P =", round(mean(cs_fit_df_con$p_cv), digits = 3))) +
-  labs(x = "cv simulated consumption", y = "") +
-  coord_cartesian(expand = 0) +
-  NULL
-pWord13 <- p13 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
 
 
-pWord12 + pWord13
-ggsave("figures/supp/log_linear/met_con/fit_con_mean_cv.png", width = 6.5, height = 6.5, dpi = 600)
 
-
-# F. PLOT PREDICTIONS ==============================================================
+# E. PLOT PREDICTIONS ==============================================================
 #** Fits and data ==================================================================
 # jags.samples - Nice for summaries and predictions
 # Extract the prediction at each x including credible interaval
@@ -1239,7 +1258,7 @@ pWord17 + pWord18 + pWord19 + pWord20 + pWord21 + plot_layout(ncol = 3)
 ggsave("figures/supp/log_linear/met_con/posterior_main_param.png", width = 6.5, height = 6.5, dpi = 600)
 
 
-# G. ADDITINAL CALCULATIONS ON THE POSTERIOR =======================================
+# F. ADDITINAL CALCULATIONS ON THE POSTERIOR =======================================
 # Calculate the proportion of the posterior of activation energy that is less than zero
 js = jags.samples(jm_met,
                   variable.names = c("mu_b1", "mu_b2", "b3"),

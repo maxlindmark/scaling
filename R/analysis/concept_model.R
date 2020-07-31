@@ -51,11 +51,20 @@ con <-
 #   mass = dat$log_mass_ct,
 #   temp = dat$temp_arr_ct)
 
-# Set temperature range. 
+# Set temperature & mass range. 
 temp_c_ct <- seq(-20, 40, 0.1)
+mass_range <- c(2, 200)
+
+# This is the mass-range in the respective datasets
+# > summary(met$mass_g)
+# Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+# 0.025     9.545    85.530   310.779   238.818 21340.920 
+# > summary(con$mass_g)
+# Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+# 0.0515    1.1794   25.9101  103.5015  161.6000 1167.8281 
 
 # Create new prediction data frame
-met_pred <- data.frame(expand.grid(mass_g = c(10, 100),
+met_pred <- data.frame(expand.grid(mass_g = mass_range,
                                    temp_c_ct = temp_c_ct))
 
 # Add which rate it is
@@ -103,7 +112,7 @@ met_pred$y_g_d <- met_pred$y_g_h * 24
 # Here we want scalars that collapse to 1 at the mean temperature
 # For metabolism this is exponential, for consumption it is based on the polynomial model
 
-# First add non-normalized temperatuers
+# First add non-normalized temperatures
 met_pred$temp_c <- met_pred$temp_c_ct + 19
 
 # Calculate Kelvin temperatures
@@ -119,11 +128,13 @@ ggplot(met_pred, aes(temp_c,temp_scalar)) + geom_point()
 # Rescale to equal 1 at 19C
 scaling_factor_m <- filter(met_pred, temp_c == 19)$temp_scalar[1]
 
-met_pred$temp_scalar_scaled <- met_pred$temp_scalar * (1/scaling_factor_m)
+met_pred$temp_scalar_scaled <- met_pred$temp_scalar / scaling_factor_m
 
 # Plot rescaled temp scalar
-#ggplot(met_pred, aes(temp_c, temp_scalar_scaled)) + geom_point()
-ggplot(met_pred, aes(temp_c_ct, temp_scalar_scaled)) + geom_point()
+ggplot(met_pred, aes(temp_c, temp_scalar_scaled)) +
+  geom_point() +
+  geom_vline(xintercept = 19) +
+  geom_hline(yintercept = 1)
 
 # Add temperature-dependent rates
 met_pred$y_g_d_temp <- met_pred$y_g_d * met_pred$temp_scalar_scaled
@@ -135,7 +146,7 @@ ggplot(met_pred, aes(temp_c, y_g_d_temp, color = factor(mass_g))) + geom_line()
 
 #**** Consumption ==================================================================
 # Create new prediction data frame
-con_pred <- data.frame(expand.grid(mass_g = c(10, 100),
+con_pred <- data.frame(expand.grid(mass_g = mass_range,
                                    temp_c_ct = temp_c_ct))
 
 # Add which rate it is
@@ -169,19 +180,18 @@ con_pred$y_g_d <- con_pred$y
 # Here we want scalars that collapse to 1 at the mean temperature
 # For metabolism this is exponential, for consumption it is based on the polynomial model
 
-# First add non-normalized temperatuers
+# First add non-normalized temperatures
 con_pred$temp_c <- con_pred$temp_c_ct + 19
 
 # Coefficients from polynomial model
-b1 <- -1.908e-03
-b2 <- 4.819e-02
-b3 <- -2.262e-04
-b4 <- -3.774e-05
-mu_b0 <- 8.320e-01
+mu_b0 <- 0.81
+b1 <- -0.0016
+b2 <- 0.042
+b3 <- -0.00025
 
 # Now calculate the scalar by predicting maximum consumption for the mean body size (i.e. 0)
-# The model is fitted to evironment-centered temperature and mean-centered mass
-con_pred$temp_scalar <- mu_b0 + b1*0 + b2*con_pred$temp_c_ct + b3*con_pred$temp_c_ct^2 + b4*con_pred$temp_c_ct^3
+# The model is fitted to environment-centered temperature and mean-centered mass
+con_pred$temp_scalar <- mu_b0 + b1*0 + b2*con_pred$temp_c_ct + b3*con_pred$temp_c_ct^2
 
 # Plot temp scalar
 ggplot(con_pred, aes(temp_c, temp_scalar)) + geom_point()
@@ -192,7 +202,10 @@ scaling_factor_c <- filter(con_pred, temp_c == 19)$temp_scalar[1]
 con_pred$temp_scalar_scaled <- con_pred$temp_scalar * (1/scaling_factor_c)
 
 # Plot rescaled temp scalar
-ggplot(con_pred, aes(temp_c_ct, temp_scalar_scaled)) + geom_point()
+ggplot(con_pred, aes(temp_c, temp_scalar_scaled)) + 
+  geom_point() +
+  geom_vline(xintercept = 19) +
+  geom_hline(yintercept = 1)
 
 # Add temperature-dependent rates
 con_pred$y_g_d_temp <- con_pred$y_g_d * con_pred$temp_scalar_scaled
@@ -233,6 +246,10 @@ diff$y_g_d_temp <- con_pred_sub$y_g_d_temp - met_pred_sub$y_g_d_temp
 
 dat <- rbind(met_pred_sub, con_pred_sub, diff)
 
+# Add variable for plotting
+dat$mass_facet <- as.factor(dat$mass_g)
+levels(dat$mass_facet) <- c("2 g", "200 g")
+
 # Find peak temperature
 peak <- dat %>% 
   group_by(mass_g) %>% 
@@ -242,27 +259,36 @@ peak <- dat %>%
 # Set palette
 pal <- RColorBrewer::brewer.pal("Dark2", n = 3)
 
+# Add a dummy for axis range (for facets individually...)
+dummy <- data.frame(y_g_d_temp = c(0.5, 2), mass_g = c(2, 200), rate = "Maximum consumption",
+                    mass_facet = c("2 g", "200 g"), temp_c_ct = 15)
 
 # Plot all 6 curves
-p1 <- ggplot(dat, aes(temp_c_ct, y_g_d_temp, color = factor(rate), linetype = factor(mass_g), alpha = factor(rate))) +
+p1 <- dat %>% filter(y_g_d_temp > 0 & temp_c_ct > -5 & temp_c_ct < 30) %>% 
+  ggplot(., aes(temp_c_ct, y_g_d_temp, color = factor(rate),
+                linetype = factor(mass_g), alpha = factor(rate))) +
   geom_line(size = 1.2) +
-  coord_cartesian(expand = 0, ylim = c(0, 5), xlim = c(-5, 35)) + 
+  coord_cartesian(expand = 0) + 
   scale_color_manual(values = pal) +
-  scale_linetype_manual(values = c(1, 2)) +
+  scale_linetype_manual(values = c(1, 1)) +
   scale_alpha_manual(values = c(0.5, 1, 0.5)) +
   labs(x = expression(paste("Rescaled temperature [", degree*C, "]")),
        y = "Rescaled rates [g/day]",
-       color = "Rate",
-       linetype = "Mass [g]") +
+       color = "Rate") +
   geom_segment(data = peak, aes(x = temp_c_ct, xend = temp_c_ct, y = y_g_d_temp, yend = 0),
                size = 1, arrow = arrow(length = unit(0.35, "cm")), show.legend = FALSE) +
-  guides(linetype = guide_legend(override.aes = list(size = 0.6))) +
+  guides(linetype = FALSE) +
   guides(alpha = FALSE) +
+  facet_wrap(~ mass_facet, scales = "free_y", ncol = 1) + # new addition that is needed for the larger size range
+  geom_point(data = dummy, aes(temp_c_ct, y_g_d_temp), inherit.aes = F, color = "white", fill = "white") + 
   NULL
 
 pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 12),
                                        aspect.ratio = 1,
-                                       legend.title = element_text(size = 10))
+                                       legend.title = element_text(size = 10),
+                                       legend.text = element_text(size = 8),
+                                       legend.position = c(0.32, 0.91),
+                                       legend.background = element_rect(fill = NA))
 
 pWord1
 
