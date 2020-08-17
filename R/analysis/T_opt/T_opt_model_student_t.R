@@ -87,90 +87,6 @@ n.iter <- 15000  # Number of samples
 thin <- 5        # Save every 5th sample
 
 
-#**** M1: Random intercept and slope with a student t likelihood ===================
-model1 <- "model{
-  
-  for(i in 1:n_obs){
-  
-  # Likelihood
-    y[i] ~ dt(mu[i], tau, k)
-    mu[i] <- b0[species_n[i]] + b1[species_n[i]]*mass[i]    # varying intercept and slope
-
-  # Simulate for comparison with data
-    y_sim[i] ~ dt(mu[i], tau, k)
-    
-  # Add log likelihood computation for each observation
-    pd[i] <- dt(y[i], mu[i], tau, k)
-  
-  # Calculates the log PPD
-    log_pd[i] <- log(dt(y[i], mu[i], tau, k))
-  }
-  
-  # Second level (species-level effects)
-  for(j in 1:max(species_n)){
-    b0[j] ~ dnorm(mu_b0, tau_b0)
-    b1[j] ~ dnorm(mu_b1, tau_b1)
-  }
-  
-  # Model fit
-    mean_y <- mean(y[])
-    mean_y_sim <- mean(y_sim[])
-    p_mean <- step(mean_y_sim - mean_y) # Proportion of data above and below 
-
-  # Priors	
-    mu_b0 ~ dnorm(0, 0.04)    
-    mu_b1 ~ dnorm(0, 0.04)    
-    sigma ~ dunif(0, 10) 
-    sigma_b0 ~ dunif(0, 10)
-    sigma_b1 ~ dunif(0, 10)
-    # shape = 2; rate = 0.1; hist(rgamma(n = 1000, shape = shape, rate = rate, scale = 1/rate))
-    k ~ dgamma(2, 0.1)   # this is the degrees of freedom parameter, prior from here: https://statmodeling.stat.columbia.edu/2015/05/17/do-we-have-any-recommendations-for-priors-for-student_ts-degrees-of-freedom-parameter/
-  
-  # Derived quantiles
-    tau <- 1/(sigma*sigma)
-    tau_b0 <- 1/(sigma_b0*sigma_b0)
-    tau_b1 <- 1/(sigma_b1*sigma_b1)
-  
-  }
-"
-model1 <- textConnection(model1)
-
-# Manually set initial values, because otherwise all the chains get the same
-inits = list(
-  list(
-    mu_b0 = 0.1,
-    mu_b1 = 0.1,
-    sigma = 0.1,
-    sigma_b0 = 0.1,
-    sigma_b1 = 0.1,
-    .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples
-  ),
-  list(
-    mu_b0 = 1,
-    mu_b1 = 1,
-    sigma = 1,
-    sigma_b0 = 1,
-    sigma_b1 = 1,
-    .RNG.name = "base::Super-Duper", .RNG.seed = 2
-  ),
-  list(
-    mu_b0 = 0.001,
-    mu_b1 = 0.001,
-    sigma = 0.001,
-    sigma_b0 = 0.001,
-    sigma_b1 = 0.001,
-    .RNG.name = "base::Super-Duper", .RNG.seed = 2
-  ))
-
-jm1 = jags.model(model1,
-                 data = data, 
-                 n.adapt = 5000, 
-                 n.chains = 3,
-                 inits = inits)
-
-update(jm1, n.iter = n.iter) 
-
-
 #**** M2: Random intercept with a student t likelihood =============================
 model2 <- "model{
   
@@ -252,138 +168,103 @@ update(jm2, n.iter = n.iter)
 # D. MODEL VALIDATION ==============================================================
 # CODA - Nice for getting the raw posteriors
 cs <- coda.samples(jm2, n.iter = n.iter, thin = thin,
-                   variable.names = c("b0", "b1", "mu_b0", "mu_b1", "sigma_b0",
+                   variable.names = c("b0", "b1", "mu_b0", "sigma_b0",
                                       "sigma", "k"))
 
 summary(cs)
 # 2. Quantiles for each variable:
 #             2.5%     25%       50%       75%    97.5%
 # ...
-# k         0.79016  1.7392  3.755282 13.179415 68.66293
-# mu_b0    -0.59217 -0.2022  0.001673  0.228639  0.72890
-# mu_b1    -0.85522 -0.5550 -0.413833 -0.260091  0.09643
-# sigma     0.21200  0.6173  1.028141  1.348146  1.77126
-# sigma_b0  0.02823  0.2346  0.474182  0.792782  1.47351
+# b1       -0.72557 -0.53345 -0.43241 -0.3367 -0.1572
+# k         1.83299  4.92901  9.30399 17.3193 44.2271
+# mu_b0    -0.38973 -0.06287  0.12387  0.3140  0.7311
+# sigma     0.71445  1.17887  1.37781  1.5485  1.8900
+# sigma_b0  0.02018  0.16699  0.34289  0.6034  1.3013
 
 
 #** Evaluate convergence ===========================================================
-# Convert to ggplottable data frame
-cs_df <- ggs(cs)
-
-#**** Species intercepts ===========================================================
-# Plot posterior densities of species intercepts
-unique(cs_df$Parameter)
-
-p1 <- cs_df %>% 
-  filter(Parameter %in% c("b0[1]", "b0[2]", "b0[3]", "b0[4]", "b0[5]", "b0[6]", "b0[7]", 
-                          "b0[8]", "b0[9]", "b0[10]", "b0[11]", "b0[12]", "b0[13]")) %>% 
-  ggs_density(.) + 
-  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
-  geom_density(alpha = 0.05) +
-  scale_color_brewer(palette = "Dark2") + 
-  scale_fill_brewer(palette = "Dark2") +
-  labs(x = "Value", y = "Density", fill = "Chain #") +
-  guides(color = FALSE, fill = FALSE) +
-  NULL
-pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 10),
-                                       axis.text = element_text(size = 5))
-
-# Traceplot for evaluating chain convergence
-p2 <- cs_df %>% 
-  filter(Parameter %in% c("b0[1]", "b0[2]", "b0[3]", "b0[4]", "b0[5]", "b0[6]", "b0[7]", 
-                          "b0[8]", "b0[9]", "b0[10]", "b0[11]", "b0[12]", "b0[13]")) %>% 
-  ggs_traceplot(.) +
-  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
-  geom_line(alpha = 0.3) +
-  scale_color_brewer(palette = "Dark2") + 
-  labs(x = "Iteration", y = "Value", color = "Chain #") +
-  guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  NULL
-pWord2 <- p2 + theme_classic() + theme(text = element_text(size = 10),
-                                       axis.text = element_text(size = 5))
-pWord1 + pWord2
-#ggsave("figures/supp/T_opt/validation_topt_intercepts.png", width = 6.5, height = 6.5, dpi = 600)
-
-
-#**** Species slope ================================================================
-# Plot posterior densities of species intercepts
-unique(cs_df$Parameter)
-
-p3 <- cs_df %>% 
-  filter(Parameter %in% c("b1[1]", "b1[2]", "b1[3]", "b1[4]", "b1[5]", "b1[6]", "b1[7]", 
-                          "b1[8]", "b1[9]", "b1[10]", "b1[11]", "b1[12]", "b1[13]")) %>% 
-  ggs_density(.) + 
-  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
-  geom_density(alpha = 0.05) +
-  scale_color_brewer(palette = "Dark2") + 
-  scale_fill_brewer(palette = "Dark2") +
-  labs(x = "Value", y = "Density", fill = "Chain #") +
-  guides(color = FALSE, fill = FALSE) +
-  NULL
-pWord3 <- p3 + theme_classic() + theme(text = element_text(size = 10),
-                                       axis.text = element_text(size = 5))
-
-# Traceplot for evaluating chain convergence
-p4 <- cs_df %>% 
-  filter(Parameter %in% c("b1[1]", "b1[2]", "b1[3]", "b1[4]", "b1[5]", "b1[6]", "b1[7]", 
-                          "b1[8]", "b1[9]", "b1[10]", "b1[11]", "b1[12]", "b1[13]")) %>% 
-  ggs_traceplot(.) +
-  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
-  geom_line(alpha = 0.3) +
-  scale_color_brewer(palette = "Dark2") + 
-  labs(x = "Iteration", y = "Value", color = "Chain #") +
-  guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  NULL
-pWord4 <- p4 + theme_classic() + theme(text = element_text(size = 10),
-                                       axis.text = element_text(size = 5))
-pWord3 + pWord4
-#ggsave("figures/supp/T_opt/validation_topt_slopes_student.png", width = 6.5, height = 6.5, dpi = 600)
-
-
-#**** Group-level means ============================================================
-# Plot posterior densities of group-level means and standard deviations
-p5 <- cs_df %>% 
-  filter(Parameter %in% c("mu_b0", "mu_b1",
-                          "sigma_b0", "sigma_b1", "sigma", "k")) %>% 
-  ggs_density(.) + 
-  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
-  geom_density(alpha = 0.05) +
-  scale_color_brewer(palette = "Dark2") + 
-  scale_fill_brewer(palette = "Dark2") +
-  labs(x = "Value", y = "Density", fill = "Chain #") +
-  guides(color = FALSE, fill = FALSE) +
-  NULL
-pWord5 <- p5 + theme_classic() + theme(text = element_text(size = 10),
-                                       axis.text = element_text(size = 5))
-
-# Traceplot for evaluating chain convergence
-p6 <- cs_df %>% 
-  filter(Parameter %in% c("mu_b0", "mu_b1",
-                          "sigma_b0", "sigma_b1", "sigma")) %>% 
-  ggs_traceplot(.) +
-  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
-  geom_line(alpha = 0.3) +
-  scale_color_brewer(palette = "Dark2") + 
-  labs(x = "Iteration", y = "Value", color = "Chain #") +
-  guides(color = guide_legend(override.aes = list(alpha = 1))) +
-  NULL
-pWord6 <- p6 + theme_classic() + theme(text = element_text(size = 10),
-                                       axis.text = element_text(size = 5))
-pWord5 + pWord6
-#ggsave("figures/supp/T_opt/validation_topt_student.png", width = 6.5, height = 6.5, dpi = 600)
-
-
-#**** Chain convergence (Rhat) ====================================================
-p7 <- cs_df %>% 
-  ggs_Rhat(.) + 
-  xlab("R_hat") +
-  xlim(0.999, 1.002) +
-  geom_point(size = 2) +
-  NULL
-pWord7 <- p7 + theme_classic() + theme(text = element_text(size = 10),
-                                       axis.text = element_text(size = 5))
-pWord7
-#ggsave("figures/supp/T_opt/validation_rhat_topt_student.png", width = 6.5, height = 6.5, dpi = 600)
+# # Convert to ggplottable data frame
+# cs_df <- ggs(cs)
+# 
+# #**** Species intercepts ===========================================================
+# # Plot posterior densities of species intercepts
+# unique(cs_df$Parameter)
+# 
+# p1 <- cs_df %>% 
+#   filter(Parameter %in% c("b0[1]", "b0[2]", "b0[3]", "b0[4]", "b0[5]", "b0[6]", "b0[7]", 
+#                           "b0[8]", "b0[9]", "b0[10]", "b0[11]", "b0[12]", "b0[13]")) %>% 
+#   ggs_density(.) + 
+#   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+#   geom_density(alpha = 0.05) +
+#   scale_color_brewer(palette = "Dark2") + 
+#   scale_fill_brewer(palette = "Dark2") +
+#   labs(x = "Value", y = "Density", fill = "Chain #") +
+#   guides(color = FALSE, fill = FALSE) +
+#   NULL
+# pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 10),
+#                                        axis.text = element_text(size = 5))
+# 
+# # Traceplot for evaluating chain convergence
+# p2 <- cs_df %>% 
+#   filter(Parameter %in% c("b0[1]", "b0[2]", "b0[3]", "b0[4]", "b0[5]", "b0[6]", "b0[7]", 
+#                           "b0[8]", "b0[9]", "b0[10]", "b0[11]", "b0[12]", "b0[13]")) %>% 
+#   ggs_traceplot(.) +
+#   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+#   geom_line(alpha = 0.3) +
+#   scale_color_brewer(palette = "Dark2") + 
+#   labs(x = "Iteration", y = "Value", color = "Chain #") +
+#   guides(color = guide_legend(override.aes = list(alpha = 1))) +
+#   NULL
+# pWord2 <- p2 + theme_classic() + theme(text = element_text(size = 10),
+#                                        axis.text = element_text(size = 5))
+# pWord1 + pWord2
+# ggsave("figures/supp/T_opt/validation_topt_intercepts_student.png", width = 6.5, height = 6.5, dpi = 600)
+# 
+# 
+# #**** Group-level means ============================================================
+# # Plot posterior densities of group-level means and standard deviations
+# p3 <- cs_df %>% 
+#   filter(Parameter %in% c("mu_b0", "mu_b1",
+#                           "sigma_b0", "sigma_b1", "sigma", "k")) %>% 
+#   ggs_density(.) + 
+#   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+#   geom_density(alpha = 0.05) +
+#   scale_color_brewer(palette = "Dark2") + 
+#   scale_fill_brewer(palette = "Dark2") +
+#   labs(x = "Value", y = "Density", fill = "Chain #") +
+#   guides(color = FALSE, fill = FALSE) +
+#   NULL
+# pWord3 <- p3 + theme_classic() + theme(text = element_text(size = 10),
+#                                        axis.text = element_text(size = 5))
+# 
+# # Traceplot for evaluating chain convergence
+# p4 <- cs_df %>% 
+#   filter(Parameter %in% c("mu_b0", "mu_b1",
+#                           "sigma_b0", "sigma_b1", "sigma")) %>% 
+#   ggs_traceplot(.) +
+#   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+#   geom_line(alpha = 0.3) +
+#   scale_color_brewer(palette = "Dark2") + 
+#   labs(x = "Iteration", y = "Value", color = "Chain #") +
+#   guides(color = guide_legend(override.aes = list(alpha = 1))) +
+#   NULL
+# pWord4 <- p4 + theme_classic() + theme(text = element_text(size = 10),
+#                                        axis.text = element_text(size = 5))
+# pWord3 + pWord4
+# ggsave("figures/supp/T_opt/validation_topt_student.png", width = 6.5, height = 6.5, dpi = 600)
+# 
+# 
+# #**** Chain convergence (Rhat) ====================================================
+# p7 <- cs_df %>% 
+#   ggs_Rhat(.) + 
+#   xlab("R_hat") +
+#   xlim(0.999, 1.002) +
+#   geom_point(size = 2) +
+#   NULL
+# pWord7 <- p7 + theme_classic() + theme(text = element_text(size = 10),
+#                                        axis.text = element_text(size = 5))
+# pWord7
+# ggsave("figures/supp/T_opt/validation_rhat_topt_student.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #** Evaluate model fit & residuals =================================================
@@ -409,7 +290,7 @@ p_fit <- ggplot(cs_fit_df, aes(mean_y_sim)) +
   theme(text = element_text(size = 12), aspect.ratio = 1) +
   NULL
 
-ggsave("figures/supp/T_opt/fit_topt_studentm2.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/T_opt/fit_topt_student_m2.png", width = 6.5, height = 6.5, dpi = 600)
 
 # Residuals
 # Extract posteriors for each data point for calculation of residuals
@@ -440,7 +321,7 @@ p_lin <- ggplot(resid_df, aes(yhat, resid)) +
   ggtitle("Linearity")
 
 # Check normality
-# ** MUST COMPARE TO STUDENT!
+# ** MUST COMPARE TO STUDENT, NOT NORMAL QQ
 p_qq <- ggplot(resid_df, aes(sample = resid)) +  # Create QQplot with ggplot2 package
   stat_qq(shape = 21, fill = "black", color = "white", size = 2, distribution = stats::qt, dparams = list(df = k)) +
   stat_qq_line(col = "red", distribution = stats::qt, dparams = list(df = k)) +

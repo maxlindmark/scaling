@@ -560,13 +560,14 @@ ggsave("figures/supp/non_linear/validation_rhat_non_linear_sigma.png", width = 6
 # Define priors for plot
 tau <- 0.04
 
+set.seed(42)
+
 mu_b0 <- rnorm(25000, 0, sqrt(1/tau))
 b1 <- rnorm(25000, 0, sqrt(1/tau))
 b2 <- rnorm(25000, 0, sqrt(1/tau))
 b3 <- rnorm(25000, 0, sqrt(1/tau))
 
-PR <- as.matrix(cbind(mu_b0, b1, b2, b3))
-
+#PR <- as.matrix(cbind(mu_b0, b1, b2, b3))
 PR <- as.matrix(cbind(mu_b0, b2, b3))
 
 # This is not a ggplot...
@@ -574,6 +575,7 @@ png(file = "/Users/maxlindmark/Desktop/R_STUDIO_PROJECTS/scaling/figures/supp/no
     units = "px", width = 1800, height = 1800, res = 300)
 
 MCMCtrace(cs,
+          # params = c("mu_b0", "b1", "b2", "b3"),
           params = c("mu_b0", "b2", "b3"),
           ISB = FALSE,
           priors = PR,

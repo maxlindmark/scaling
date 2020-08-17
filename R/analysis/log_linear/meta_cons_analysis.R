@@ -884,9 +884,6 @@ p_combo & theme_classic() + theme(text = element_text(size = 12), aspect.ratio =
 ggsave("figures/supp/log_linear/met_con/resid_con.png", width = 6.5, height = 6.5, dpi = 600)
 
 
-
-
-
 # E. PLOT PREDICTIONS ==============================================================
 #** Fits and data ==================================================================
 # jags.samples - Nice for summaries and predictions

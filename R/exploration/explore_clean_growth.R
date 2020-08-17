@@ -131,7 +131,7 @@ p1 <- ggplot(dat, aes(x = reorder(species, trophic_level), y = trophic_level)) +
   coord_flip() +
   NULL 
 pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 12),
-                                       axis.text.y = element_text(size = 8))
+                                       axis.text.y = element_text(size = 8, face = "italic"))
 
 # Max. published weight
 p2 <- ggplot(dat, aes(x = reorder(species, w_maturation_g), y = w_maturation_g)) +
@@ -143,10 +143,8 @@ p2 <- ggplot(dat, aes(x = reorder(species, w_maturation_g), y = w_maturation_g))
   coord_flip() +
   NULL 
 pWord2 <- p2 + theme_classic() + theme(text = element_text(size = 12),
-                                       axis.text.y = element_text(size = 8))
-
+                                       axis.text.y = element_text(size = 8, face = "italic"))
 pWord1 / pWord2
-
 ggsave("figures/supp/data/growth_tl_mass.png", width = 6.5, height = 6.5, dpi = 600)
 
 
@@ -165,10 +163,12 @@ p3 <- ggplot(dat) +
                  y = env_temp_min, color = "Environment (min)"), size = 1.5, alpha = 0.6) +
   scale_color_manual(values = rev(pal), name = "Temperature") +
   xlab("") + 
+  guides(shape = F) +
   ylab(expression(paste("Temperature [", degree*C, "]"))) + 
   NULL 
 pWord <- p3 + theme_classic() + theme(text = element_text(size = 12),
-                                      axis.text = element_text(size = 8))
+                                      axis.text = element_text(size = 8),
+                                      axis.text.y = element_text(face = "italic"))
 ggsave("figures/supp/data/growth_temperatures.png", width = 6.5, height = 6.5, dpi = 600)
 
 

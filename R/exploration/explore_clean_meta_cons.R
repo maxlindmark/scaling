@@ -148,7 +148,7 @@ p2 <- ggplot(dat, aes(x = reorder(species, trophic_level), y = trophic_level)) +
   facet_wrap(~ rate) +
   NULL 
 pWord <- p2 + theme_classic() + theme(text = element_text(size = 12),
-                                      axis.text.y = element_text(size = 8))
+                                      axis.text.y = element_text(size = 8, face = "italic"))
 ggsave("figures/supp/data/meta_cons_trophic_level.png", width = 6.5, height = 6.5, dpi = 600)
 
 
@@ -171,7 +171,7 @@ p3 <- ggplot(dat) +
   facet_wrap(~ rate) +
   NULL 
 pWord <- p3 + theme_classic() + theme(text = element_text(size = 12),
-                                      axis.text = element_text(size = 8))
+                                      axis.text = element_text(size = 8, face = "italic"))
 ggsave("figures/supp/data/meta_cons_temperatures.png", width = 6.5, height = 6.5, dpi = 600)
 
 
@@ -187,7 +187,7 @@ p4 <- ggplot(dat, aes(x = reorder(species, w_max_published_g), y = w_max_publish
   facet_wrap(~ rate) +
   NULL 
 pWord <- p4 + theme_classic() + theme(text = element_text(size = 12),
-                                      axis.text.y = element_text(size = 8))
+                                      axis.text.y = element_text(size = 8, face = "italic"))
 ggsave("figures/supp/data/meta_cons_max_weight.png", width = 6.5, height = 6.5, dpi = 600)
 
 
@@ -199,7 +199,8 @@ p5 <- dat %>% dplyr::distinct(common_name, .keep_all = TRUE) %>%
   facet_wrap(~ rate) +
   NULL
 pWord <- p5 + theme_classic() + theme(text = element_text(size = 12),
-                                      axis.text.x = element_text(angle = 60, hjust = 1, size = 8))
+                                      axis.text.x = element_text(angle = 60, hjust = 1, size = 8,
+                                                                 face = "italic"))
 ggsave("figures/supp/data/meta_cons_phylogeny.png", width = 6.5, height = 6.5, dpi = 600)
 
 

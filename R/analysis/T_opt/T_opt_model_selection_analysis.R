@@ -366,6 +366,8 @@ ggsave("figures/supp/T_opt/validation_rhat_topt.png", width = 6.5, height = 6.5,
 tau_int <- 0.04
 tau_slope <- 0.04
 
+set.seed(42)
+
 mu_b0 <- rnorm(25000, 0, sqrt(1/tau_int))
 b1 <- rnorm(25000, 0, sqrt(1/tau_slope))
 
@@ -714,4 +716,5 @@ pWord9 <- p9 + theme_classic() + theme(legend.position = "bottom",
                                        legend.text = element_text(size = 10),
                                        aspect.ratio = 6/7,
                                        text = element_text(size = 12))
+
 ggsave("figures/supp/T_opt/env_exp_temp.png", width = 6.5, height = 6.5, dpi = 600)
