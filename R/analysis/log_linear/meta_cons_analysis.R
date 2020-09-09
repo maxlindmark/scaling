@@ -34,6 +34,7 @@ library(patchwork)
 library(bayesplot)
 library(MCMCvis)
 library(scales)
+library(bayesplot)
 
 # > sessionInfo()
 # other attached packages:
@@ -66,7 +67,6 @@ n_stand / (n_stand + n_rout_rest)
 
 summary(met$mass_g)
 summary(con$mass_g)
-
 
 # Filter data points at below optimum temperatures
 met <- met %>% filter(above_peak_temp == "N")
@@ -784,28 +784,46 @@ cs_fit_met = coda.samples(jm_met, n.iter = n.iter, thin = thin,
 # Convert to data frames
 cs_fit_df_met <- data.frame(as.matrix(cs_fit_met))
 
-# Model fit
+#-- Model fit
 p_fit_m <- ggplot(cs_fit_df_met, aes(mean_y_sim)) + 
   coord_cartesian(expand = 0) +
   geom_histogram(bins = round(1 + 3.2*log(nrow(cs_fit_df_met)))) +
-  geom_histogram() +
   geom_vline(xintercept = cs_fit_df_met$mean_y, color = "white", 
              linetype = 2, size = 0.4) +
   labs(x = "mean simulated data", y = "count") +
   theme_classic() +
+  annotate("text", -Inf, Inf, label = round(mean(cs_fit_df_met$p_mean), digits = 3), 
+           size = 3, hjust = -0.5, vjust = 1.3) +
   theme(text = element_text(size = 12), aspect.ratio = 1) +
   NULL
 
-ggsave("figures/supp/log_linear/met_con/fit_met_mean.png", width = 6.5, height = 6.5, dpi = 600)
 
-# Residuals
+#-- Posterior predictive distributions
+# https://www.weirdfishes.blog/blog/fitting-bayesian-models-with-stan-and-r/#posterior-predictive-analysis
+
 # Extract posteriors for each data point for calculation of residuals
-resid <- coda.samples(jm_met, variable.names = c("y_sim"), n.iter = n.iter, thin = thin, )
+y_sim_met <- coda.samples(jm_met, variable.names = c("y_sim"), n.iter = n.iter, thin = thin)
 
 # Tidy-up
-resid_df <- ggs(resid)
+df_y_sim_met <- ggs(y_sim_met)
 
-resid_df <- resid_df %>%
+pal <- brewer.pal(n = 3, name = "Dark2")
+
+pp_m <- ggplot() +
+  geom_density(data = df_y_sim_met, aes(value, fill = 'Posterior\nPredictive'), alpha = 0.6) +
+  geom_density(data = met, aes(log(y_spec), fill = 'Observed'), alpha = 0.6) +
+  scale_fill_manual(values = pal[c(3,2)]) +
+  coord_cartesian(expand = 0) +
+  theme_classic() +
+  theme(text = element_text(size = 12), aspect.ratio = 1,
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8),
+        legend.position = c(0.2, 0.95),
+        legend.key.size = unit(0.3, "cm"))
+
+
+#-- Residual vs fitted
+df_y_sim_met <- df_y_sim_met %>%
   ungroup() %>%
   group_by(Parameter) %>%
   summarize(median = median(value)) %>% 
@@ -813,21 +831,14 @@ resid_df <- resid_df %>%
   mutate(y = met_data$y,
          resid = y - yhat)
 
-# Check linearity
-p_lin <- ggplot(resid_df, aes(yhat, resid)) +
-  geom_point() +
-  ggtitle("Linearity")
+p_resid_met <- ggplot(df_y_sim_met, aes(yhat, resid)) +
+  geom_point(fill = "black", color = "white", shape = 21) + 
+  theme_classic() +
+  theme(text = element_text(size = 12)) 
 
-# Check normality
-p_qq <- ggplot(resid_df, aes(sample = resid)) +
-  stat_qq() +
-  stat_qq_line(col = "red") +
-  ggtitle("QQ")
+(p_fit_m | pp_m) / p_resid_met + plot_annotation(tag_levels = 'A')
 
-p_combo <- (p_lin + p_qq) + plot_annotation(title = 'Log-linear metabolism')
-p_combo & theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
-
-ggsave("figures/supp/log_linear/met_con/resid_met.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/fit_pp_resid_met.png", width = 7, height = 7, dpi = 600)
 
 
 #**** Consumption ===================================================================
@@ -838,28 +849,46 @@ cs_fit_con = coda.samples(jm_con, n.iter = n.iter, thin = thin,
 # Convert to data frames
 cs_fit_df_con <- data.frame(as.matrix(cs_fit_con))
 
-# Model fit
+#-- Model fit
 p_fit_c <- ggplot(cs_fit_df_con, aes(mean_y_sim)) + 
   coord_cartesian(expand = 0) +
   geom_histogram(bins = round(1 + 3.2*log(nrow(cs_fit_df_con)))) +
-  geom_histogram() +
   geom_vline(xintercept = cs_fit_df_con$mean_y, color = "white", 
              linetype = 2, size = 0.4) +
   labs(x = "mean simulated data", y = "count") +
   theme_classic() +
+  annotate("text", -Inf, Inf, label = round(mean(cs_fit_df_con$p_mean), digits = 3), 
+           size = 3, hjust = -0.5, vjust = 1.3) +
   theme(text = element_text(size = 12), aspect.ratio = 1) +
   NULL
 
-ggsave("figures/supp/log_linear/met_con/fit_con_mean.png", width = 6.5, height = 6.5, dpi = 600)
 
-# Residuals
+#-- Posterior predictive distributions
+# https://www.weirdfishes.blog/blog/fitting-bayesian-models-with-stan-and-r/#posterior-predictive-analysis
+
 # Extract posteriors for each data point for calculation of residuals
-resid <- coda.samples(jm_con, variable.names = c("y_sim"), n.iter = n.iter, thin = thin, )
+y_sim_con <- coda.samples(jm_con, variable.names = c("y_sim"), n.iter = n.iter, thin = thin)
 
 # Tidy-up
-resid_df <- ggs(resid)
+df_y_sim_con <- ggs(y_sim_con)
 
-resid_df <- resid_df %>%
+pal <- brewer.pal(n = 3, name = "Dark2")
+
+pp_c <- ggplot() +
+  geom_density(data = df_y_sim_con, aes(value, fill = 'Posterior\nPredictive'), alpha = 0.6) +
+  geom_density(data = con, aes(log(y_spec), fill = 'Observed'), alpha = 0.6) +
+  scale_fill_manual(values = pal[c(3,2)]) +
+  coord_cartesian(expand = 0) +
+  theme_classic() +
+  theme(text = element_text(size = 12), aspect.ratio = 1,
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8),
+        legend.position = c(0.2, 0.95),
+        legend.key.size = unit(0.3, "cm"))
+
+
+#-- Residual vs fitted
+df_y_sim_con <- df_y_sim_con %>%
   ungroup() %>%
   group_by(Parameter) %>%
   summarize(median = median(value)) %>% 
@@ -867,21 +896,14 @@ resid_df <- resid_df %>%
   mutate(y = con_data$y,
          resid = y - yhat)
 
-# Check linearity
-p_lin <- ggplot(resid_df, aes(yhat, resid)) +
-  geom_point() +
-  ggtitle("Linearity")
+p_resid_con <- ggplot(df_y_sim_con, aes(yhat, resid)) +
+  geom_point(fill = "black", color = "white", shape = 21) + 
+  theme_classic() +
+  theme(text = element_text(size = 12)) 
 
-# Check normality
-p_qq <- ggplot(resid_df, aes(sample = resid)) +
-  stat_qq() +
-  stat_qq_line(col = "red") +
-  ggtitle("QQ")
+(p_fit_c | pp_c) / p_resid_con + plot_annotation(tag_levels = 'A')
 
-p_combo <- (p_lin + p_qq) + plot_annotation(title = 'Log-linear consumption')
-p_combo & theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
-
-ggsave("figures/supp/log_linear/met_con/resid_con.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/fit_pp_resid_con.png", width = 7, height = 7, dpi = 600)
 
 
 # E. PLOT PREDICTIONS ==============================================================
@@ -947,7 +969,7 @@ getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
 pal <- getPalette(colourCount)
 
 p14 <- ggplot(c_pred_df, aes(mass_g, median)) +
-  geom_point(data = con, aes(mass_g, log(con$y_spec), fill = species_ab),
+  geom_point(data = con, aes(mass_g, log(y_spec), fill = species_ab),
              size = 2, shape = 21, alpha = 0.8, color = "white") +
   geom_ribbon(data = c_pred_df, aes(x = mass_g, ymin = lwr_95, ymax = upr_95), 
               size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
@@ -956,7 +978,8 @@ p14 <- ggplot(c_pred_df, aes(mass_g, median)) +
   geom_line(size = 0.8, alpha = 0.8) +
   scale_fill_manual(values = pal) +
   scale_x_continuous(trans = scales::log_trans(),
-                     labels = scales::number_format(accuracy = 0.1)) +
+                     #labels = scales::number_format(accuracy = .1), # Use this to get evenly space ticks, and the below to round them up!
+                     breaks = c(0.5, 7, 150)) +
   guides(fill = FALSE) +
   labs(x = "mass [g]",
        y = "ln(maximum consumption rate [g/g/day])") +
@@ -966,7 +989,7 @@ p14 <- ggplot(c_pred_df, aes(mass_g, median)) +
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) + # This solution doesn't play with the ln axis...
   NULL
 
-pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 12))
+pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio =  1)
 
 
 colourCount = length(unique(met$species))
@@ -974,7 +997,7 @@ getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
 pal <- getPalette(colourCount)
 
 p15 <- ggplot(m_pred_df, aes(mass_g, median)) +
-  geom_point(data = met, aes(mass_g, log(met$y_spec), fill = species_ab),
+  geom_point(data = met, aes(mass_g, log(y_spec), fill = species_ab),
              size = 2, shape = 21, alpha = 0.8, color = "white") +
   geom_ribbon(data = m_pred_df, aes(x = mass_g, ymin = lwr_95, ymax = upr_95), 
               size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
@@ -983,19 +1006,20 @@ p15 <- ggplot(m_pred_df, aes(mass_g, median)) +
   geom_line(size = 0.8, alpha = 0.8) +
   scale_fill_manual(values = pal) +
   scale_x_continuous(trans = scales::log_trans(),
-                     labels = scales::number_format(accuracy = 0.1)) +
+                     #labels = scales::number_format(accuracy = .1), # Use this to get evenly space ticks, and the below to round them up!
+                     breaks = c(0.5, 20, 1100)) +
   guides(fill = FALSE) +
   labs(x = "mass [g]",
-       y = "ln(metabolic rate [mg 02/g/day])") +
+       y = expression(paste("ln(metabolic rate [mg ", O[2], "/g/day]"))) +
   annotate("text", 0.022, 0.3, label = "B", size = 4, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
   # annotate("text", -Inf, Inf, label = "A", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) + # This solution doesn't play with the ln axis...
   NULL
-pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 12))
+pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
 
-pWord14 / pWord15
-ggsave("figures/pred_con_met.png", width = 6.5, height = 6.5, dpi = 600)
+pWord14 | pWord15
+ggsave("figures/pred_con_met.png", width = 7, height = 3.5, dpi = 600)
 
 
 #** Parameter estimates ============================================================
@@ -1023,8 +1047,13 @@ cs_met <- coda.samples(jm_met,
 # Maxiumum consumption
 # First get the species names in order as they appear in the output. This is based on 
 # the order of the factor level (1:n), based on the species names in alphabetical order,
-# which is not the same as the order they appear in the data.
+# which is not the same as the order they appear in the data(!).
 con_spec <- unique(arrange(con, species_n)$species_ab)
+# unique(con$species_n)
+# unique(con$species_ab)
+# sort(unique(con$species_n))
+# sort(unique(con$species_ab))
+# con %>% select(species_n, species_ab)
 
 con_df <- data.frame(summary(cs_con)[2]) # Extract quantiles
 con_df$Parameter <- rownames(con_df)
@@ -1158,7 +1187,9 @@ pWord16 <- p16 + theme_classic() + theme(text = element_text(size = 12),
                                          aspect.ratio = 2/1,
                                          legend.position = "bottom",
                                          legend.title = element_blank())
-ggsave("figures/species_b_ea.png", width = 6.5, height = 6.5, dpi = 600)
+
+ggsave("figures/species_b_ea.png", width = 4.5, height = 6.5, dpi = 600)
+
 
 
 #**** Plot global-predictions ======================================================

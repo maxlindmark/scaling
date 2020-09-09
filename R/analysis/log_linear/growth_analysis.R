@@ -168,7 +168,7 @@ summary(cs)
 # mu_b2    -0.948409 -0.80570 -0.739995 -0.67379 -0.5311737
 # mu_b3    -0.063643 -0.01721  0.004598  0.02689  0.0746968
 
-#** Evaluate convergence ===========================================================
+# Evaluate convergence ===========================================================
 # Convert to ggplottable data frame
 cs_df <- ggs(cs)
 
@@ -361,7 +361,7 @@ MCMCtrace(cs,
 dev.off()
 
 
-#** Evaluate model fit & residuals =================================================
+# Evaluate model fit & residuals =================================================
 # https://rpubs.com/Niko/332320
 
 # Extract generated data and data
@@ -371,56 +371,66 @@ cs_fit = coda.samples(jm, n.iter = n.iter, thin = thin,
 # Convert to data frames
 cs_fit_df <- data.frame(as.matrix(cs_fit))
 
-# Model fit
+#-- Model fit
 p_fit <- ggplot(cs_fit_df, aes(mean_y_sim)) + 
   coord_cartesian(expand = 0) +
   geom_histogram(bins = round(1 + 3.2*log(nrow(cs_fit_df)))) +
-  geom_histogram() +
   geom_vline(xintercept = cs_fit_df$mean_y, color = "white", 
              linetype = 2, size = 0.4) +
   labs(x = "mean simulated data", y = "count") +
   theme_classic() +
+  annotate("text", -Inf, Inf, label = round(mean(cs_fit_df$p_mean), digits = 3), 
+           size = 3, hjust = -0.5, vjust = 1.3) +
   theme(text = element_text(size = 12), aspect.ratio = 1) +
   NULL
 
-ggsave("figures/supp/log_linear/growth/fit_gro_mean.png", width = 6.5, height = 6.5, dpi = 600)
 
+#-- Posterior predictive distributions
+# https://www.weirdfishes.blog/blog/fitting-bayesian-models-with-stan-and-r/#posterior-predictive-analysis
 
-# Residuals
 # Extract posteriors for each data point for calculation of residuals
-resid <- coda.samples(jm, variable.names = c("y_sim"), n.iter = n.iter, thin = thin, )
+y_sim <- coda.samples(jm, variable.names = c("y_sim"), n.iter = n.iter, thin = thin)
 
 # Tidy-up
-resid_df <- ggs(resid)
+df_y_sim <- ggs(y_sim)
 
-resid_df <- resid_df %>%
+pal <- brewer.pal(n = 3, name = "Dark2")
+
+pp <- ggplot() +
+  geom_density(data = df_y_sim, aes(value, fill = 'Posterior\nPredictive'), alpha = 0.6) +
+  geom_density(data = dat, aes(log(y), fill = 'Observed'), alpha = 0.6) +
+  scale_fill_manual(values = pal[c(3,2)]) +
+  coord_cartesian(expand = 0) +
+  theme_classic() +
+  theme(text = element_text(size = 12), aspect.ratio = 1,
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8),
+        legend.position = c(0.2, 0.95),
+        legend.key.size = unit(0.3, "cm"))
+
+
+#-- Residual vs fitted
+df_y_sim <- df_y_sim %>%
   ungroup() %>%
   group_by(Parameter) %>%
   summarize(median = median(value)) %>% 
   rename("yhat" = "median") %>% 
-  mutate(y = data$y,
+  mutate(y = log(dat$y),
          resid = y - yhat)
 
-# Check linearity
-p_lin <- ggplot(resid_df, aes(yhat, resid)) +
-  geom_point() +
-  ggtitle("Linearity")
+p_resid <- ggplot(df_y_sim, aes(yhat, resid)) +
+  geom_point(fill = "black", color = "white", shape = 21) + 
+  theme_classic() +
+  theme(text = element_text(size = 12)) 
 
-# Check normality
-p_qq <- ggplot(resid_df, aes(sample = resid)) +
-  stat_qq() +
-  stat_qq_line(col = "red") +
-  ggtitle("QQ")
+(p_fit | pp) / p_resid + plot_annotation(tag_levels = 'A')
 
-p_combo <- (p_lin + p_qq) + plot_annotation(title = 'Log-linear growth')
-p_combo & theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
-
-ggsave("figures/supp/log_linear/growth/resid_growth.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/growth/fit_pp_resid_gro.png", width = 7, height = 7, dpi = 600)
 
 
 # E. PLOT PREDICTIONS ==============================================================
 # jags.samples - Nice for summaries and predictions
-# Extract the prediction at each x including credible interaval
+# Extract the prediction at each x including credible interval
 # For nice labels and ln-axis:
 # https://stackoverflow.com/questions/14255533/pretty-ticks-for-log-normal-scale-using-ggplot2-dynamic-not-manual
 js = jags.samples(jm, 
@@ -456,26 +466,6 @@ colourCount = length(unique(dat$species))
 getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
 pal <- getPalette(colourCount)
 
-#------------------------------------------------------------------------------------------ 
-#TEST
-# ggplot(pred_df, aes(log(mass_g), median)) +
-#   # geom_ribbon(data = pred_df, aes(x = mass_g, ymin = lwr_95, ymax = upr_95), 
-#   #           size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
-#   # geom_ribbon(data = pred_df, aes(x = mass_g, ymin = lwr_80, ymax = upr_80), 
-#   #             size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
-#   geom_line(size = 0.8, alpha = 0.8) +
-#   geom_point(data = dat, aes(log(mass_g), log(dat$y), fill = species_ab),
-#              size = 2.8, shape = 21, alpha = 0.8, color = "white") +
-#   scale_fill_manual(values = pal) +
-#   # scale_x_continuous(trans = scales::log_trans(),
-#   #                    labels = scales::number_format(accuracy = 1)) +
-#   guides(fill = FALSE) +
-#   labs(x = "mass [g]",
-#        y = "ln(growth rate [%/day])") +
-#   annotate("text", 0.2, 3.2, label = "A", size = 4, 
-#            fontface = "bold", hjust = -0.5, vjust = 1.3) +
-#   NULL
-#------------------------------------------------------------------------------------------
 
 p12 <- ggplot(pred_df, aes(mass_g, median)) +
   geom_ribbon(data = pred_df, aes(x = mass_g, ymin = lwr_95, ymax = upr_95), 
@@ -483,12 +473,13 @@ p12 <- ggplot(pred_df, aes(mass_g, median)) +
   geom_ribbon(data = pred_df, aes(x = mass_g, ymin = lwr_80, ymax = upr_80), 
               size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
   geom_line(size = 0.8, alpha = 0.8) +
-  geom_point(data = dat, aes(mass_g, log(dat$y), fill = species_ab),
+  geom_point(data = dat, aes(mass_g, log(y), fill = species_ab),
              size = 2.8, shape = 21, alpha = 0.8, color = "white") +
-  scale_fill_manual(values = pal) +
+  scale_fill_manual(values = pal, name = "Species") +
   scale_x_continuous(trans = scales::log_trans(),
-                     labels = scales::number_format(accuracy = 0.1)) +
-  guides(fill = FALSE) +
+                     #labels = scales::number_format(accuracy = 0.1),
+                     breaks = c(1, 20, 400)) +
+  guides(fill = guide_legend(ncol = 4)) +
   labs(x = "mass [g]",
        y = "ln(growth rate [%/day])") +
   annotate("text", 0.2, 3.2, label = "A", size = 4, 
@@ -496,7 +487,13 @@ p12 <- ggplot(pred_df, aes(mass_g, median)) +
   # annotate("text", -Inf, Inf, label = "A", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) + # This solution doesn't play with the ln axis...
   NULL
-pWord12 <- p12 + theme_classic() + theme(text = element_text(size = 12))
+pWord12 <- p12 + theme_classic() + theme(text = element_text(size = 12),
+                                         legend.text = element_text(size = 8),
+                                         legend.title = element_text(size = 8),
+                                         legend.spacing.y = unit(0, 'cm'),
+                                         legend.spacing.x = unit(0, 'cm'),
+                                         legend.key.size = unit(0.01, "cm"), 
+                                         legend.position = c(0.25, 0.1))
 
 # Add posterior distributions of parameters
 cs = coda.samples(jm,
@@ -519,22 +516,24 @@ p13 <- cs %>%
   mcmc_dens(pars = "mu_b1") +
   geom_vline(xintercept = sum_dat[2, 1], color = "white", size = 0.6, linetype = 2) +
   scale_y_continuous(expand = c(0,0)) +
+  coord_cartesian(xlim = c(-0.6, -0.1)) +
   annotate("text", -Inf, Inf, label = "B", size = 4, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
   labs(x = "Mass-exponent") +
   NULL
-pWord13 <- p13 + theme_classic() + theme(text = element_text(size = 12))
+pWord13 <- p13 + theme_classic() + theme(text = element_text(size = 10))
 
 # Temperature-coefficient
 p14 <- cs %>% 
   mcmc_dens(pars = "mu_b2") +
   geom_vline(xintercept = sum_dat[3, 1], color = "white", size = 0.6, linetype = 2) +
   scale_y_continuous(expand = c(0,0)) +
+  coord_cartesian(xlim = c(-1.1, -0.4)) +
   annotate("text", -Inf, Inf, label = "C", size = 4, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
   labs(x = "Temperature coefficient") +
   NULL
-pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 12))
+pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 10))
 
 
 # Mass-temperature interaction
@@ -543,15 +542,16 @@ p15 <- cs %>%
   geom_vline(xintercept = 0, color = "red", size = 0.6, linetype = 1) +
   geom_vline(xintercept = sum_dat[4, 1], color = "white", size = 0.6, linetype = 2) +
   scale_y_continuous(expand = c(0,0)) +
-  coord_cartesian(xlim = c(-0.2, 0.15)) +
+  coord_cartesian(xlim = c(-0.11, 0.11)) +
   annotate("text", -Inf, Inf, label = "D", size = 4,
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
   labs(x = "M*T interaction") +
   NULL
-pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 12))
+pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 10))
+
 
 # Plot all together
-pWord12 / (pWord13 + pWord14 + pWord15) + plot_layout(heights = c(2.5, 1, 1, 1))
+pWord12 / (pWord13 | pWord14 | pWord15) + plot_layout(ncol = 1, heights = c(5, 1)) #+ plot_annotation(tag_levels = 'A')
 
 ggsave("figures/pred_gro.png", width = 6.5, height = 6.5, dpi = 600)
 

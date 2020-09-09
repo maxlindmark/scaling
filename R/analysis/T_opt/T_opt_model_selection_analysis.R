@@ -228,7 +228,7 @@ summary(cs)
 # sigma_b0  0.009626  0.1118  0.240491  0.4166  0.90406
 
 
-#** Evaluate convergence ===========================================================
+# Evaluate convergence ===========================================================
 # Convert to ggplottable data frame
 cs_df <- ggs(cs)
 
@@ -389,7 +389,7 @@ MCMCtrace(cs,
 dev.off()
 
 
-#** Evaluate model fit & residuals =================================================
+# Evaluate model fit & residuals =================================================
 # https://rpubs.com/Niko/332320
 
 # Extract generated data and data
@@ -399,51 +399,61 @@ cs_fit = coda.samples(jm2, n.iter = n.iter, thin = thin,
 # Convert to data frames
 cs_fit_df <- data.frame(as.matrix(cs_fit))
 
-# Model fit
+#-- Model fit
 p_fit <- ggplot(cs_fit_df, aes(mean_y_sim)) + 
   coord_cartesian(expand = 0) +
   geom_histogram(bins = round(1 + 3.2*log(nrow(cs_fit_df)))) +
-  geom_histogram() +
   geom_vline(xintercept = cs_fit_df$mean_y, color = "white", 
              linetype = 2, size = 0.4) +
   labs(x = "mean simulated data", y = "count") +
   theme_classic() +
+  annotate("text", -Inf, Inf, label = round(mean(cs_fit_df$p_mean), digits = 3), 
+           size = 3, hjust = -0.5, vjust = 1.3) +
   theme(text = element_text(size = 12), aspect.ratio = 1) +
   NULL
 
-ggsave("figures/supp/T_opt/fit_topt.png", width = 6.5, height = 6.5, dpi = 600)
 
+#-- Posterior predictive distributions
+# https://www.weirdfishes.blog/blog/fitting-bayesian-models-with-stan-and-r/#posterior-predictive-analysis
 
-# Residuals
 # Extract posteriors for each data point for calculation of residuals
-resid <- coda.samples(jm2, variable.names = c("mu"), n.iter = n.iter, thin = thin)
+y_sim <- coda.samples(jm2, variable.names = c("y_sim"), n.iter = n.iter, thin = thin)
 
 # Tidy-up
-resid_df <- ggs(resid)
+df_y_sim <- ggs(y_sim)
 
-resid_df <- resid_df %>%
+pal <- brewer.pal(n = 3, name = "Dark2")
+
+pp <- ggplot() +
+  geom_density(data = df_y_sim, aes(value, fill = 'Posterior\nPredictive'), alpha = 0.6) +
+  geom_density(data = dat, aes(opt_temp_c_ct, fill = 'Observed'), alpha = 0.6) +
+  scale_fill_manual(values = pal[c(3,2)]) +
+  coord_cartesian(expand = 0) +
+  theme_classic() +
+  theme(text = element_text(size = 12), aspect.ratio = 1,
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8),
+        legend.position = c(0.2, 0.95),
+        legend.key.size = unit(0.3, "cm"))
+
+
+#-- Residual vs fitted
+df_y_sim <- df_y_sim %>%
   ungroup() %>%
   group_by(Parameter) %>%
   summarize(median = median(value)) %>% 
   rename("yhat" = "median") %>% 
-  mutate(y = data$y,
+  mutate(y = dat$opt_temp_c_ct,
          resid = y - yhat)
 
-# Check linearity
-p_lin <- ggplot(resid_df, aes(yhat, resid)) +
-  geom_point(shape = 21, fill = "black", color = "white", size = 2) +
-  ggtitle("Linearity")
+p_resid <- ggplot(df_y_sim, aes(yhat, resid)) +
+  geom_point(fill = "black", color = "white", shape = 21) + 
+  theme_classic() +
+  theme(text = element_text(size = 12)) 
 
-# Check normality
-p_qq <- ggplot(resid_df, aes(sample = resid)) +  # Create QQplot with ggplot2 package
-  stat_qq() +
-  stat_qq_line(col = "red") +
-  ggtitle("QQ")
+(p_fit | pp) / p_resid + plot_annotation(tag_levels = 'A')
 
-p_combo <- (p_lin + p_qq) + plot_annotation(title = 'Growth T_opt model')
-p_combo & theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
-
-ggsave("figures/supp/T_opt/resid_topt.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/T_opt/fit_pp_resid_T_opt.png", width = 7, height = 7, dpi = 600)
 
 
 # E. PLOT PREDICTIONS ==============================================================
@@ -486,7 +496,8 @@ p9 <- ggplot(pred_df, aes(mass, median)) +
          size = guide_legend(override.aes = list(fill = "black",
                                                  color = "black"))) +
   labs(x = "ln(rescaled mass)",
-       y = "Rescaled optimum growth temperature",
+       #y = "Rescaled optimum growth temperature",
+       y = expression(paste("Rescaled ", italic(T[opt]))),
        size = "Mass [g]") +
   NULL
 
@@ -495,7 +506,7 @@ pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 12),
                                        legend.position = "bottom", 
                                        legend.title = element_text(size = 10))
 pWord9
-ggsave("figures/T_opt_scatter.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/T_opt_scatter.png", width = 3.5, height = 3.5, dpi = 600)
 
 
 # F. ADDITINAL CALCULATIONS ON THE POSTERIOR =======================================
@@ -681,7 +692,7 @@ sub$sort <- ifelse(sub$species_ab == "R.canadum", 13, sub$sort)
 # Plot
 pal2 <- RColorBrewer::brewer.pal("Dark2", n = 5)
 
-p9 <- ggplot() +
+p10 <- ggplot() +
   geom_point(data = sub, aes(x = reorder(species_ab, sort), y = temp,
                               fill = source, alpha = source), size = 1,
              shape = 21, color = "white", position = position_dodge(width = 1)) +
@@ -710,7 +721,7 @@ p9 <- ggplot() +
   ylab(expression(paste("Temperature [", degree*C, "]"))) + 
   NULL 
 
-pWord9 <- p9 + theme_classic() + theme(legend.position = "bottom",
+pWord10 <- p10 + theme_classic() + theme(legend.position = "bottom",
                                        legend.direction = "vertical",
                                        axis.text.y = element_text(face = "italic"),
                                        legend.text = element_text(size = 10),
