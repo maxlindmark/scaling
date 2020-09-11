@@ -354,7 +354,7 @@ MCMCtrace(cs,
           ISB = FALSE,
           priors = PR,
           pdf = FALSE,
-          Rhat = TRUE,
+          Rhat = FALSE,
           n.eff = TRUE,
           type = "density")   # removes the trace plot
 

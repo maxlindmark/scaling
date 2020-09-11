@@ -210,7 +210,8 @@ inits = list(
 jm2 = jags.model(model2,
                  data = data, 
                  n.adapt = 5000, 
-                 n.chains = 3)
+                 n.chains = 3,
+                 inits = inits)
 
 update(jm2, n.iter = n.iter) 
 
@@ -218,7 +219,8 @@ update(jm2, n.iter = n.iter)
 zj2 = jags.samples(jm2, 
                   variable.names = c("pd", "log_pd"), 
                   n.iter = n.iter, 
-                  thin = thin)
+                  thin = thin,
+                  inits = inits)
 
 # Calculate model fit by summing over the log of means of the posterior distribution of 
 # the PPD and multiply by -2 (i.e. negative log likelihood).
@@ -232,12 +234,14 @@ pd.WAIC2 <- sum((summary(zj2$log_pd, sd)$stat)^2) # Penalty
 waic_m2 <- lppd2 + 2*pd.WAIC2
 
 
+# Since this model is similar in WAIC to the model without interaction, I want to check the estimate of it
 test <- coda.samples(jm2,
                      variable.names = c("b3"),
                      n.iter = n.iter,
                      thin = thin)
 
 summary(test)
+
 
 #**** M3a ==========================================================================
 # M3a - intercept and mass vary by species
@@ -280,7 +284,8 @@ inits = list(
 jm3a = jags.model(model3a,
                   data = data, 
                   n.adapt = 5000, 
-                  n.chains = 3)
+                  n.chains = 3,
+                  inits = inits)
 
 burn.in = 10000 # Length of burn-in
 
@@ -345,7 +350,8 @@ inits = list(
 jm3b = jags.model(model3b,
                   data = data, 
                   n.adapt = 5000, 
-                  n.chains = 3)
+                  n.chains = 3,
+                  inits = inits)
 
 burn.in = 10000 # Length of burn-in
 
@@ -407,7 +413,8 @@ inits = list(
 jm4 = jags.model(model4,
                  data = data, 
                  n.adapt = 5000, 
-                 n.chains = 3)
+                 n.chains = 3,
+                 inits = inits)
 
 burn.in = 10000 # Length of burn-in
 
@@ -472,7 +479,8 @@ inits = list(
 jm5 = jags.model(model5,
                  data = data, 
                  n.adapt = 5000, 
-                 n.chains = 3)
+                 n.chains = 3,
+                 inits = inits)
 
 burn.in = 10000 # Length of burn-in
 
@@ -534,7 +542,8 @@ inits = list(
 jm6a = jags.model(model6a,
                   data = data, 
                   n.adapt = 5000, 
-                  n.chains = 3)
+                  n.chains = 3,
+                  inits = inits)
 
 burn.in = 10000 # Length of burn-in
 
@@ -595,7 +604,8 @@ inits = list(
 jm6b = jags.model(model6b,
                   data = data, 
                   n.adapt = 5000, 
-                  n.chains = 3)
+                  n.chains = 3,
+                  inits = inits)
 
 burn.in = 10000 # Length of burn-in
 
@@ -653,7 +663,8 @@ inits = list(
 jm7 = jags.model(model7,
                  data = data, 
                  n.adapt = 5000, 
-                 n.chains = 3)
+                 n.chains = 3,
+                 inits = inits)
 
 burn.in = 10000 # Length of burn-in
 
@@ -693,21 +704,21 @@ waic_m7
 # > waic_m1
 # [1] 564.5484
 # > waic_m2
-# [1] 561.875
+# [1] 561.9578
 # > waic_m3a
-# [1] 708.0752
+# [1] 708.5617
 # > waic_m3b
-# [1] 630.309
+# [1] 629.4864
 # > waic_m4
-# [1] 751.1522
+# [1] 750.4202
 # > waic_m5
-# [1] 560.6001
+# [1] 560.2499
 # > waic_m6a
-# [1] 726.7025
+# [1] 726.3189
 # > waic_m6b
-# [1] 634.2806
+# [1] 634.3972
 # > waic_m7
-# [1] 773.5315
+# [1] 774.189
 
 # Calculate delta WAIC
 waic_m1 - waic_m5

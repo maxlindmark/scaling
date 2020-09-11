@@ -210,11 +210,12 @@ waic_m2-waic_m1
 # > waic_m2
 # [1] 178.2945
 
+
 # D. MODEL VALIDATION ==============================================================
 # CODA - Nice for getting the raw posteriors
-cs <- coda.samples(jm2,
+cs <- coda.samples(jm1,
                    variable.names = c("b0", "b1",
-                                      "mu_b0",
+                                      "mu_b0", "mu_b1",
                                       "sigma_b0", "sigma"), 
                    n.iter = n.iter, 
                    thin = thin)
@@ -222,10 +223,10 @@ cs <- coda.samples(jm2,
 summary(cs)
 # 2. Quantiles for each variable:
 #               2.5%     25%       50%     75%   97.5%
-# b1       -0.629740 -0.4460 -0.352272 -0.2597 -0.08065
-# mu_b0    -0.496795 -0.1522  0.024583  0.2058  0.56808
-# sigma     1.358067  1.5437  1.660037  1.7953  2.11282
-# sigma_b0  0.009626  0.1118  0.240491  0.4166  0.90406
+# mu_b0    -0.62893 -0.2653 -0.07414  0.11706  0.48268
+# mu_b1    -0.75438 -0.4495 -0.31358 -0.18053  0.15475
+# sigma     1.17733  1.3901  1.51670  1.66081  1.97838
+# sigma_b0  0.01205  0.1274  0.25706  0.44737  0.95766
 
 
 # Evaluate convergence ===========================================================
@@ -267,45 +268,45 @@ pWord1 + pWord2
 ggsave("figures/supp/T_opt/validation_topt_intercepts.png", width = 6.5, height = 6.5, dpi = 600)
 
 
-#**** Species slope ================================================================
-# Plot posterior densities of species intercepts
-# unique(cs_df$Parameter)
-# 
-# p3 <- cs_df %>% 
-#   filter(Parameter %in% c("b1[1]", "b1[2]", "b1[3]", "b1[4]", "b1[5]", "b1[6]", "b1[7]", 
-#                           "b1[8]", "b1[9]", "b1[10]", "b1[11]", "b1[12]", "b1[13]")) %>% 
-#   ggs_density(.) + 
-#   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
-#   geom_density(alpha = 0.05) +
-#   scale_color_brewer(palette = "Dark2") + 
-#   scale_fill_brewer(palette = "Dark2") +
-#   labs(x = "Value", y = "Density", fill = "Chain #") +
-#   guides(color = FALSE, fill = FALSE) +
-#   NULL
-# pWord3 <- p3 + theme_classic() + theme(text = element_text(size = 10),
-#                                        axis.text = element_text(size = 5))
-# 
-# # Traceplot for evaluating chain convergence
-# p4 <- cs_df %>% 
-#   filter(Parameter %in% c("b1[1]", "b1[2]", "b1[3]", "b1[4]", "b1[5]", "b1[6]", "b1[7]", 
-#                           "b1[8]", "b1[9]", "b1[10]", "b1[11]", "b1[12]", "b1[13]")) %>% 
-#   ggs_traceplot(.) +
-#   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
-#   geom_line(alpha = 0.3) +
-#   scale_color_brewer(palette = "Dark2") + 
-#   labs(x = "Iteration", y = "Value", color = "Chain #") +
-#   guides(color = guide_legend(override.aes = list(alpha = 1))) +
-#   NULL
-# pWord4 <- p4 + theme_classic() + theme(text = element_text(size = 10),
-#                                        axis.text = element_text(size = 5))
-# pWord3 + pWord4
-# ggsave("figures/supp/T_opt/validation_topt_slopes.png", width = 6.5, height = 6.5, dpi = 600)
+#**** Species slopes ================================================================
+#Plot posterior densities of species intercepts
+unique(cs_df$Parameter)
+
+p3 <- cs_df %>%
+  filter(Parameter %in% c("b1[1]", "b1[2]", "b1[3]", "b1[4]", "b1[5]", "b1[6]", "b1[7]",
+                          "b1[8]", "b1[9]", "b1[10]", "b1[11]", "b1[12]", "b1[13]")) %>%
+  ggs_density(.) +
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+  geom_density(alpha = 0.05) +
+  scale_color_brewer(palette = "Dark2") +
+  scale_fill_brewer(palette = "Dark2") +
+  labs(x = "Value", y = "Density", fill = "Chain #") +
+  guides(color = FALSE, fill = FALSE) +
+  NULL
+pWord3 <- p3 + theme_classic() + theme(text = element_text(size = 10),
+                                       axis.text = element_text(size = 5))
+
+# Traceplot for evaluating chain convergence
+p4 <- cs_df %>%
+  filter(Parameter %in% c("b1[1]", "b1[2]", "b1[3]", "b1[4]", "b1[5]", "b1[6]", "b1[7]",
+                          "b1[8]", "b1[9]", "b1[10]", "b1[11]", "b1[12]", "b1[13]")) %>%
+  ggs_traceplot(.) +
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+  geom_line(alpha = 0.3) +
+  scale_color_brewer(palette = "Dark2") +
+  labs(x = "Iteration", y = "Value", color = "Chain #") +
+  guides(color = guide_legend(override.aes = list(alpha = 1))) +
+  NULL
+pWord4 <- p4 + theme_classic() + theme(text = element_text(size = 10),
+                                       axis.text = element_text(size = 5))
+pWord3 + pWord4
+ggsave("figures/supp/T_opt/validation_topt_slopes.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Group-level means ============================================================
 # Plot posterior densities of group-level means and standard deviations
 p5 <- cs_df %>% 
-  filter(Parameter %in% c("mu_b0", "b1",
+  filter(Parameter %in% c("mu_b0", "mu_b1",
                           "sigma_b0", "sigma_b1", "sigma")) %>% 
   ggs_density(.) + 
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
@@ -369,22 +370,23 @@ tau_slope <- 0.04
 set.seed(42)
 
 mu_b0 <- rnorm(25000, 0, sqrt(1/tau_int))
-b1 <- rnorm(25000, 0, sqrt(1/tau_slope))
+mu_b1 <- rnorm(25000, 0, sqrt(1/tau_slope))
 
-PR <- as.matrix(cbind(mu_b0, b1))
+PR <- as.matrix(cbind(mu_b0, mu_b1))
 
 # This is not a ggplot...
 png(file = "/Users/maxlindmark/Desktop/R_STUDIO_PROJECTS/scaling/figures/supp/T_opt/validation_prior_post_topt.png", 
     units = "px", width = 1800, height = 1800, res = 300)
 
 MCMCtrace(cs,
-          params = c("mu_b0", "b1"),
+          params = c("mu_b0", "mu_b1"),
           ISB = FALSE,
           priors = PR,
           pdf = FALSE,
-          Rhat = TRUE,
+          Rhat = FALSE,
           n.eff = TRUE,
-          type = "density")   # removes the trace plot
+          type = "density",
+          sz_txt = 1)   # removes the trace plot
 
 dev.off()
 
@@ -393,7 +395,7 @@ dev.off()
 # https://rpubs.com/Niko/332320
 
 # Extract generated data and data
-cs_fit = coda.samples(jm2, n.iter = n.iter, thin = thin,
+cs_fit = coda.samples(jm1, n.iter = n.iter, thin = thin,
                       variable.names = c("mean_y", "mean_y_sim", "p_mean"))
 
 # Convert to data frames
@@ -417,7 +419,7 @@ p_fit <- ggplot(cs_fit_df, aes(mean_y_sim)) +
 # https://www.weirdfishes.blog/blog/fitting-bayesian-models-with-stan-and-r/#posterior-predictive-analysis
 
 # Extract posteriors for each data point for calculation of residuals
-y_sim <- coda.samples(jm2, variable.names = c("y_sim"), n.iter = n.iter, thin = thin)
+y_sim <- coda.samples(jm1, variable.names = c("y_sim"), n.iter = n.iter, thin = thin)
 
 # Tidy-up
 df_y_sim <- ggs(y_sim)
@@ -460,7 +462,7 @@ ggsave("figures/supp/T_opt/fit_pp_resid_T_opt.png", width = 7, height = 7, dpi =
 #** Fits and data ==================================================================
 # jags.samples - Nice for summaries and predictions
 # Extract the prediction at each x including credible interval
-js = jags.samples(jm2, 
+js = jags.samples(jm1, 
                   variable.names = c("pred"), 
                   n.iter = n.iter, 
                   thin = thin)
@@ -488,11 +490,12 @@ p9 <- ggplot(pred_df, aes(mass, median)) +
   geom_ribbon(data = pred_df, aes(x = mass, ymin = lwr_80, ymax = upr_80), 
               size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
   geom_line(size = 1, alpha = 1, col = "black") +
-  geom_point(data = dat, aes(log_mass_norm_mat, opt_temp_c_ct, fill = species, size = mass_g),
+  geom_point(data = dat, aes(log_mass_norm_mat, opt_temp_c_ct, fill = species_ab, size = mass_g),
              shape = 21, alpha = 0.8, color = "white") +
-  scale_fill_manual(values = pal) +
+  scale_fill_manual(values = pal, name = "Species") +
   scale_size(range = c(2, 8), breaks = c(0, 1, 10, 100, 1000)) +
-  guides(fill = FALSE,
+  guides(#fill = FALSE,
+         fill = guide_legend(ncol = 1),
          size = guide_legend(override.aes = list(fill = "black",
                                                  color = "black"))) +
   labs(x = "ln(rescaled mass)",
@@ -502,21 +505,26 @@ p9 <- ggplot(pred_df, aes(mass, median)) +
   NULL
 
 pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 12),
-                                       aspect.ratio = 4/5,
-                                       legend.position = "bottom", 
-                                       legend.title = element_text(size = 10))
+                                       aspect.ratio = 1,
+                                       #legend.position = "bottom", 
+                                       legend.spacing.x = unit(0, 'cm'),
+                                       legend.box.spacing = unit(0, 'cm'),
+                                       legend.key.size = unit(0.2, 'cm'), 
+                                       #legend.margin = unit(0.4, 'cm'),
+                                       legend.title = element_text(size = 10),
+                                       legend.text = element_text(size = 10, face = "italic"))
 pWord9
-ggsave("figures/T_opt_scatter.png", width = 3.5, height = 3.5, dpi = 600)
+ggsave("figures/T_opt_scatter.png", width = 6.5, height = 5.5, dpi = 600)
 
 
 # F. ADDITINAL CALCULATIONS ON THE POSTERIOR =======================================
 # Calculate the proportion of the posterior of activation energy that is less than zero
-js2 = jags.samples(jm2,
-                   variable.names = c("mu_b0", "b1"),
+js2 = jags.samples(jm1,
+                   variable.names = c("mu_b0", "mu_b1"),
                    n.iter = n.iter,
                    thin = thin)
 
-ecdf(js2$b1)(0) 
+ecdf(js2$mu_b1)(0) 
 # [1] 0.9943333
 
 

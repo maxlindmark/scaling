@@ -1,7 +1,7 @@
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # 2019.12.06: Max Lindmark
 #
-# Code to fit and evaluate non-linear (polynomial) models to consumption rates
+# Code to fit and evaluate polynomial models to consumption rates
 # 
 # A. Load libraries
 #
@@ -559,28 +559,28 @@ ggsave("figures/supp/polynomial/validation_rhat_poly.png", width = 6.5, height =
 
 # Define priors for plot
 tau <- 0.04
+tau_b1_sigma <- 0.01
 
 set.seed(42)
 
 mu_b0 <- rnorm(25000, 0, sqrt(1/tau))
 b1 <- rnorm(25000, 0, sqrt(1/tau))
+b1.sigma <- rnorm(25000, 0, sqrt(1/tau_b1_sigma))
 b2 <- rnorm(25000, 0, sqrt(1/tau))
 b3 <- rnorm(25000, 0, sqrt(1/tau))
 
-#PR <- as.matrix(cbind(mu_b0, b1, b2, b3))
-PR <- as.matrix(cbind(mu_b0, b2, b3))
+PR <- as.matrix(cbind(mu_b0, b1, b1.sigma, b2, b3))
 
 # This is not a ggplot...
 png(file = "/Users/maxlindmark/Desktop/R_STUDIO_PROJECTS/scaling/figures/supp/polynomial/validation_prior_post_poly.png", 
     units = "px", width = 1800, height = 1800, res = 300)
 
 MCMCtrace(cs,
-          #params = c("mu_b0", "b1", "b2", "b3"),
-          params = c("mu_b0", "b2", "b3"),
+          params = c("mu_b0", "b1", "b1.sigma", "b2", "b3"),
           ISB = FALSE,
           priors = PR,
           pdf = FALSE,
-          Rhat = TRUE,
+          Rhat = FALSE,
           n.eff = TRUE,
           type = "density")   # removes the trace plot
 

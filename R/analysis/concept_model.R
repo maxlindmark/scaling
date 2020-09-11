@@ -292,4 +292,4 @@ pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 12),
 
 pWord1
 
-ggsave("figures/concept.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/concept.png", width = 3.5, height = 6.5, dpi = 600)

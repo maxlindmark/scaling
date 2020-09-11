@@ -211,7 +211,8 @@ inits = list(
 jm2 = jags.model(model2,
                  data = data, 
                  n.adapt = 5000, 
-                 n.chains = 3)
+                 n.chains = 3, 
+                 inits = inits)
 
 update(jm2, n.iter = n.iter) 
 
@@ -274,7 +275,8 @@ inits = list(
 jm3a = jags.model(model3a,
                   data = data, 
                   n.adapt = 5000, 
-                  n.chains = 3)
+                  n.chains = 3, 
+                  inits = inits)
 
 update(jm3a, n.iter = n.iter) 
 
@@ -337,7 +339,8 @@ inits = list(
 jm3b = jags.model(model3b,
                   data = data, 
                   n.adapt = 5000, 
-                  n.chains = 3)
+                  n.chains = 3, 
+                  inits = inits)
 
 update(jm3b, n.iter = n.iter) 
 
@@ -397,7 +400,8 @@ inits = list(
 jm4 = jags.model(model4,
                  data = data, 
                  n.adapt = 5000, 
-                 n.chains = 3)
+                 n.chains = 3, 
+                 inits = inits)
 
 update(jm4, n.iter = n.iter) 
 
@@ -460,7 +464,8 @@ inits = list(
 jm5 = jags.model(model5,
                  data = data, 
                  n.adapt = 5000, 
-                 n.chains = 3)
+                 n.chains = 3, 
+                 inits = inits)
 
 update(jm5, n.iter = n.iter) 
 
@@ -520,7 +525,8 @@ inits = list(
 jm6a = jags.model(model6a,
                   data = data, 
                   n.adapt = 5000, 
-                  n.chains = 3)
+                  n.chains = 3, 
+                  inits = inits)
 
 update(jm6a, n.iter = n.iter) 
 
@@ -579,7 +585,8 @@ inits = list(
 jm6b = jags.model(model6b,
                   data = data, 
                   n.adapt = 5000, 
-                  n.chains = 3)
+                  n.chains = 3, 
+                  inits = inits)
 
 update(jm6b, n.iter = n.iter) 
 
@@ -635,7 +642,8 @@ inits = list(
 jm7 = jags.model(model7,
                  data = data, 
                  n.adapt = 5000, 
-                 n.chains = 3)
+                 n.chains = 3, 
+                 inits = inits)
 
 update(jm7, n.iter = n.iter) 
 
@@ -671,25 +679,24 @@ waic_m7
 
 # WAIC suggests model 1 is best fitting with model
 
-# > # WAIC
 # > waic_m1
 # [1] 47.20224
 # > waic_m2
-# [1] 54.58471
+# [1] 54.84147
 # > waic_m3a
-# [1] 71.15692
+# [1] 70.92513
 # > waic_m3b
-# [1] 80.14861
+# [1] 79.54329
 # > waic_m4
-# [1] 90.83943
+# [1] 90.86876
 # > waic_m5
-# [1] 52.70258
+# [1] 52.72265
 # > waic_m6a
-# [1] 68.9457
+# [1] 69.2529
 # > waic_m6b
-# [1] 81.96606
+# [1] 81.47716
 # > waic_m7
-# [1] 91.9808
+# [1] 92.05313
 
 # Calculate delta WAIC
 waic_m1 - waic_m1
