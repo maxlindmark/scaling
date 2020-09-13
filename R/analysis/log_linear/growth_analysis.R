@@ -472,28 +472,29 @@ p12 <- ggplot(pred_df, aes(mass_g, median)) +
               size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
   geom_ribbon(data = pred_df, aes(x = mass_g, ymin = lwr_80, ymax = upr_80), 
               size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
-  geom_line(size = 0.8, alpha = 0.8) +
+  geom_line(size = 0.6, alpha = 0.8) +
   geom_point(data = dat, aes(mass_g, log(y), fill = species_ab),
-             size = 2.8, shape = 21, alpha = 0.8, color = "white") +
+             size = 2, shape = 21, alpha = 0.8, color = "white") +
   scale_fill_manual(values = pal, name = "Species") +
   scale_x_continuous(trans = scales::log_trans(),
                      #labels = scales::number_format(accuracy = 0.1),
                      breaks = c(1, 20, 400)) +
-  guides(fill = guide_legend(ncol = 4)) +
+  guides(fill = guide_legend(ncol = 3, override.aes = list(size = 2))) +
   labs(x = "mass [g]",
        y = "ln(growth rate [%/day])") +
-  annotate("text", 0.2, 3.2, label = "A", size = 4, 
+  annotate("text", 0.2, 3.2, label = "A", size = 2.5, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
   # annotate("text", -Inf, Inf, label = "A", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) + # This solution doesn't play with the ln axis...
   NULL
-pWord12 <- p12 + theme_classic() + theme(text = element_text(size = 12),
-                                         legend.text = element_text(size = 8),
-                                         legend.title = element_text(size = 8),
+
+pWord12 <- p12 + theme_classic() + theme(text = element_text(size = 8), # 12
+                                         legend.text = element_text(size = 5, face = "italic"),
+                                         legend.title = element_text(size = 5),
                                          legend.spacing.y = unit(0, 'cm'),
                                          legend.spacing.x = unit(0, 'cm'),
-                                         legend.key.size = unit(0.01, "cm"), 
-                                         legend.position = c(0.25, 0.1))
+                                         legend.key.size = unit(0.0005, 'cm'),
+                                         legend.position = c(0.23, 0.12)) 
 
 # Add posterior distributions of parameters
 cs = coda.samples(jm,
@@ -517,11 +518,11 @@ p13 <- cs %>%
   geom_vline(xintercept = sum_dat[2, 1], color = "white", size = 0.6, linetype = 2) +
   scale_y_continuous(expand = c(0,0)) +
   coord_cartesian(xlim = c(-0.6, -0.1)) +
-  annotate("text", -Inf, Inf, label = "B", size = 4, 
+  annotate("text", -Inf, Inf, label = "B", size = 2.5, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
   labs(x = "Mass-exponent") +
   NULL
-pWord13 <- p13 + theme_classic() + theme(text = element_text(size = 10))
+pWord13 <- p13 + theme_classic() + theme(text = element_text(size = 6)) # 10
 
 # Temperature-coefficient
 p14 <- cs %>% 
@@ -529,11 +530,11 @@ p14 <- cs %>%
   geom_vline(xintercept = sum_dat[3, 1], color = "white", size = 0.6, linetype = 2) +
   scale_y_continuous(expand = c(0,0)) +
   coord_cartesian(xlim = c(-1.1, -0.4)) +
-  annotate("text", -Inf, Inf, label = "C", size = 4, 
+  annotate("text", -Inf, Inf, label = "C", size = 2.5, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
   labs(x = "Temperature coefficient") +
   NULL
-pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 10))
+pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 6)) # 10
 
 
 # Mass-temperature interaction
@@ -543,17 +544,18 @@ p15 <- cs %>%
   geom_vline(xintercept = sum_dat[4, 1], color = "white", size = 0.6, linetype = 2) +
   scale_y_continuous(expand = c(0,0)) +
   coord_cartesian(xlim = c(-0.11, 0.11)) +
-  annotate("text", -Inf, Inf, label = "D", size = 4,
+  annotate("text", -Inf, Inf, label = "D", size = 2.5,
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
   labs(x = "M*T interaction") +
   NULL
-pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 10))
+pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 6)) #10
 
 
 # Plot all together
 pWord12 / (pWord13 | pWord14 | pWord15) + plot_layout(ncol = 1, heights = c(5, 1)) #+ plot_annotation(tag_levels = 'A')
 
-ggsave("figures/pred_gro.png", width = 6.5, height = 6.5, dpi = 600)
+#ggsave("figures/pred_gro.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/pred_gro.png", width = 11, height = 11, dpi = 600, units = "cm") # Change to .tiff...
 
 
 # F. ADDITINAL CALCULATIONS ON THE POSTERIOR =======================================

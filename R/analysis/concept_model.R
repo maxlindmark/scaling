@@ -240,7 +240,7 @@ con_pred_sub <- con_pred %>% select(y_g_d_temp, mass_g, temp_c_ct, temp_c, rate)
 
 diff <- con_pred_sub
 
-diff$rate <- "Maximum consumption-\nMetabolism"
+diff$rate <- "Net gain"
 
 diff$y_g_d_temp <- con_pred_sub$y_g_d_temp - met_pred_sub$y_g_d_temp
 
@@ -253,7 +253,7 @@ levels(dat$mass_facet) <- c("2 g", "200 g")
 # Find peak temperature
 peak <- dat %>% 
   group_by(mass_g) %>% 
-  filter(rate == "Maximum consumption-\nMetabolism") %>% 
+  filter(rate == "Net gain") %>% 
   filter(y_g_d_temp == max(y_g_d_temp))
 
 # Set palette
@@ -267,7 +267,7 @@ dummy <- data.frame(y_g_d_temp = c(0.5, 2), mass_g = c(2, 200), rate = "Maximum 
 p1 <- dat %>% filter(y_g_d_temp > 0 & temp_c_ct > -5 & temp_c_ct < 30) %>% 
   ggplot(., aes(temp_c_ct, y_g_d_temp, color = factor(rate),
                 linetype = factor(mass_g), alpha = factor(rate))) +
-  geom_line(size = 1.2) +
+  geom_line(size = 0.75) +
   coord_cartesian(expand = 0) + 
   scale_color_manual(values = pal) +
   scale_linetype_manual(values = c(1, 1)) +
@@ -276,20 +276,24 @@ p1 <- dat %>% filter(y_g_d_temp > 0 & temp_c_ct > -5 & temp_c_ct < 30) %>%
        y = "Rescaled rates [g/day]",
        color = "Rate") +
   geom_segment(data = peak, aes(x = temp_c_ct, xend = temp_c_ct, y = y_g_d_temp, yend = 0),
-               size = 1, arrow = arrow(length = unit(0.35, "cm")), show.legend = FALSE) +
+               size = 0.75, arrow = arrow(length = unit(0.25, "cm")), show.legend = FALSE) +
   guides(linetype = FALSE) +
   guides(alpha = FALSE) +
+  guides(color = guide_legend(ncol = 1)) +
   facet_wrap(~ mass_facet, scales = "free_y", ncol = 1) + # new addition that is needed for the larger size range
   geom_point(data = dummy, aes(temp_c_ct, y_g_d_temp), inherit.aes = F, color = "white", fill = "white") + 
   NULL
 
-pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 12),
+pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 8), # 12
                                        aspect.ratio = 1,
-                                       legend.title = element_text(size = 10),
-                                       legend.text = element_text(size = 8),
-                                       legend.position = c(0.32, 0.91),
+                                       legend.title = element_text(size = 6), # 10
+                                       legend.key.size = unit(0.2, 'cm'), 
+                                       legend.text = element_text(size = 6), 
+                                       #legend.position = c(0.32, 0.91),
+                                       legend.position = "bottom",
                                        legend.background = element_rect(fill = NA))
 
 pWord1
 
-ggsave("figures/concept.png", width = 3.5, height = 6.5, dpi = 600)
+#ggsave("figures/concept.png", width = 3.5, height = 6.5, dpi = 600)
+ggsave("figures/concept.png", width = 11, height = 11, dpi = 600, unit = "cm")

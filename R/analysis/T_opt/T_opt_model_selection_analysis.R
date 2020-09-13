@@ -489,13 +489,13 @@ p9 <- ggplot(pred_df, aes(mass, median)) +
               size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
   geom_ribbon(data = pred_df, aes(x = mass, ymin = lwr_80, ymax = upr_80), 
               size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
-  geom_line(size = 1, alpha = 1, col = "black") +
+  geom_line(size = 0.5, alpha = 1, col = "black") +
   geom_point(data = dat, aes(log_mass_norm_mat, opt_temp_c_ct, fill = species_ab, size = mass_g),
-             shape = 21, alpha = 0.8, color = "white") +
+             shape = 21, alpha = 0.8, color = "grey10") +
   scale_fill_manual(values = pal, name = "Species") +
-  scale_size(range = c(2, 8), breaks = c(0, 1, 10, 100, 1000)) +
+  scale_size(range = c(1, 4), breaks = c(0, 1, 10, 100, 1000)) + # 2,8 sizes
   guides(#fill = FALSE,
-         fill = guide_legend(ncol = 1),
+         fill = guide_legend(ncol = 1, override.aes = list(size = 1)),
          size = guide_legend(override.aes = list(fill = "black",
                                                  color = "black"))) +
   labs(x = "ln(rescaled mass)",
@@ -504,17 +504,18 @@ p9 <- ggplot(pred_df, aes(mass, median)) +
        size = "Mass [g]") +
   NULL
 
-pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 12),
+pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 6), #12
                                        aspect.ratio = 1,
                                        #legend.position = "bottom", 
                                        legend.spacing.x = unit(0, 'cm'),
                                        legend.box.spacing = unit(0, 'cm'),
-                                       legend.key.size = unit(0.2, 'cm'), 
+                                       legend.key.size = unit(0.1, 'cm'), 
                                        #legend.margin = unit(0.4, 'cm'),
-                                       legend.title = element_text(size = 10),
-                                       legend.text = element_text(size = 10, face = "italic"))
+                                       legend.title = element_text(size = 4), #10
+                                       legend.text = element_text(size = 4, face = "italic")) # 10
 pWord9
-ggsave("figures/T_opt_scatter.png", width = 6.5, height = 5.5, dpi = 600)
+# ggsave("figures/T_opt_scatter.png", width = 6.5, height = 5.5, dpi = 600)
+ggsave("figures/T_opt_scatter.png", width = 9, height = 6, dpi = 600, unit = "cm")
 
 
 # F. ADDITINAL CALCULATIONS ON THE POSTERIOR =======================================

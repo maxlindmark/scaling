@@ -1097,7 +1097,9 @@ p15 <- ggplot(m_pred_df, aes(mass_g, median)) +
 pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
 
 pWord14 | pWord15
-ggsave("figures/pred_con_met.png", width = 7, height = 3.5, dpi = 600)
+#ggsave("figures/pred_con_met.png", width = 7, height = 3.5, dpi = 600)
+ggsave("figures/pred_con_met.png", width = 18, height = 22, dpi = 600, units = "cm")
+
 
 
 #** Parameter estimates ============================================================
@@ -1259,7 +1261,8 @@ p16 <- df %>%
                 size = 1.5, width = 0, alpha = 0.7) +
   geom_point(size = 1.5, fill = "white") +
   labs(x = "Species", y = "Prediction") + 
-  NULL
+  guides(color = guide_legend(ncol = 1)) +
+  NULL 
 
 pWord16 <- p16 + theme_classic() + theme(text = element_text(size = 12),
                                          axis.text = element_text(size = 7, face = "italic"),
@@ -1267,7 +1270,9 @@ pWord16 <- p16 + theme_classic() + theme(text = element_text(size = 12),
                                          legend.position = "bottom",
                                          legend.title = element_blank())
 
-ggsave("figures/species_b_ea.png", width = 4.5, height = 6.5, dpi = 600)
+#ggsave("figures/species_b_ea.png", width = 4.5, height = 6.5, dpi = 600)
+ggsave("figures/species_b_ea.png", width = 18, height = 22, dpi = 600, units = "cm")
+
 
 
 #**** Plot global-predictions ======================================================
