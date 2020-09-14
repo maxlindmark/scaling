@@ -2,7 +2,7 @@
 # 2020.04.29: Max Lindmark
 #
 # - Code to exemplify the different temperature dependencies of metabolism and 
-#   conumsumption using already fitted models. Note that the models for metabolism
+#   conssumption using already fitted models. Note that the models for metabolism
 #   and consumption differ a lot in what variables go in (consumption uses
 #   normalized consumption ~ mass_g and centered temperature in Celcius, whereas 
 #   metabolism is modelled as log(y) ~ log(centered mass) + Arrhenius temperature)
