@@ -263,15 +263,33 @@ pal <- RColorBrewer::brewer.pal("Dark2", n = 3)
 dummy <- data.frame(y_g_d_temp = c(0.5, 2), mass_g = c(2, 200), rate = "Maximum consumption",
                     mass_facet = c("2 g", "200 g"), temp_c_ct = 15)
 
+met_ribbon <- filter(dat, rate == "Metabolism")
+colnames(met_ribbon)[1] <- "Metabolic_rate"
+con_ribbon <- filter(dat, rate == "Maximum consumption")
+colnames(con_ribbon)[1] <- "Maximum_consumption_rate"
+
+con_ribbon <- con_ribbon %>%
+  select(Maximum_consumption_rate)
+
+ribbon <- cbind(met_ribbon, con_ribbon)
+ribbon$diff <- ribbon$Maximum_consumption_rate - ribbon$Metabolic_rate
+ribbon <- ribbon %>% filter(diff > 0.02)
+ribbon <- ribbon %>% filter(Metabolic_rate > 0 & Maximum_consumption_rate > 0 & temp_c_ct > -5 & temp_c_ct < 30)
+
+
 # Plot all 6 curves
 p1 <- dat %>% filter(y_g_d_temp > 0 & temp_c_ct > -5 & temp_c_ct < 30) %>% 
   ggplot(., aes(temp_c_ct, y_g_d_temp, color = factor(rate),
                 linetype = factor(mass_g), alpha = factor(rate))) +
+  geom_ribbon(data = ribbon, inherit.aes = FALSE,
+              aes(x = temp_c_ct, ymin = Metabolic_rate, ymax = Maximum_consumption_rate),
+              fill = "grey95", color = NA) +
   geom_line(size = 0.75) +
   coord_cartesian(expand = 0) + 
   scale_color_manual(values = pal) +
   scale_linetype_manual(values = c(1, 1)) +
-  scale_alpha_manual(values = c(0.5, 1, 0.5)) +
+  scale_alpha_manual(values = c(0.5, 0.5, 1)) +
+  #scale_alpha_manual(values = c(1, 1, 1)) +
   labs(x = expression(paste("Rescaled temperature [", degree*C, "]")),
        y = "Rescaled rates [g/day]",
        color = "Rate") +
