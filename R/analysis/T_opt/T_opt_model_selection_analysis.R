@@ -229,7 +229,7 @@ summary(cs)
 # sigma_b0  0.01205  0.1274  0.25706  0.44737  0.95766
 
 
-# Evaluate convergence ===========================================================
+# Evaluate convergence =============================================================
 # Convert to ggplottable data frame
 cs_df <- ggs(cs)
 
@@ -490,31 +490,30 @@ p9 <- ggplot(pred_df, aes(mass, median)) +
   geom_ribbon(data = pred_df, aes(x = mass, ymin = lwr_80, ymax = upr_80), 
               size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
   geom_line(size = 0.5, alpha = 1, col = "black") +
+  geom_line(data = test, aes(m, y), inherit.aes = FALSE, size = 1, col = "pink") +
   geom_point(data = dat, aes(log_mass_norm_mat, opt_temp_c_ct, fill = species_ab, size = mass_g),
              shape = 21, alpha = 0.8, color = "grey10") +
   scale_fill_manual(values = pal, name = "Species") +
-  scale_size(range = c(1, 4), breaks = c(0, 1, 10, 100, 1000)) + # 2,8 sizes
-  guides(#fill = FALSE,
-         fill = guide_legend(ncol = 1, override.aes = list(size = 1)),
+  scale_size(range = c(1, 4), breaks = c(0, 1, 10, 100, 1000)) +
+  guides(fill = guide_legend(ncol = 1, override.aes = list(size = 1)),
          size = guide_legend(override.aes = list(fill = "black",
                                                  color = "black"))) +
+  annotate("text", 0, -4, label = paste("n=", nrow(dat), sep = ""), size = 1.5,
+           hjust = -0.5, vjust = 1.3) +
   labs(x = "ln(rescaled mass)",
-       #y = "Rescaled optimum growth temperature",
        y = expression(paste("Rescaled ", italic(T[opt]))),
        size = "Mass [g]") +
   NULL
 
-pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 6), #12
+pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 6),
                                        aspect.ratio = 1,
-                                       #legend.position = "bottom", 
                                        legend.spacing.x = unit(0, 'cm'),
                                        legend.box.spacing = unit(0, 'cm'),
                                        legend.key.size = unit(0.1, 'cm'), 
-                                       #legend.margin = unit(0.4, 'cm'),
-                                       legend.title = element_text(size = 4), #10
-                                       legend.text = element_text(size = 4, face = "italic")) # 10
+                                       legend.title = element_text(size = 4),
+                                       legend.text = element_text(size = 4, face = "italic"))
 pWord9
-# ggsave("figures/T_opt_scatter.png", width = 6.5, height = 5.5, dpi = 600)
+
 ggsave("figures/T_opt_scatter.png", width = 9, height = 6, dpi = 600, unit = "cm")
 
 
@@ -731,10 +730,10 @@ p10 <- ggplot() +
   NULL 
 
 pWord10 <- p10 + theme_classic() + theme(legend.position = "bottom",
-                                       legend.direction = "vertical",
-                                       axis.text.y = element_text(face = "italic"),
-                                       legend.text = element_text(size = 10),
-                                       aspect.ratio = 6/7,
-                                       text = element_text(size = 12))
+                                         legend.direction = "vertical",
+                                         axis.text.y = element_text(face = "italic"),
+                                         legend.text = element_text(size = 10),
+                                         aspect.ratio = 6/7,
+                                         text = element_text(size = 12))
 
 ggsave("figures/supp/T_opt/env_exp_temp.png", width = 6.5, height = 6.5, dpi = 600)

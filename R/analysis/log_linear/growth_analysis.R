@@ -44,12 +44,6 @@ library(scales)
 dat <- 
   read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/growth_analysis.csv"))
 
-str(dat)
-
-# Count data
-length(unique(dat$common_name))
-nrow(dat)
-
 # Filter data points at below optimum temperatures
 dat <- dat %>% filter(above_peak_temp == "N")
 
@@ -484,6 +478,8 @@ p12 <- ggplot(pred_df, aes(mass_g, median)) +
        y = "ln(growth rate [%/day])") +
   annotate("text", 0.2, 3.2, label = "A", size = 2.5, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  annotate("text", 300, 3.2, label = paste("n=", nrow(dat), sep = ""), size = 2,
+           hjust = -0.5, vjust = 1.3) +
   # annotate("text", -Inf, Inf, label = "A", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) + # This solution doesn't play with the ln axis...
   NULL

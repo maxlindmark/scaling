@@ -35,6 +35,7 @@ library(bayesplot)
 library(MCMCvis)
 library(scales)
 library(bayesplot)
+library(tidylog)
 
 # > sessionInfo()
 # other attached packages:
@@ -52,6 +53,12 @@ met <-
 
 con <- 
   read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/con_analysis.csv"))
+
+length(unique(con$common_name))
+
+# Filter data points at below optimum temperatures
+met <- met %>% filter(above_peak_temp == "N")
+con <- con %>% filter(above_peak_temp == "N")
 
 # Count data
 length(unique(met$common_name))
@@ -72,9 +79,55 @@ met %>% group_by(common_name, temp_c) %>% summarise(n = n()) %>% as.data.frame()
 
 str(met)
 
-# Filter data points at below optimum temperatures
-met <- met %>% filter(above_peak_temp == "N")
-con <- con %>% filter(above_peak_temp == "N")
+# How many temperatures? 
+met %>%
+  group_by(species) %>% 
+  summarise(n_unique_temp = length(unique(factor(temp_c)))) %>% 
+  as.data.frame()
+
+con %>%
+  group_by(species) %>% 
+  summarise(n_unique_temp = length(unique(factor(temp_c)))) %>% 
+  as.data.frame()
+
+# Average # of temperatures per species?
+met %>%
+  group_by(species) %>% 
+  summarise(n_unique_temp = length(unique(factor(temp_c)))) %>% 
+  ungroup() %>% 
+  summarise(mean_n = mean(n_unique_temp))
+
+con %>%
+  group_by(species) %>% 
+  summarise(n_unique_temp = length(unique(factor(temp_c)))) %>% 
+  ungroup() %>% 
+  summarise(mean_n = mean(n_unique_temp))
+
+# How many masses? 
+met %>%
+  group_by(species) %>% 
+  summarise(n_unique_mass = length(unique(factor(mass_g)))) %>% 
+  as.data.frame()
+
+con %>%
+  group_by(species) %>% 
+  summarise(n_unique_mass = length(unique(factor(mass_g)))) %>% 
+  as.data.frame()
+
+# Average # of masses per species?
+met %>%
+  group_by(species) %>% 
+  summarise(n_unique_mass = length(unique(round(mass_g, digits = 0)))) %>% 
+  ungroup() %>% 
+  summarise(mean_n = mean(n_unique_mass))
+
+con %>%
+  group_by(species) %>% 
+  summarise(n_unique_mass = length(unique(round(mass_g, digits = 0)))) %>% 
+  ungroup() %>% 
+  summarise(mean_n = mean(n_unique_mass))
+
+
 
 # Rename species factor for JAGS (must be numbered 1:n)
 met$species_n <- as.numeric(as.factor(met$species_ab))
@@ -1063,12 +1116,13 @@ p14 <- ggplot(c_pred_df, aes(mass_g, median)) +
        y = "ln(maximum consumption rate [g/g/day])") +
   annotate("text", 0.05, 1.2, label = "A", size = 4, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  annotate("text", 100, 1.2, label = paste("n=", nrow(con), sep = ""), size = 3,
+           hjust = -0.5, vjust = 1.3) +
   # annotate("text", -Inf, Inf, label = "B", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) + # This solution doesn't play with the ln axis...
   NULL
 
 pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio =  1)
-
 
 colourCount = length(unique(met$species))
 getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
@@ -1091,6 +1145,8 @@ p15 <- ggplot(m_pred_df, aes(mass_g, median)) +
        y = expression(paste("ln(metabolic rate [mg ", O[2], "/g/day]"))) +
   annotate("text", 0.022, 0.3, label = "B", size = 4, 
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  annotate("text", 500, 0.3, label = paste("n=", nrow(met), sep = ""), size = 3,
+           hjust = -0.5, vjust = 1.3) +
   # annotate("text", -Inf, Inf, label = "A", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) + # This solution doesn't play with the ln axis...
   NULL
@@ -1099,7 +1155,6 @@ pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 12), aspect.
 pWord14 | pWord15
 #ggsave("figures/pred_con_met.png", width = 7, height = 3.5, dpi = 600)
 ggsave("figures/pred_con_met.png", width = 18, height = 22, dpi = 600, units = "cm")
-
 
 
 #** Parameter estimates ============================================================
@@ -1195,7 +1250,6 @@ met_c$Parameter_mte <- "M*T interaction"
 met_c$pred <- filter(met_df, Parameter == "mu_b3")$quantiles.50.
 met_c$pred_sd <- filter(std_met, Parameter == "mu_b3")$statistics.SD
 
-
 # Merge data frames
 df <- rbind(con_b, con_e, met_b, met_e, met_c)
 
@@ -1240,9 +1294,7 @@ df_std$ymin <- df_std$pred - 2*df_std$pred_sd
 p16 <- df %>% 
   filter(Parameter_mte %in% c("Activation energy", "Mass exponent")) %>% 
   ggplot(., aes(Species, quantiles.50., color = Rate, shape = Rate)) +
-  #facet_grid(~ Parameter_mte, scales = "free") +
   facet_grid(Rate ~ Parameter_mte, scales = "free") +
-  #guides(color = FALSE, fill = FALSE, shape = FALSE) +
   scale_color_manual(values = pal[1:2]) +
   scale_fill_manual(values = pal[1:2]) +
   scale_shape_manual(values = c(21, 24)) +
@@ -1272,7 +1324,6 @@ pWord16 <- p16 + theme_classic() + theme(text = element_text(size = 12),
 
 #ggsave("figures/species_b_ea.png", width = 4.5, height = 6.5, dpi = 600)
 ggsave("figures/species_b_ea.png", width = 18, height = 22, dpi = 600, units = "cm")
-
 
 
 #**** Plot global-predictions ======================================================
