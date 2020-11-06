@@ -346,13 +346,16 @@ pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 8), # 12
                                        legend.title = element_text(size = 6), # 10
                                        legend.key.size = unit(0.2, 'cm'), 
                                        legend.text = element_text(size = 6), 
-                                       legend.position = c(0.85, 0.55),
-                                       #legend.position = "bottom",
+                                       #legend.position = c(0.85, 0.55),
+                                       legend.position = "bottom",
                                        legend.background = element_rect(fill = NA))
 
 pWord1
 
 ggsave("figures/concept.png", width = 11, height = 11, dpi = 600, unit = "cm")
+
+
+
 
 # Just a quick calculation here...
 # The difference in peak temperature here is 1.1C between a 5 g and 1000 g fish
