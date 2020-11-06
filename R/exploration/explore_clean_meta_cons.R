@@ -155,15 +155,18 @@ ggsave("figures/supp/data/meta_cons_trophic_level.png", width = 6.5, height = 6.
 # Mid env. temperature (Fishbase) compared to experimental temperature range
 pal <- brewer.pal("Dark2", n = 5)
 
+pal[2] <- "grey"
+
 p3 <- ggplot(dat) +
   coord_flip() +
+  geom_jitter(aes(x = reorder(species, median_temp), 
+                 y = temp_c, color = "Experiment"), size = 1, alpha = 0.6,
+              width = 0.1, height = 0, shape = 21, fill = NA) +
   geom_point(aes(x = reorder(species, median_temp), 
                  y = median_temp, color = "Environment (median)"), size = 1, alpha = 0.6) +
-  geom_point(aes(x = reorder(species, env_temp_mid), 
-                 y = temp_c, color = "Experiment"), size = 1, alpha = 0.6) +
-  geom_point(aes(x = reorder(species, env_temp_max), 
+  geom_point(aes(x = reorder(species, median_temp), 
                  y = env_temp_max, color = "Environment (max)"), size = 1, alpha = 0.6) +
-  geom_point(aes(x = reorder(species, env_temp_min), 
+  geom_point(aes(x = reorder(species, median_temp), 
                  y = env_temp_min, color = "Environment (min)"), size = 1, alpha = 0.6) +
   scale_color_manual(values = rev(pal), name = "Temperature") +
   xlab("") + 
@@ -171,7 +174,7 @@ p3 <- ggplot(dat) +
   facet_wrap(~ rate) +
   NULL 
 pWord <- p3 + theme_classic() + theme(text = element_text(size = 12),
-                                      axis.text = element_text(size = 8, face = "italic"))
+                                      axis.text.y = element_text(size = 8, face = "italic"))
 ggsave("figures/supp/data/meta_cons_temperatures.png", width = 6.5, height = 6.5, dpi = 600)
 
 
@@ -371,18 +374,25 @@ for(i in unique(s_datm$common_name)) {
 }  
 
 
+# Calculate number of unique studies
+# > length(unique(s_datm$reference))
+# [1] 26
+# > length(unique(s_datc$reference))
+# [1] 20
+
+
 # C. SAVE DATA =====================================================================
 glimpse(s_datm)
 s_datm %>%
  select(y, mass_g, log_mass, mass_norm, log_mass_norm, temp_c, temp_arr, median_temp, 
-        above_peak_temp, common_name, species, species_ab, unit, type) %>%
-write_csv(., "data/met_analysis.csv", ";")
+        above_peak_temp, common_name, species, species_ab, unit, type) #%>%
+#write_csv(., "data/met_analysis.csv", ";")
 
 
 glimpse(s_datc) 
 s_datc %>%
   select(y, mass_g, log_mass, mass_norm, log_mass_norm, temp_c, temp_arr, median_temp, 
-         above_peak_temp, common_name, species, species_ab, unit, type) %>%
-write_csv(., "data/con_analysis.csv", ";")
+         above_peak_temp, common_name, species, species_ab, unit, type) #%>%
+#write_csv(., "data/con_analysis.csv", ";")
 
 

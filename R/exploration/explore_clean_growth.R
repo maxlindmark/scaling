@@ -151,16 +151,19 @@ ggsave("figures/supp/data/growth_tl_mass.png", width = 6.5, height = 6.5, dpi = 
 # Mid env. temperature (Fishbase) compared to experimental temperature range
 pal <- brewer.pal("Dark2", n = 5)
 
+pal[2] <- "grey"
+
 p3 <- ggplot(dat) +
   coord_flip() +
+  geom_jitter(aes(x = reorder(species, median_temp), 
+                 y = temp_c, color = "Experiment"), size = 1.7, alpha = 0.6,
+             width = 0.1, height = 0) +
   geom_point(aes(x = reorder(species, median_temp), 
-                 y = median_temp, color = "Environment (median)"), size = 1.5, alpha = 0.6) +
-  geom_point(aes(x = reorder(species, env_temp_mid), 
-                 y = temp_c, color = "Experiment"), size = 1.5, alpha = 0.6) +
-  geom_point(aes(x = reorder(species, env_temp_max), 
-                 y = env_temp_max, color = "Environment (max)"), size = 1.5, alpha = 0.6) +
-  geom_point(aes(x = reorder(species, env_temp_min), 
-                 y = env_temp_min, color = "Environment (min)"), size = 1.5, alpha = 0.6) +
+                 y = median_temp, color = "Environment (median)"), size = 1.7, alpha = 0.6) +
+  geom_point(aes(x = reorder(species, median_temp), 
+                 y = env_temp_max, color = "Environment (max)"), size = 1.7, alpha = 0.6) +
+  geom_point(aes(x = reorder(species, median_temp), 
+                 y = env_temp_min, color = "Environment (min)"), size = 1.7, alpha = 0.6) +
   scale_color_manual(values = rev(pal), name = "Temperature") +
   xlab("") + 
   guides(shape = F) +
@@ -274,9 +277,14 @@ pWord9 / pWord10
 ggsave("figures/supp/data/growth_rate_temp_mass.png", width = 6.5, height = 6.5, dpi = 600)
 
 
+# Calculate number of unique studies
+# > length(unique(dat$reference))
+# [1] 13
+
+
 # C. SAVE DATA =====================================================================
 glimpse(dat)
 dat %>%
   select(y, `growth_rate_%/day`, geom_mean_mass_g, size_group, mass_g, log_mass, mass_norm, log_mass_norm, 
-         temp_c, temp_arr, median_temp, above_peak_temp, common_name, species, species_ab, env_temp_min, env_temp_max) %>%
-  write_csv(., "data/growth_analysis.csv", ";")
+         temp_c, temp_arr, median_temp, above_peak_temp, common_name, species, species_ab, env_temp_min, env_temp_max)# %>%
+  #write_csv(., "data/growth_analysis.csv", ";")
