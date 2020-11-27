@@ -1107,6 +1107,7 @@ p14 <- ggplot(c_pred_df, aes(mass_g, median)) +
   geom_ribbon(data = c_pred_df, aes(x = mass_g, ymin = lwr_80, ymax = upr_80), 
               size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
   geom_line(size = 0.8, alpha = 0.8) +
+  coord_cartesian(ylim = c(min(min(con_data$y), min(met_data$y)), max(max(con_data$y), max(met_data$y)))) +
   scale_fill_manual(values = pal) +
   scale_x_continuous(trans = scales::log_trans(),
                      #labels = scales::number_format(accuracy = .1), # Use this to get evenly space ticks, and the below to round them up!
@@ -1136,6 +1137,7 @@ p15 <- ggplot(m_pred_df, aes(mass_g, median)) +
   geom_ribbon(data = m_pred_df, aes(x = mass_g, ymin = lwr_80, ymax = upr_80), 
               size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
   geom_line(size = 0.8, alpha = 0.8) +
+  coord_cartesian(ylim = c(min(min(con_data$y), min(met_data$y)), max(max(con_data$y), max(met_data$y)))) +
   scale_fill_manual(values = pal) +
   scale_x_continuous(trans = scales::log_trans(),
                      #labels = scales::number_format(accuracy = .1), # Use this to get evenly space ticks, and the below to round them up!
@@ -1154,7 +1156,7 @@ pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 12), aspect.
 
 pWord14 | pWord15
 #ggsave("figures/pred_con_met.png", width = 7, height = 3.5, dpi = 600)
-ggsave("figures/pred_con_met.png", width = 18, height = 22, dpi = 600, units = "cm")
+# ggsave("figures/pred_con_met.png", width = 18, height = 22, dpi = 600, units = "cm")
 
 
 #** Parameter estimates ============================================================
@@ -1290,7 +1292,7 @@ df_std <- df[!duplicated(df$pred_sd), ]
 df_std$ymax <- df_std$pred + 2*df_std$pred_sd
 df_std$ymin <- df_std$pred - 2*df_std$pred_sd
 
-# Plot all species varying estimates and global mean
+# Plot all species estimates and global mean
 p16 <- df %>% 
   filter(Parameter_mte %in% c("Activation energy", "Mass exponent")) %>% 
   ggplot(., aes(Species, quantiles.50., color = Rate, shape = Rate)) +
@@ -1323,7 +1325,117 @@ pWord16 <- p16 + theme_classic() + theme(text = element_text(size = 12),
                                          legend.title = element_blank())
 
 #ggsave("figures/species_b_ea.png", width = 4.5, height = 6.5, dpi = 600)
-ggsave("figures/species_b_ea.png", width = 18, height = 22, dpi = 600, units = "cm")
+#ggsave("figures/species_b_ea.png", width = 18, height = 22, dpi = 600, units = "cm")
+
+
+#** Make a combined plot ===========================================================
+colourCount = length(unique(con$species))
+getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
+pal <- getPalette(colourCount)
+
+p14 <- ggplot(c_pred_df, aes(mass_g, median)) +
+  geom_point(data = con, aes(mass_g, log(y_spec), fill = species_ab),
+             size = 2, shape = 21, alpha = 0.8, color = "white") +
+  geom_ribbon(data = c_pred_df, aes(x = mass_g, ymin = lwr_95, ymax = upr_95), 
+              size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
+  geom_ribbon(data = c_pred_df, aes(x = mass_g, ymin = lwr_80, ymax = upr_80), 
+              size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
+  geom_line(size = 0.8, alpha = 0.8) +
+  coord_cartesian(ylim = c(min(min(con_data$y), min(met_data$y)), max(max(con_data$y), max(met_data$y)))) +
+  scale_fill_manual(values = pal) +
+  scale_x_continuous(trans = scales::log_trans(),
+                     #labels = scales::number_format(accuracy = .1), # Use this to get evenly space ticks, and the below to round them up!
+                     breaks = c(0.5, 7, 150)) +
+  guides(fill = FALSE) +
+  labs(x = "mass [g]",
+       y = "ln(maximum consumption rate [g/g/day])") +
+  annotate("text", 0.05, 1.2, label = "A", size = 4, 
+           fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  annotate("text", 0.1, -8, label = paste("n=", nrow(con), sep = ""), size = 3,
+           hjust = -0.5, vjust = 1.3) +
+  NULL
+
+pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio =  1)
+
+colourCount = length(unique(met$species))
+getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
+pal <- getPalette(colourCount)
+
+p15 <- ggplot(m_pred_df, aes(mass_g, median)) +
+  geom_point(data = met, aes(mass_g, log(y_spec), fill = species_ab),
+             size = 2, shape = 21, alpha = 0.8, color = "white") +
+  geom_ribbon(data = m_pred_df, aes(x = mass_g, ymin = lwr_95, ymax = upr_95), 
+              size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
+  geom_ribbon(data = m_pred_df, aes(x = mass_g, ymin = lwr_80, ymax = upr_80), 
+              size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
+  geom_line(size = 0.8, alpha = 0.8) +
+  coord_cartesian(ylim = c(min(min(con_data$y), min(met_data$y)), max(max(con_data$y), max(met_data$y)))) +
+  scale_fill_manual(values = pal) +
+  scale_x_continuous(trans = scales::log_trans(),
+                     #labels = scales::number_format(accuracy = .1), # Use this to get evenly space ticks, and the below to round them up!
+                     breaks = c(0.5, 20, 1100)) +
+  guides(fill = FALSE) +
+  labs(x = "mass [g]",
+       y = expression(paste("ln(metabolic rate [mg ", O[2], "/g/day]"))) +
+  annotate("text", 0.05, 1.2, label = "B", size = 4, 
+           fontface = "bold", hjust = -0.5, vjust = 1.3) +
+  annotate("text", 0.1, -8, label = paste("n=", nrow(met), sep = ""), size = 3,
+           hjust = -0.5, vjust = 1.3) +
+  NULL
+
+pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
+
+pWord14 | pWord15
+
+# Add a fake datapoint to get identical axis ranges for both rates
+ylim_activ <- c(max(filter(df, Parameter_mte == "Activation energy")$quantiles.2.5.),
+                min(filter(df, Parameter_mte == "Activation energy")$quantiles.97.5.))
+
+ylim_massexp <- c(min(filter(df, Parameter_mte == "Mass exponent")$quantiles.2.5.),
+                  max(filter(df, Parameter_mte == "Mass exponent")$quantiles.97.5.))
+
+plot_dat <- data.frame(quantiles.50. = c(ylim_activ, ylim_massexp),
+                       Parameter_mte = rep(c("Activation energy", "Mass exponent"), each = 2),
+                       Species = rep("O.mykiss", 4))
+
+# Define color palettes
+pal <- brewer.pal("Dark2", n = 5)[c(1,3)]
+
+# CONSUMPTION: Plot all species varying estimates and global mean
+p16 <- df %>% 
+  filter(Parameter_mte %in% c("Activation energy", "Mass exponent")) %>% 
+  ggplot(., aes(Species, quantiles.50., color = Rate, shape = Rate)) +
+  facet_grid(Parameter_mte ~ Rate, scales = "free") +
+  scale_color_manual(values = pal) +
+  scale_fill_manual(values = pal) +
+  scale_shape_manual(values = c(21, 24)) +
+  geom_point(data = plot_dat, aes(Species, quantiles.50.), color = "white", inherit.aes = FALSE) +
+  geom_hline(data = filter(df_std, Parameter_mte %in% c("Activation energy", "Mass exponent")),
+             aes(yintercept = pred, color = Rate),
+             size = 0.6, alpha = 1, linetype = "dashed") +
+  geom_rect(data = filter(df_std, Parameter_mte %in% c("Activation energy", "Mass exponent")),
+            inherit.aes = FALSE, aes(ymin = ymin, ymax = ymax, fill = Rate), xmin = 0, xmax = 50,
+            alpha = 0.2) +
+  geom_errorbar(aes(Species, quantiles.50., color = Rate, 
+                    ymin = quantiles.2.5., ymax = quantiles.97.5.),
+                size = 1, width = 0, alpha = 0.4) +
+  geom_errorbar(aes(Species, quantiles.50., color = Rate, 
+                    ymin = quantiles.25., ymax = quantiles.75.), 
+                size = 1.5, width = 0, alpha = 0.7) +
+  geom_point(size = 1.5, fill = "white") +
+  labs(x = "", y = "") + 
+  guides(color = FALSE, shape = FALSE, fill = FALSE) +
+  NULL 
+
+pWord16 <- p16 + theme_classic() + theme(text = element_text(size = 12),
+                                         axis.text.x = element_text(size = 7, face = "italic", angle = 90),
+                                         aspect.ratio = 1/2,
+                                         legend.position = "bottom",
+                                         legend.title = element_blank())
+
+(pWord14 + pWord15) / pWord16 + plot_layout(widths = c(2, 1), heights = unit(c(7.8, 1), c('cm', 'null')))
+
+ggsave("figures/meta_cons_combined.png", width = 22, height = 22, dpi = 600, units = "cm")
 
 
 #**** Plot global-predictions ======================================================
