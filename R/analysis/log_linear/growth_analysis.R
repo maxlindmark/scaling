@@ -504,13 +504,13 @@ cs_df <- ggs(cs)
 
 # Posterior of parameters
 color_scheme_set("gray")
-sum_dat <- data.frame(summary(cs)[1])
+sum_dat <- data.frame(summary(cs)[2])
 
 # Mass-coefficient
 p13 <- cs %>% 
   mcmc_dens(pars = "mu_b1") +
   geom_point(data = data.frame(x = 0, y = 6.8), aes(x, y), alpha = 0, inherit.aes = FALSE) + # Add invisible point because it gets cropped!
-  geom_vline(xintercept = sum_dat[2, 1], color = "white", size = 0.6, linetype = 2) +
+  geom_vline(xintercept = sum_dat[2, 3], color = "white", size = 0.6, linetype = 2) +
   scale_y_continuous(expand = c(0,0)) +
   coord_cartesian(xlim = c(-0.6, -0.1)) +
   annotate("text", -Inf, Inf, label = "B", size = 2.5, 
@@ -523,7 +523,7 @@ pWord13 <- p13 + theme_classic() + theme(text = element_text(size = 6))
 p14 <- cs %>% 
   mcmc_dens(pars = "mu_b2") +
   geom_point(data = data.frame(x = 0, y = 4.5), aes(x, y), alpha = 0, inherit.aes = FALSE) + # Add invisible point because it gets cropped!
-  geom_vline(xintercept = sum_dat[3, 1], color = "white", size = 0.6, linetype = 2) +
+  geom_vline(xintercept = sum_dat[3, 3], color = "white", size = 0.6, linetype = 2) +
   scale_y_continuous(expand = c(0,0)) +
   coord_cartesian(xlim = c(-1.1, -0.4)) +
   annotate("text", -Inf, Inf, label = "C", size = 2.5, 
@@ -538,7 +538,7 @@ p15 <- cs %>%
   mcmc_dens(pars = "mu_b3") +
   geom_point(data = data.frame(x = 0, y = 13), aes(x, y), alpha = 0, inherit.aes = FALSE) + # Add invisible point because it gets cropped!
   geom_vline(xintercept = 0, color = "red", size = 0.6, linetype = 1) +
-  geom_vline(xintercept = sum_dat[4, 1], color = "white", size = 0.6, linetype = 2) +
+  geom_vline(xintercept = sum_dat[4, 3], color = "white", size = 0.6, linetype = 2) +
   scale_y_continuous(expand = c(0, 0)) +
   coord_cartesian(xlim = c(-0.11, 0.11)) +
   annotate("text", -Inf, Inf, label = "D", size = 2.5,
