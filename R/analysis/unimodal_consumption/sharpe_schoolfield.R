@@ -541,30 +541,29 @@ min(pred_df$median)
 
 p9 <- ggplot(pred_df, aes(temp, median)) +
   geom_ribbon(data = pred_df, aes(x = temp, ymin = lwr_95, ymax = upr_95),
-             size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
+             size = 0.3, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
   geom_ribbon(data = pred_df, aes(x = temp, ymin = lwr_80, ymax = upr_80), 
-              size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
-  geom_line(size = 0.5, alpha = 1, col = "black") +
-  # geom_point(data = con, aes(temp_ct, y_ct, color = species_ab),
-  #            size = 2, alpha = 0.8) +
-  geom_point(data = con, aes(peak_temp_c_model_ct, y_ct, color = species_ab),
-             size = 2, alpha = 0.8) +
-  scale_color_manual(values = pal, name = "Species") +
-  annotate("text", -27.5, 2.1, label = paste("n=", nrow(con), sep = ""), size = 4) +
+              size = 0.3, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
+  geom_line(size = 0.3, alpha = 1, col = "black") +
+  geom_point(data = con, aes(peak_temp_c_model_ct, y_ct, fill = species_ab),
+             size = 1.2, alpha = 0.8, shape = 21, color = "white", stroke = 0.2) +
+  #scale_color_manual(values = pal, name = "Species") +
+  scale_fill_manual(values = pal, name = "Species") +
+  annotate("text", 11, 2.8, label = paste("n=", nrow(con), sep = ""), size = 2) +
   labs(x = "Rescaled temperature",
        y = "Rescaled consumption rate")
   
-pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 12),
+pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 8),
                                        aspect.ratio = 1,
                                        legend.spacing.x = unit(0, 'cm'),
                                        legend.box.spacing = unit(0, 'cm'),
                                        legend.key.size = unit(0.1, 'cm'), 
-                                       legend.title = element_text(size = 10),
-                                       legend.position = c(0.1, 0.85),
-                                       legend.text = element_text(size = 10, face = "italic"))
+                                       legend.title = element_text(size = 4),
+                                       legend.position = c(0.15, 0.8),
+                                       legend.text = element_text(size = 4, face = "italic"))
 pWord9
 
-ggsave("figures/SharpeSchool_scatter.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/SharpeSchool_scatter.png", width = 6, height = 6, dpi = 600, unit = "cm")
 
 
 ####*************  TEST: Testing plotting it together with the conceptual figure ####

@@ -480,11 +480,9 @@ p12 <- ggplot(pred_df, aes(mass_g, median)) +
            fontface = "bold", hjust = -0.5, vjust = 1.3) +
   annotate("text", 300, 3.2, label = paste("n=", nrow(dat), sep = ""), size = 2,
            hjust = -0.5, vjust = 1.3) +
-  # annotate("text", -Inf, Inf, label = "A", size = 4, 
-  #          fontface = "bold", hjust = -0.5, vjust = 1.3) + # This solution doesn't play with the ln axis...
   NULL
 
-pWord12 <- p12 + theme_classic() + theme(text = element_text(size = 8), # 12
+pWord12 <- p12 + theme_classic() + theme(text = element_text(size = 8), 
                                          legend.text = element_text(size = 5, face = "italic"),
                                          legend.title = element_text(size = 5),
                                          legend.spacing.y = unit(0, 'cm'),
@@ -511,47 +509,49 @@ sum_dat <- data.frame(summary(cs)[1])
 # Mass-coefficient
 p13 <- cs %>% 
   mcmc_dens(pars = "mu_b1") +
+  geom_point(data = data.frame(x = 0, y = 6.8), aes(x, y), alpha = 0, inherit.aes = FALSE) + # Add invisible point because it gets cropped!
   geom_vline(xintercept = sum_dat[2, 1], color = "white", size = 0.6, linetype = 2) +
   scale_y_continuous(expand = c(0,0)) +
   coord_cartesian(xlim = c(-0.6, -0.1)) +
   annotate("text", -Inf, Inf, label = "B", size = 2.5, 
-           fontface = "bold", hjust = -0.5, vjust = 1.3) +
+           fontface = "bold", hjust = -0.5, vjust = 1) +
   labs(x = "Mass-exponent") +
   NULL
-pWord13 <- p13 + theme_classic() + theme(text = element_text(size = 6)) # 10
+pWord13 <- p13 + theme_classic() + theme(text = element_text(size = 6))
 
 # Temperature-coefficient
 p14 <- cs %>% 
   mcmc_dens(pars = "mu_b2") +
+  geom_point(data = data.frame(x = 0, y = 4.5), aes(x, y), alpha = 0, inherit.aes = FALSE) + # Add invisible point because it gets cropped!
   geom_vline(xintercept = sum_dat[3, 1], color = "white", size = 0.6, linetype = 2) +
   scale_y_continuous(expand = c(0,0)) +
   coord_cartesian(xlim = c(-1.1, -0.4)) +
   annotate("text", -Inf, Inf, label = "C", size = 2.5, 
-           fontface = "bold", hjust = -0.5, vjust = 1.3) +
+           fontface = "bold", hjust = -0.5, vjust = 1) +
   labs(x = "Temperature coefficient") +
   NULL
-pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 6)) # 10
+pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 6)) 
 
 
 # Mass-temperature interaction
 p15 <- cs %>%
   mcmc_dens(pars = "mu_b3") +
+  geom_point(data = data.frame(x = 0, y = 13), aes(x, y), alpha = 0, inherit.aes = FALSE) + # Add invisible point because it gets cropped!
   geom_vline(xintercept = 0, color = "red", size = 0.6, linetype = 1) +
   geom_vline(xintercept = sum_dat[4, 1], color = "white", size = 0.6, linetype = 2) +
-  scale_y_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0, 0)) +
   coord_cartesian(xlim = c(-0.11, 0.11)) +
   annotate("text", -Inf, Inf, label = "D", size = 2.5,
-           fontface = "bold", hjust = -0.5, vjust = 1.3) +
+           fontface = "bold", hjust = -0.5, vjust = 1) +
   labs(x = "M*T interaction") +
   NULL
 pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 6)) #10
 
 
 # Plot all together
-pWord12 / (pWord13 | pWord14 | pWord15) + plot_layout(ncol = 1, heights = c(5, 1)) #+ plot_annotation(tag_levels = 'A')
+pWord12 / (pWord13 | pWord14 | pWord15) + plot_layout(ncol = 1, heights = c(4, 1))
 
-#ggsave("figures/pred_gro.png", width = 6.5, height = 6.5, dpi = 600)
-ggsave("figures/pred_gro.png", width = 11, height = 11, dpi = 600, units = "cm") # Change to .tiff...
+ggsave("figures/supp/log_linear/growth/pred_gro.png", width = 11, height = 11, dpi = 600, units = "cm")
 
 
 # F. ADDITINAL CALCULATIONS ON THE POSTERIOR =======================================

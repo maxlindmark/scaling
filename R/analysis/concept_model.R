@@ -346,6 +346,7 @@ pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 8), # 12
                                        legend.title = element_text(size = 6), # 10
                                        legend.key.size = unit(0.2, 'cm'), 
                                        legend.text = element_text(size = 6), 
+                                       legend.margin = margin(-0.3, 0, 0, 0, unit="cm"),
                                        #legend.position = c(0.85, 0.55),
                                        legend.position = "bottom",
                                        legend.background = element_rect(fill = NA))
