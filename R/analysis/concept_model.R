@@ -2,10 +2,11 @@
 # 2020.04.29: Max Lindmark
 #
 # - Code to exemplify the different temperature dependencies of metabolism and 
-#   conssumption using already fitted models. Note that the models for metabolism
-#   and consumption differ a lot in what variables go in (consumption uses
-#   normalized consumption ~ mass_g and centered temperature in Celcius, whereas 
-#   metabolism is modelled as log(y) ~ log(centered mass) + Arrhenius temperature)
+#   consumption using allometric relationships.
+#   Note that the models for metabolism and (non-linear) consumption use different
+#   predictor and response variables (consumption uses normalized consumption ~ mass_g
+#   and centered temperature in Celcius, whereas metabolism is modeled as
+#   log(y) ~ log(centered mass) + Arrhenius temperature)
 #
 #   I have therefore plotted normalized rates (0:1 within each rate), to illustrate 
 #   the curves
@@ -14,7 +15,7 @@
 #
 # B. Generate data
 #
-# D. Plot
+# C. Plot
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # A. LOAD LIBRARIES ================================================================
@@ -69,29 +70,29 @@ met_pred$log_mass <- log(met_pred$mass_g)
 met_pred$log_mass_ct <- met_pred$log_mass - mean(met$log_mass)
 
 # Calculate log metabolic rate
-# Regression coefficients: see meta_cons_analysis.R
-mu_b0 <- -2.1672409
-mu_b1 <- -0.2039408
-mu_b2 <- -0.6118622
+# Regression coefficients: see meta_cons_analysis.R. Ignore the mass-temp interaction(!)
+mu_b0 <- -1.9310915 # This is for routine metabolic rate
+mu_b1 <- -0.2088925
+mu_b2 <- -0.6209557
 
 # Temperature-independent allometric function (valid at 19C = mean temperature)
 met_pred$log_y_spec <- mu_b0 + mu_b1*met_pred$log_mass_ct
 
-# Exponentiate prediction - Note it's mass-specific
+# Exponentiate prediction - Note it's still mass-specific
 met_pred$y_spec <- exp(met_pred$log_y_spec)
 
 # Whole organism rate
 met_pred$y <- met_pred$y_spec * met_pred$mass_g
 
-# Now convert to g/d using the same values as Jan
+# Now convert to g/d using the same values as Jan in Ohlberger et al (2012) Oikos
 # 1 kcal = 295 mg O2 
 # 0.003389831 kcal = 1 mg 02
 met_pred$y_kcal_h <- met_pred$y * 0.003389831
 
-# Convert to cal
+# Convert to cal/h from kilo cal/h 
 met_pred$y_cal_h <- met_pred$y_kcal_h*1000
 
-# Convert to Joule
+# Convert to Joule/h
 met_pred$y_J_h <- met_pred$y_cal_h * 4.1855
 
 # Convert to g/h. Energy content of fish: 5600 J/g
@@ -122,7 +123,7 @@ ggplot(met_pred, aes(temp_c, temp_scalar_scaled)) +
   geom_vline(xintercept = 19) +
   geom_hline(yintercept = 1)
 
-# Add temperature-dependent rates
+# Make allometric rates temperature-dependent
 met_pred$y_g_d_temp <- met_pred$y_g_d * met_pred$temp_scalar_scaled
 
 # Plot "temperature-corrected" metabolic rate
@@ -137,11 +138,10 @@ ggplot(met_pred, aes(temp_c, y_g_d_temp*met_factor[1], color = factor(mass_g))) 
   geom_line() + 
   geom_hline(yintercept = filter(met_pred, temp_c_ct == 0)$y_g_d) +
   geom_vline(xintercept = 19) + 
-  coord_cartesian(ylim = c(0, 1.2))
+  coord_cartesian(ylim = c(0, 5))
 
-# Here, the vertical lines correspond to the values at 19C without any temperature,
+# Here, the horizontal lines correspond to the values at 19C without any temperature,
 # and we see that they intersect the temperature-dependent curves at 19C
-
 met_pred$y_g_d_temp <- met_pred$y_g_d_temp*met_factor[1]
 
 met_pred %>% filter(temp_c_ct == 0)
@@ -150,6 +150,12 @@ met_pred %>% filter(temp_c_ct == 0)
 # at the maximum temperature in the data frame, and then the whole rate is shifted 
 # with another factor so that the whole function at 19C equals the non-temperature
 # dependent metabolic rate
+# Plot again without the correction factor:
+ggplot(met_pred, aes(temp_c, y_g_d_temp, color = factor(mass_g))) +
+  geom_line() + 
+  geom_hline(yintercept = filter(met_pred, temp_c_ct == 0)$y_g_d) +
+  geom_vline(xintercept = 19) + 
+  coord_cartesian(ylim = c(0, 5))
 
 
 #**** Consumption ==================================================================
@@ -198,7 +204,6 @@ con_pred$temp_c <- con_pred$temp_c_ct + 19
 # Th       2.8158 3.6412 4.0288 4.3708 4.9798
 # mu_E     0.4454 0.5308 0.5770 0.6254 0.7359
 # mu_b0    0.5204 0.6463 0.7029 0.7611 0.8853
-# sigma_b0 0.1498 0.2046 0.2463 0.3012 0.4666
 
 # Median
 Eh <- 2.6374
@@ -206,14 +211,14 @@ Th <- 4.0288
 mu_E <- 0.5770
 mu_b0 <- 0.7029
 
-# Add in constants as well
+# Define the constants in the Sharpe-Schoolfield equations
 tref <- -10
 bk <- 8.62e-05
 
 # Now calculate the scalar by predicting maximum consumption for the mean body size (i.e. 0)
 # The model is fitted to environment-centered temperature and mean-centered mass
 con_pred$temp_scalar <- (mu_b0 * exp(mu_E*((1/(bk*(tref + 273.15))) - 1/(bk*(con_pred$temp_c_ct + 273.15))))) / (1 + exp(Eh*((1/(bk*(Th + 273.15))) - (1/(bk*(con_pred$temp_c_ct + 273.15))))))
-
+                               
 # Plot temp scalar
 ggplot(con_pred, aes(temp_c_ct, temp_scalar)) + geom_point()
 
@@ -226,7 +231,7 @@ ggplot(con_pred, aes(temp_c, temp_scalar_scaled)) +
   geom_vline(xintercept = 19) +
   geom_hline(yintercept = 1)
 
-# Add temperature-dependent rates
+# Make allometric rates temperature-dependent
 con_pred$y_g_d_temp <- con_pred$y_g_d * con_pred$temp_scalar_scaled
 
 # Plot temperature-corrected maximum consumption rate
@@ -237,15 +242,15 @@ ggplot(con_pred, aes(temp_c, y_g_d_temp, color = factor(mass_g))) + geom_line()
 con_factor <- filter(con_pred, temp_c_ct == 0)$y_g_d /
   filter(con_pred, temp_c_ct == 0)$y_g_d_temp
 
+# Same for both sizes because there's no mass-temp interaction here
 ggplot(con_pred, aes(temp_c, y_g_d_temp*con_factor[1], color = factor(mass_g))) +
   geom_line() + 
   geom_hline(yintercept = filter(con_pred, temp_c_ct == 0)$y_g_d) +
   geom_vline(xintercept = 19) + 
-  coord_cartesian(ylim = c(0, 5))
+  coord_cartesian(ylim = c(0, 12))
 
 # Here, the vertical lines correspond to the values at 19C without any temperature,
 # and we see that they intersect the temperature-dependent curves at 19C
-
 con_pred$y_g_d_temp <- con_pred$y_g_d_temp*con_factor[1]
 
 con_pred %>% filter(temp_c_ct == 0)
@@ -254,11 +259,17 @@ con_pred %>% filter(temp_c_ct == 0)
 # at the maximum temperature in the data frame, and then the whole rate is shifted 
 # with another factor so that the whole function at 19C equals the non-temperature
 # dependent consumption rate
+# Plot again without the correction factor:
+ggplot(con_pred, aes(temp_c, y_g_d_temp, color = factor(mass_g))) +
+  geom_line() + 
+  geom_hline(yintercept = filter(con_pred, temp_c_ct == 0)$y_g_d) +
+  geom_vline(xintercept = 19) + 
+  coord_cartesian(ylim = c(0, 12))
 
 # Now that we have both rates, we can calculate the difference and make the conceptual figure:
 
   
-#*** Plot ==========================================================================
+# C. PLOT ==========================================================================
 #**** Combine data =================================================================
 met_pred_sub <- met_pred %>%
   dplyr::select(y_g_d_temp, mass_g, temp_c_ct, temp_c, rate) %>%
@@ -296,24 +307,25 @@ t_min <- -5.5
 
 # Add a dummy for axis range (for facets individually so that the y-axis range can be 5% more than maximum for visibility)
 m5_rate <- max(filter(dat, y_g_d_temp > 0 & temp_c_ct > t_min & temp_c_ct < t_max & mass_g == 5)$y_g_d_temp)
-
 m1000_rate <- max(filter(dat, y_g_d_temp > 0 & temp_c_ct > t_min & temp_c_ct < t_max & mass_g == 1000)$y_g_d_temp)  
 
 dummy <- data.frame(y_g_d_temp = c(m5_rate*1.05, m1000_rate*1.05), mass_g = c(5, 1000), rate = "Maximum consumption",
                     mass_facet = c("5 g", "1000 g"), temp_c_ct = 0)
 
+# Define the ribbon that shows positive net gain
 met_ribbon <- filter(dat, rate == "Metabolism")
 colnames(met_ribbon)[1] <- "Metabolic_rate"
-net_ribbon <- filter(dat, rate == "Net gain")
-colnames(net_ribbon)[1] <- "Net_gain"
 
-net_ribbon <- net_ribbon %>% select(Net_gain)
+con_ribbon <- filter(dat, rate == "Maximum consumption")
+colnames(con_ribbon)[1] <- "Maximum consumption"
 
-ribbon <- cbind(met_ribbon, net_ribbon)
-ribbon$diff <- ribbon$Net_gain - ribbon$Metabolic_rate
+con_ribbon <- con_ribbon %>% dplyr::select(`Maximum consumption`)
+
+ribbon <- cbind(met_ribbon, con_ribbon)
+ribbon$diff <- ribbon$`Maximum consumption` - ribbon$Metabolic_rate
 #ribbon <- ribbon %>% filter(diff > 0.02)
 ribbon <- ribbon %>%
-  filter(Metabolic_rate > 0 & Net_gain > 0 & temp_c_ct > t_min & temp_c_ct < t_max)
+  filter(Metabolic_rate > 0 & `Maximum consumption` > 0 & temp_c_ct > t_min & temp_c_ct < t_max)
 
 # Plot all 6 curves
 p1 <- dat %>% filter(y_g_d_temp > 0 & temp_c_ct > t_min & temp_c_ct < t_max) %>% 
@@ -321,7 +333,7 @@ p1 <- dat %>% filter(y_g_d_temp > 0 & temp_c_ct > t_min & temp_c_ct < t_max) %>%
                 linetype = factor(mass_g), alpha = factor(rate))) +
   geom_ribbon(data = filter(ribbon, temp_c_ct > t_min & temp_c_ct < t_max & diff > 0),
               inherit.aes = FALSE,
-              aes(x = temp_c_ct, ymin = Metabolic_rate, ymax = Net_gain),
+              aes(x = temp_c_ct, ymin = Metabolic_rate, ymax = `Maximum consumption`),
               fill = "grey95", color = NA) +
   geom_line(size = 0.5) +
   coord_cartesian(expand = 0) + 
@@ -354,8 +366,7 @@ pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 8), # 12
 pWord1
 
 ggsave("figures/concept.png", width = 11, height = 11, dpi = 600, unit = "cm")
-
-
+ggsave("figures/concept.pdf", width = 11, height = 11, dpi = 600, unit = "cm")
 
 
 # Just a quick calculation here...
@@ -388,3 +399,5 @@ small_opt - large_opt
 
 max(test$m_linear)
 
+# In the conceptual figure, we have a difference in about ~1C
+peak

@@ -1,7 +1,7 @@
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # 2019.12.02: Max Lindmark
 #
-# - Code to fit hierarchicals model to metabolism using a log-linear model 
+# - Code to fit hierarchical model to metabolism using a log-linear model 
 # inspired by the MTE, and perform model selection using WAIC
 # 
 # A. Load libraries
@@ -57,8 +57,18 @@ dat$temp_arr_ct <- dat$temp_arr - mean(dat$temp_arr)
 # Use mass-specific values
 dat$y_spec <- dat$y / dat$mass_g
 
+# Add dummy variable for metabolic type (0 for routine/resting, 1 for standard)
+dat$met_type <- ifelse(dat$type == "Standard", 1, 0)
+dat$met_s <- ifelse(dat$type == "Standard", 1, 0)
+dat$met_r <- ifelse(!dat$type == "Standard", 1, 0)
+
+plot(dat$met_s ~ dat$met_r)
+
 # Prepare data for JAGS
 data = NULL # Clear any old data lists that might confuse things
+
+# Arrange by species name so there's no confusion between the index and the name
+dat <- dat %>% arrange(species_n)
 
 # Data in list-format for JAGS
 data = list(
@@ -66,12 +76,16 @@ data = list(
   n_obs = length(dat$y), 
   species_n = dat$species_n,
   mass = dat$log_mass_ct,
-  temp = dat$temp_arr_ct
+  temp = dat$temp_arr_ct,
+  met_r = dat$met_r,
+  met_s = dat$met_s,
+  spec_s = distinct(dat, species, .keep_all = TRUE)$met_s, # New variable to go in the 1:34 for loop 
+  spec_r = distinct(dat, species, .keep_all = TRUE)$met_r # New variable to go in the 1:34 for loop 
 )
 
 
 # C. MODEL SELECTION ===============================================================
-# Here we fit models with different hierarcial structures
+# Here we fit models with different hierarchical structures
 # Specifically, we consider:
 
 # M1  - all coefficients vary by species
@@ -92,42 +106,48 @@ thin <- 5        # Save every 5th sample
 #**** M1 ===========================================================================
 # M1  - all coefficients vary by species
 
-model1 = "R/analysis/JAGS_models/log_linear/m1.txt"
+model1 = "JAGS_models/log_linear/metabolism/m1.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 # NOTE I don't do it for all parameters...
 inits = list(
   list(
-    mu_b0 = 0.1,
+    mu_b0_s = 0.1,
+    mu_b0_r = 0.1,
     mu_b1 = 0.1,
     mu_b2 = 0.1,
     mu_b3 = 0.1,
     sigma = 0.1,
-    sigma_b0 = 0.1,
+    sigma_b0_r = 0.1,
+    sigma_b0_s = 0.1,
     sigma_b1 = 0.1,
     sigma_b2 = 0.1,
     sigma_b3 = 0.1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples, see JAGS 4.3 user manual
   ),
   list(
-    mu_b0 = 1,
+    mu_b0_s = 1,
+    mu_b0_r = 1,
     mu_b1 = 1,
     mu_b2 = 1,
     mu_b3 = 1,
     sigma = 1,
-    sigma_b0 = 1,
+    sigma_b0_r = 1,
+    sigma_b0_s = 1,
     sigma_b1 = 1,
     sigma_b2 = 1,
     sigma_b3 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    mu_b0 = 2,
+    mu_b0_s = 2,
+    mu_b0_r = 2,
     mu_b1 = 2,
     mu_b2 = 2,
     mu_b3 = 2,
     sigma = 2,
-    sigma_b0 = 2,
+    sigma_b0_r = 2,
+    sigma_b0_s = 2,
     sigma_b1 = 2,
     sigma_b2 = 2,
     sigma_b3 = 2,
@@ -170,39 +190,45 @@ waic_m1 <- lppd1 + 2*pd.WAIC1
 #**** M2 ===========================================================================
 # M2  - intercept, mass, temperature vary by species
 
-model2 = "R/analysis/JAGS_models/log_linear/m2.txt"
+model2 = "JAGS_models/log_linear/metabolism/m2.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
   list(
-    mu_b0 = 0.1,
+    mu_b0_s = 0.1,
+    mu_b0_r = 0.1,
     mu_b1 = 0.1,
     mu_b2 = 0.1,
     b3 = 1,
     sigma = 0.1,
-    sigma_b0 = 0.1,
+    sigma_b0_r = 0.1,
+    sigma_b0_s = 0.1,
     sigma_b1 = 0.1,
     sigma_b2 = 0.1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    mu_b0 = 1,
+    mu_b0_s = 1,
+    mu_b0_r = 1,
     mu_b1 = 1,
     mu_b2 = 1,
     b3 = 1,
     sigma = 1,
-    sigma_b0 = 1,
+    sigma_b0_r = 1,
+    sigma_b0_s = 1,
     sigma_b1 = 1,
     sigma_b2 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    mu_b0 = 2,
+    mu_b0_s = 2,
+    mu_b0_r = 2,
     mu_b1 = 2,
     mu_b2 = 2,
     b3 = 2,
     sigma = 2,
-    sigma_b0 = 2,
+    sigma_b0_r = 2,
+    sigma_b0_s = 2,
     sigma_b1 = 2,
     sigma_b2 = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
@@ -237,37 +263,43 @@ waic_m2 <- lppd2 + 2*pd.WAIC2
 #**** M3a ==========================================================================
 # M3a - intercept and mass vary by species
 
-model3a = "R/analysis/JAGS_models/log_linear/m3a.txt"
+model3a = "JAGS_models/log_linear/metabolism/m3a.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
   list(
-    mu_b0 = 0.1,
+    mu_b0_s = 0.1,
+    mu_b0_r = 0.1,
     mu_b1 = 0.1,
     b2 = 0.1,
     b3 = 1,
     sigma = 0.1,
-    sigma_b0 = 0.1,
+    sigma_b0_r = 1,
+    sigma_b0_s = 1,
     sigma_b1 = 0.1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    mu_b0 = 1,
+    mu_b0_s = 1,
+    mu_b0_r = 1,
     mu_b1 = 1,
     b2 = 1,
     b3 = 1,
     sigma = 1,
-    sigma_b0 = 1,
+    sigma_b0_r = 1,
+    sigma_b0_s = 1,
     sigma_b1 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    mu_b0 = 2,
+    mu_b0_s = 2,
+    mu_b0_r = 2,
     mu_b1 = 2,
     b2 = 2,
     b3 = 2,
     sigma = 2,
-    sigma_b0 = 2,
+    sigma_b0_r = 2,
+    sigma_b0_s = 2,
     sigma_b1 = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ))
@@ -301,37 +333,43 @@ waic_m3a <- lppd3a + 2*pd.WAIC3a
 #**** M3b ==========================================================================
 # M3b - intercept and temperature vary by species
 
-model3b = "R/analysis/JAGS_models/log_linear/m3b.txt"
+model3b = "JAGS_models/log_linear/metabolism/m3b.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
   list(
-    mu_b0 = 0.1,
+    mu_b0_s = 0.1,
+    mu_b0_r = 0.1,
     b1 = 0.1,
     mu_b2 = 0.1,
     b3 = 0.1,
     sigma = 0.1,
-    sigma_b0 = 0.1,
+    sigma_b0_r = 0.1,
+    sigma_b0_s = 0.1,
     sigma_b2 = 0.1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    mu_b0 = 1,
+    mu_b0_s = 1,
+    mu_b0_r = 1,
     b1 = 1,
     mu_b2 = 1,
     b3 = 1,
     sigma = 1,
-    sigma_b0 = 1,
+    sigma_b0_r = 1,
+    sigma_b0_s = 1,
     sigma_b2 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    mu_b0 = 2,
+    mu_b0_s = 2,
+    mu_b0_r = 2,
     b1 = 2,
     mu_b2 = 2,
     b3 = 2,
     sigma = 2,
-    sigma_b0 = 2,
+    sigma_b0_r = 2,
+    sigma_b0_s = 2,
     sigma_b2 = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ))
@@ -365,35 +403,41 @@ waic_m3b <- lppd3b + 2*pd.WAIC3b
 #**** M4 ===========================================================================
 # M4  - intercept varies by species
 
-model4 = "R/analysis/JAGS_models/log_linear/m4.txt"
+model4 = "JAGS_models/log_linear/metabolism/m4.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
   list(
-    mu_b0 = 0.1,
+    mu_b0_s = 0.1,
+    mu_b0_r = 0.1,
     b1 = 0.1,
     b2 = 0.1,
     b3 = 0.1,
     sigma = 0.1,
-    sigma_b0 = 0.1,
+    sigma_b0_r = 0.1,
+    sigma_b0_s = 0.1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    mu_b0 = 1,
+    mu_b0_s = 1,
+    mu_b0_r = 1,
     b1 = 1,
     b2 = 1,
     b3 = 1,
     sigma = 1,
-    sigma_b0 = 1,
+    sigma_b0_r = 1,
+    sigma_b0_s = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    mu_b0 = 2,
+    mu_b0_s = 2,
+    mu_b0_r = 2,
     b1 = 2,
     b2 = 2,
     b3 = 2,
     sigma = 2,
-    sigma_b0 = 2,
+    sigma_b0_r = 2,
+    sigma_b0_s = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ))
 
@@ -426,36 +470,42 @@ waic_m4 <- lppd4 + 2*pd.WAIC4
 #**** M5 ===========================================================================
 # M5  - no interaction, all coefficients vary by species
 
-model5 = "R/analysis/JAGS_models/log_linear/m5.txt"
+model5 = "JAGS_models/log_linear/metabolism/m5.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
   list(
-    mu_b0 = 0.1,
+    mu_b0_s = 0.1,
+    mu_b0_r = 0.1,
     mu_b1 = 0.1,
     mu_b2 = 0.1,
     sigma = 0.1,
-    sigma_b0 = 0.1,
+    sigma_b0_r = 0.1,
+    sigma_b0_s = 0.1,
     sigma_b1 = 0.1,
     sigma_b2 = 0.1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    mu_b0 = 1,
+    mu_b0_s = 1,
+    mu_b0_r = 1,
     mu_b1 = 1,
     mu_b2 = 1,
     sigma = 1,
-    sigma_b0 = 1,
+    sigma_b0_r = 1,
+    sigma_b0_s = 1,
     sigma_b1 = 1,
     sigma_b2 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    mu_b0 = 2,
+    mu_b0_s = 2,
+    mu_b0_r = 2,
     mu_b1 = 2,
     mu_b2 = 2,
     sigma = 2,
-    sigma_b0 = 2,
+    sigma_b0_r = 2,
+    sigma_b0_s = 2,
     sigma_b1 = 2,
     sigma_b2 = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
@@ -490,34 +540,40 @@ waic_m5 <- lppd5 + 2*pd.WAIC5
 #**** M6a ===========================================================================
 # M6a - no interaction, intercept and mass vary by species
 
-model6a = "R/analysis/JAGS_models/log_linear/m6a.txt"
+model6a = "JAGS_models/log_linear/metabolism/m6a.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
   list(
-    mu_b0 = 0.1,
+    mu_b0_s = 0.1,
+    mu_b0_r = 0.1,
     mu_b1 = 0.1,
     b2 = 0.1,
     sigma = 0.1,
-    sigma_b0 = 0.1,
+    sigma_b0_r = 0.1,
+    sigma_b0_s = 0.1,
     sigma_b1 = 0.1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    mu_b0 = 1,
+    mu_b0_s = 1,
+    mu_b0_r = 1,
     mu_b1 = 1,
     b2 = 1,
     sigma = 1,
-    sigma_b0 = 1,
+    sigma_b0_r = 1,
+    sigma_b0_s = 1,
     sigma_b1 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    mu_b0 = 2,
+    mu_b0_s = 2,
+    mu_b0_r = 2,
     mu_b1 = 2,
     b2 = 2,
     sigma = 2,
-    sigma_b0 = 2,
+    sigma_b0_r = 2,
+    sigma_b0_s = 2,
     sigma_b1 = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ))
@@ -550,34 +606,40 @@ waic_m6a <- lppd6a + 2*pd.WAIC6a
 
 #**** M6b ===========================================================================
 # M6b - no interaction, intercept and temperature vary by species
-model6b = "R/analysis/JAGS_models/log_linear/m6b.txt"
+model6b = "JAGS_models/log_linear/metabolism/m6b.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
   list(
-    mu_b0 = 0.1,
+    mu_b0_s = 0.1,
+    mu_b0_r = 0.1,
     b1 = 0.1,
     mu_b2 = 0.1,
     sigma = 0.1,
-    sigma_b0 = 0.1,
+    sigma_b0_r = 0.1,
+    sigma_b0_s = 0.1,
     sigma_b2 = 0.1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    mu_b0 = 1,
+    mu_b0_s = 1,
+    mu_b0_r = 1,
     b1 = 1,
     mu_b2 = 1,
     sigma = 1,
-    sigma_b0 = 1,
+    sigma_b0_r = 1,
+    sigma_b0_s = 1,
     sigma_b2 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    mu_b0 = 2,
+    mu_b0_s = 2,
+    mu_b0_r = 2,
     b1 = 2,
     mu_b2 = 2,
     sigma = 2,
-    sigma_b0 = 2,
+    sigma_b0_r = 2,
+    sigma_b0_s = 2,
     sigma_b2 = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ))
@@ -610,32 +672,38 @@ waic_m6b <- lppd6b + 2*pd.WAIC6b
 
 #**** M7 ===========================================================================
 # M7  - no interaction, intercept varies by species
-model7 = "R/analysis/JAGS_models/log_linear/m7.txt"
+model7 = "JAGS_models/log_linear/metabolism/m7.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
   list(
-    mu_b0 = 0.1,
+    mu_b0_s = 0.1,
+    mu_b0_r = 0.1,
     b1 = 0.1,
     b2 = 0.1,
     sigma = 0.1,
-    sigma_b0 = 0.1,
+    sigma_b0_r = 0.1,
+    sigma_b0_s = 0.1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    mu_b0 = 1,
+    mu_b0_s = 1,
+    mu_b0_r = 1,
     b1 = 1,
     b2 = 1,
     sigma = 1,
-    sigma_b0 = 1,
+    sigma_b0_r = 1,
+    sigma_b0_s = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    mu_b0 = 2,
+    mu_b0_s = 2,
+    mu_b0_r = 2,
     b1 = 2,
     b2 = 2,
     sigma = 2,
-    sigma_b0 = 2,
+    sigma_b0_r = 2,
+    sigma_b0_s = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ))
 
@@ -677,25 +745,25 @@ waic_m6a
 waic_m6b
 waic_m7
 
-# WAIC suggests model 2, closely followed by model 1
+# WAIC suggests model 1, closely followed by model 2
 # > waic_m1
-# [1] 274.8849
+# [1] 274.7977
 # > waic_m2
-# [1] 275.3082
+# [1] 275.6669
 # > waic_m3a
-# [1] 579.2858
+# [1] 580.7304
 # > waic_m3b
-# [1] 660.6223
+# [1] 659.1574
 # > waic_m4
-# [1] 922.8613
+# [1] 923.1733
 # > waic_m5
-# [1] 280.3384
+# [1] 281.1196
 # > waic_m6a
-# [1] 620.6874
+# [1] 622.5134
 # > waic_m6b
-# [1] 661.9706
+# [1] 661.4648
 # > waic_m7
-# [1] 955.8063
+# [1] 955.5913
 
 # Calculate delta WAIC
 waic_m1 - waic_m1
@@ -707,3 +775,22 @@ waic_m5 - waic_m1
 waic_m6a - waic_m1
 waic_m6b - waic_m1
 waic_m7 - waic_m1
+
+# > waic_m1 - waic_m1
+# [1] 0
+# > waic_m2 - waic_m1
+# [1] 0.8692302
+# > waic_m3a - waic_m1
+# [1] 305.9327
+# > waic_m3b - waic_m1
+# [1] 384.3596
+# > waic_m4 - waic_m1
+# [1] 648.3756
+# > waic_m5 - waic_m1
+# [1] 6.321836
+# > waic_m6a - waic_m1
+# [1] 347.7157
+# > waic_m6b - waic_m1
+# [1] 386.6671
+# > waic_m7 - waic_m1
+# [1] 680.7936

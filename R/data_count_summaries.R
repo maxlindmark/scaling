@@ -137,7 +137,6 @@ dat %>%
 
 
 # T_opt ============================================================================
-
 # Read in your data file
 topt <- 
   read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/topt_analysis.csv"))

@@ -1,3 +1,11 @@
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# 2020.12.21: Max Lindmark
+#
+# Short script to see what the mass-exponent of net gain is given metabolism and
+# consumption, and how that relates to the exponent for growth rate
+#
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 # Load libraries, install if needed
 library(dplyr)
 library(RCurl)
@@ -29,9 +37,10 @@ met_pred$log_mass_ct <- met_pred$log_mass - mean(met$log_mass)
 
 # Calculate log metabolic rate
 # Regression coefficients: see meta_cons_analysis.R
-mu_b0 <- -2.1672409
-mu_b1 <- -0.2039408
-mu_b2 <- -0.6118622
+# Using the intercept for routine metabolic rate
+# mu_b0 <- -1.9310915
+# mu_b1 <- -0.2088925
+# mu_b2 <- -0.6209557
 
 # Temperature-independent allometric function (valid at 19C, which is the mean temperature)
 met_pred$log_y_spec <- mu_b0 + mu_b1*met_pred$log_mass_ct
@@ -75,9 +84,9 @@ con_pred$log_mass_ct <- con_pred$log_mass - mean(con$log_mass)
 
 # Calculate log maximum consumption rate
 # Regression coefficients: see meta_cons_analysis.R
-mu_b0 <- -2.9576
-mu_b1 <- -0.3750
-mu_b2 <- -0.6945
+mu_b0 <- -2.9497
+mu_b1 <- -0.3757
+mu_b2 <- -0.6920
 
 # Temperature-independent allometric function (valid at 19C, which is the mean temperature)
 con_pred$log_y_spec <- mu_b0 + mu_b1*con_pred$log_mass_ct
@@ -103,8 +112,27 @@ diff$rate <- "Net gain"
 
 diff$y_g_d <- con_pred_sub$y_g_d - met_pred_sub$y_g_d
 
+diff$y_g_g_d2 <- con_pred_sub$y_g_d/con_pred_sub$mass_g - met_pred_sub$y_g_d/met_pred_sub$mass_g
+
+# Now calculate the slopes
+# Net gain vs mass (log-log) in unit g per day
 summary(lm(log(diff$y_g_d) ~ log(diff$mass_g)))
+# mass-slope = 0.62429
+# The mass-specific slope is therefore 0.62429-1 = -0.37571
+# The mass-exponent of specific growth rate is: -0.362649
+# The whole-organism rate is therefore: 0.637351
+diff$y_g_g_d <- diff$y_g_d / diff$mass_g
+summary(lm(log(diff$y_g_g_d) ~ log(diff$mass_g)))
+# -0.3756
+
+# What if I now calculate it based on the mass-specific rates?
+summary(lm(log(diff$y_g_g_d2) ~ log(diff$mass_g)))
+# -0.3756
+
+# consumption vs mass (log-log)
 summary(lm(log(con_pred_sub$y_g_d) ~ log(con_pred_sub$mass_g)))
+
+# metabolism vs mass (log-log)
 summary(lm(log(met_pred_sub$y_g_d) ~ log(met_pred_sub$mass_g)))
 
 dat <- rbind(met_pred_sub, con_pred_sub, diff)

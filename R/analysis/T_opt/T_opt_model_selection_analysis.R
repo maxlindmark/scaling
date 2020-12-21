@@ -91,7 +91,7 @@ thin <- 5        # Save every 5th sample
 
 
 #**** M1: Random intercept and slope ===============================================
-model1 = "R/analysis/JAGS_models/T_opt/m1_T_opt_pred_fit.txt"
+model1 = "JAGS_models/T_opt/m1_T_opt_pred_fit.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -147,7 +147,7 @@ waic_m1 <- lppd1 + 2*pd.WAIC1
 
 
 #**** M2: Random intercept =========================================================
-model2 = "R/analysis/JAGS_models/T_opt/m2_T_opt_pred_fit.txt"
+model2 = "JAGS_models/T_opt/m2_T_opt_pred_fit.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -303,7 +303,7 @@ pWord3 + pWord4
 ggsave("figures/supp/T_opt/validation_topt_slopes.png", width = 6.5, height = 6.5, dpi = 600)
 
 
-#**** Group-level means ============================================================
+#**** Global means =================================================================
 # Plot posterior densities of group-level means and standard deviations
 p5 <- cs_df %>% 
   filter(Parameter %in% c("mu_b0", "mu_b1",
@@ -438,7 +438,6 @@ pp <- ggplot() +
         legend.position = c(0.2, 0.95),
         legend.key.size = unit(0.3, "cm"))
 
-
 #-- Residual vs fitted
 df_y_sim <- df_y_sim %>%
   ungroup() %>%
@@ -516,6 +515,7 @@ pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 8),
 pWord9
 
 ggsave("figures/T_opt_scatter.png", width = 6, height = 6, dpi = 600, unit = "cm")
+ggsave("figures/T_opt_scatter.pdf", width = 6, height = 6, dpi = 600, unit = "cm")
 
 
 # F. ADDITINAL CALCULATIONS ON THE POSTERIOR =======================================
@@ -738,3 +738,4 @@ pWord10 <- p10 + theme_classic() + theme(legend.position = "bottom",
                                          text = element_text(size = 12))
 
 ggsave("figures/supp/T_opt/env_exp_temp.png", width = 6.5, height = 6.5, dpi = 600)
+

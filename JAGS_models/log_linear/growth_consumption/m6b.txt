@@ -1,0 +1,35 @@
+model{
+  
+  for(i in 1:n_obs){
+  
+  # Likelihood
+    y[i] ~ dnorm(mu[i], tau)
+    mu[i] <- b0[species_n[i]] + b1*mass[i] + b2[species_n[i]]*temp[i] 
+  
+  # Add log likelihood computation for each observation
+    pd[i] <- dnorm(y[i], mu[i], tau)
+  
+  # Calculates the log PPD
+    log_pd[i] <- log(dnorm(y[i], mu[i], tau))
+  }
+  
+  # Second level (species-level effects)
+  for(j in 1:max(species_n)){
+    b0[j] ~ dnorm(mu_b0, tau_b0)
+    b2[j] ~ dnorm(mu_b2, tau_b2)
+  }
+  
+  # Priors	
+    mu_b0 ~ dnorm(0, 0.04)             
+    b1 ~ dnorm(-0.25, 1)            
+    mu_b2 ~ dnorm(-0.6, 1)          
+    sigma ~ dunif(0, 10) 
+    sigma_b0 ~ dunif(0, 10)
+    sigma_b2 ~ dunif(0, 10)
+  
+  # Derived quantiles
+    tau <- 1/(sigma*sigma)
+    tau_b0 <- 1/(sigma_b0*sigma_b0)
+    tau_b2 <- 1/(sigma_b2*sigma_b2)
+  
+  }

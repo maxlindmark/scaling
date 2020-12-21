@@ -92,7 +92,7 @@ thin <- 5        # Save every 5th sample
 #**** M1 ===========================================================================
 # M1  - all coefficients vary by species
 
-model1 = "R/analysis/JAGS_models/log_linear/m1.txt"
+model1 = "R/analysis/JAGS_models/log_linear/growth_consumption/m1.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 # NOTE I don't do it for all parameters...
@@ -170,7 +170,7 @@ waic_m1 <- lppd1 + 2*pd.WAIC1
 #**** M2 ===========================================================================
 # M2  - intercept, mass, temperature vary by species
 
-model2 = "R/analysis/JAGS_models/log_linear/m2.txt"
+model2 = "R/analysis/JAGS_models/log_linear/growth_consumption/m2.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -237,7 +237,7 @@ waic_m2 <- lppd2 + 2*pd.WAIC2
 #**** M3a ==========================================================================
 # M3a - intercept and mass vary by species
 
-model3a = "R/analysis/JAGS_models/log_linear/m3a.txt"
+model3a = "R/analysis/JAGS_models/log_linear/growth_consumption/m3a.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -301,7 +301,7 @@ waic_m3a <- lppd3a + 2*pd.WAIC3a
 #**** M3b ==========================================================================
 # M3b - intercept and temperature vary by species
 
-model3b = "R/analysis/JAGS_models/log_linear/m3b.txt"
+model3b = "R/analysis/JAGS_models/log_linear/growth_consumption/m3b.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -365,7 +365,7 @@ waic_m3b <- lppd3b + 2*pd.WAIC3b
 #**** M4 ===========================================================================
 # M4  - intercept varies by species
 
-model4 = "R/analysis/JAGS_models/log_linear/m4.txt"
+model4 = "R/analysis/JAGS_models/log_linear/growth_consumption/m4.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -426,7 +426,7 @@ waic_m4 <- lppd4 + 2*pd.WAIC4
 #**** M5 ===========================================================================
 # M5  - no interaction, all coefficients vary by species
 
-model5 = "R/analysis/JAGS_models/log_linear/m5.txt"
+model5 = "R/analysis/JAGS_models/log_linear/growth_consumption/m5.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -490,7 +490,7 @@ waic_m5 <- lppd5 + 2*pd.WAIC5
 #**** M6a ===========================================================================
 # M6a - no interaction, intercept and mass vary by species
 
-model6a = "R/analysis/JAGS_models/log_linear/m6a.txt"
+model6a = "R/analysis/JAGS_models/log_linear/growth_consumption/m6a.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -550,7 +550,7 @@ waic_m6a <- lppd6a + 2*pd.WAIC6a
 
 #**** M6b ===========================================================================
 # M6b - no interaction, intercept and temperature vary by species
-model6b = "R/analysis/JAGS_models/log_linear/m6b.txt"
+model6b = "R/analysis/JAGS_models/log_linear/growth_consumption/m6b.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -610,7 +610,7 @@ waic_m6b <- lppd6b + 2*pd.WAIC6b
 
 #**** M7 ===========================================================================
 # M7  - no interaction, intercept varies by species
-model7 = "R/analysis/JAGS_models/log_linear/m7.txt"
+model7 = "R/analysis/JAGS_models/log_linear/growth_consumption/m7.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -682,13 +682,13 @@ waic_m7
 # > waic_m1
 # [1] 47.20224
 # > waic_m2
-# [1] 54.84147
+# [1] 54.40601
 # > waic_m3a
-# [1] 70.92513
+# [1] 70.6371
 # > waic_m3b
-# [1] 79.54329
+# [1] 79.75376
 # > waic_m4
-# [1] 90.86876
+# [1] 90.66608
 # > waic_m5
 # [1] 52.72265
 # > waic_m6a
@@ -708,3 +708,21 @@ waic_m5 - waic_m1
 waic_m6a - waic_m1
 waic_m6b - waic_m1
 waic_m7 - waic_m1
+
+# [1] 0
+# > waic_m2 - waic_m1
+# [1] 7.203766
+# > waic_m3a - waic_m1
+# [1] 23.43486
+# > waic_m3b - waic_m1
+# [1] 32.55152
+# > waic_m4 - waic_m1
+# [1] 43.46383
+# > waic_m5 - waic_m1
+# [1] 5.520408
+# > waic_m6a - waic_m1
+# [1] 22.05066
+# > waic_m6b - waic_m1
+# [1] 34.27492
+# > waic_m7 - waic_m1
+# [1] 44.85089

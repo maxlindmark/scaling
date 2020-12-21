@@ -73,6 +73,9 @@ temp_pred <- 0 # This means we use mean temperature as it is centered
 # Prepare data for JAGS
 data = NULL # Clear any old data lists that might confuse things
 
+# Arrange by species name so there's no confusion between the index and the name
+dat <- dat %>% arrange(species_n)
+
 # Data in list-format for JAGS
 data = list(
   y = log(dat$y), 
@@ -93,7 +96,7 @@ n.iter <- 15000  # Number of samples
 thin <- 5        # Save every 5th sample
 
 # Select model with lowest WAIC (see grow_model_selection.R)
-model = "R/analysis/JAGS_models/log_linear/selected_models/m1_pred_fit.txt"
+model = "JAGS_models/log_linear/selected_models/m1_pred_fit_gro.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -268,8 +271,8 @@ pWord5 + pWord6
 ggsave("figures/supp/log_linear/growth/validation_gro_temp.png", width = 6.5, height = 6.5, dpi = 600)
 
 
-#**** Group-level means ============================================================
-# Plot posterior densities of group-level means and standard deviations
+#**** Global means =================================================================
+# Plot posterior densities of global means and standard deviations
 p7 <- cs_df %>% 
   filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", "mu_b3",
                           "sigma_b0", "sigma_b1", "sigma_b2", "sigma_b3")) %>% 

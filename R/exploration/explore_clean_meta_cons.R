@@ -136,6 +136,18 @@ p1 <- ggplot(dat, aes(mass_norm, fill = species)) +
 pWord <- p1 + theme_classic() + theme(text = element_text(size = 12))
 ggsave("figures/supp/data/meta_cons_size_range.png", width = 6.5, height = 6.5, dpi = 600)
 
+# Plot size vs asymptotic size
+# If we have a strong relationship between mass and max mass, then it could be argued that
+# we also plot average interspecific relationships
+ggplot(dat, aes(w_max_published_g, mass_g, color = species)) + 
+  geom_point() + 
+  facet_wrap(~ rate, nrow = 2, scales = "free_y") +
+  scale_color_viridis(discrete = TRUE, option = "magma") +
+  #coord_cartesian(expand = 0) + 
+  #labs(x = "Mass/Max mass") +
+  guides(fill = FALSE) +
+  NULL
+
 
 # Trophic level
 p2 <- ggplot(dat, aes(x = reorder(species, trophic_level), y = trophic_level)) +

@@ -120,15 +120,23 @@ dat$mass_norm_mat <- dat$mass_g / dat$w_maturation_g
 
 
 #** Plot general data ==============================================================
+# Extend color palette
+colourCount = length(unique(dat$species))
+getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
+pal <- getPalette(colourCount)
+
 # Test which sizes I use
 p1 <- ggplot(dat, aes(mass_norm_mat, fill = species)) + 
   geom_histogram() + 
-  scale_fill_viridis(discrete = TRUE, option = "magma") +
+  #scale_fill_viridis(discrete = TRUE, option = "magma") +
+  scale_fill_manual(values = pal, name = "Species") +
   coord_cartesian(expand = 0) + 
   labs(x = "Mass/Maturation mass") +
-  guides(fill = FALSE) +
+  #guides(fill = FALSE) +
   NULL
-pWord <- p1 + theme_classic() + theme(text = element_text(size = 12), aspect.ratio = 1)
+pWord <- p1 + theme_classic() + theme(text = element_text(size = 12),
+                                      legend.text = element_text(face = "italic"),
+                                      aspect.ratio = 1)
 ggsave("figures/supp/data/topt_size_range.png", width = 6.5, height = 6.5, dpi = 600)
 
 

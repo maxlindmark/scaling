@@ -36,6 +36,7 @@ library(MCMCvis)
 library(scales)
 library(bayesplot)
 library(tidylog)
+library(tibble)
 
 # > sessionInfo()
 # other attached packages:
@@ -88,9 +89,20 @@ mass_pred_con <-  seq(from = min(con$log_mass_ct),
 temp_pred_met <- 0 # This means we use mean temperature as it is centered 
 temp_pred_con <- 0 # This means we use mean temperature as it is centered 
 
+# Add dummy variable for metabolic type (0 for routine/resting, 1 for standard)
+met$met_type <- ifelse(met$type == "Standard", 1, 0)
+met$met_s <- ifelse(met$type == "Standard", 1, 0)
+met$met_r <- ifelse(!met$type == "Standard", 1, 0)
+
+plot(met$met_s ~ met$met_r)
+
 # Prepare data for JAGS
 met_data = NULL # Clear any old data lists that might confuse things
 con_data = NULL
+
+# Arrange by species name so there's no confusion between the index and the name
+met <- met %>% arrange(species_n)
+con <- con %>% arrange(species_n)
 
 # Data in list-format for JAGS
 met_data = list(
@@ -99,8 +111,12 @@ met_data = list(
   species_n = met$species_n,
   mass = met$log_mass_ct,
   temp = met$temp_arr_ct,
+  met_r = met$met_r,
+  met_s = met$met_s,
   mass_pred = mass_pred_met,
-  temp_pred = temp_pred_met)
+  temp_pred = temp_pred_met,
+  spec_s = distinct(met, species, .keep_all = TRUE)$met_s, # New variable to go in the 1:34 for loop 
+  spec_r = distinct(met, species, .keep_all = TRUE)$met_r) # New variable to go in the 1:34 for loop
 
 # Data in list-format for JAGS
 con_data = list(
@@ -121,39 +137,45 @@ thin <- 5        # Save every 5th sample
 
 # Metabolic rate ===================================================================
 # Select model with lowest WAIC (see met_model_selection.R)
-met_model = "R/analysis/JAGS_models/log_linear/selected_models/m1_pred_fit.txt"
+met_model = "JAGS_models/log_linear/selected_models/m1_pred_fit_met.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits_met = list(
   list(
-    mu_b0 = 0.1,
+    mu_b0_s = 0.1,
+    mu_b0_r = 0.1,
     mu_b1 = 0.1,
     mu_b2 = 0.1,
     mu_b3 = 1,
     sigma = 0.1,
-    sigma_b0 = 0.1,
+    sigma_b0_r = 0.1,
+    sigma_b0_s = 0.1,
     sigma_b1 = 0.1,
     sigma_b2 = 0.1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    mu_b0 = 1,
+    mu_b0_s = 1,
+    mu_b0_r = 1,
     mu_b1 = 1,
     mu_b2 = 1,
     mu_b3 = 1,
     sigma = 1,
-    sigma_b0 = 1,
+    sigma_b0_r = 1,
+    sigma_b0_s = 1,
     sigma_b1 = 1,
     sigma_b2 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    mu_b0 = 2,
+    mu_b0_s = 2,
+    mu_b0_r = 2,
     mu_b1 = 2,
     mu_b2 = 2,
     mu_b3 = 2,
     sigma = 2,
-    sigma_b0 = 2,
+    sigma_b0_r = 2,
+    sigma_b0_s = 2,
     sigma_b1 = 2,
     sigma_b2 = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
@@ -169,7 +191,7 @@ update(jm_met, n.iter = n.iter)
 
 # Maximum consumption rate =========================================================
 # Select model with lowest WAIC (see con_model_selection.R)
-con_model = "R/analysis/JAGS_models/log_linear/selected_models/m5_pred_fit.txt"
+con_model = "JAGS_models/log_linear/selected_models/m5_pred_fit_con.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 # NOTE I don't do it for all parameters...
@@ -218,33 +240,36 @@ update(jm_con, n.iter = n.iter, inits = inits_con)
 # Metabolic rate ===================================================================
 # CODA - Nice for getting the raw posteriors
 cs_met <- coda.samples(jm_met,
-                       variable.names = c("b0", "b1", "b2", "b3",
-                                          "mu_b0", "mu_b1", "mu_b2", "mu_b3",
-                                          "sigma_b0", "sigma_b1", "sigma_b2", "sigma_b3",
+                       variable.names = c("b0_r", "b0_s", "b1", "b2", "b3",
+                                          "mu_b0_r", "mu_b0_s", "mu_b1", "mu_b2", "mu_b3",
+                                          "sigma_b0_r", "sigma_b0_s", "sigma_b1", "sigma_b2", "sigma_b3",
                                           "sigma"), 
                        n.iter = n.iter, 
                        thin = thin)
 
 # summary(cs_met)
 # 2. Quantiles for each variable:
-#           2.5%       25%        50%      75%     97.5%
-# mu_b0    -2.361601 -2.2396832 -2.1781054 -2.115502 -1.980890
-# mu_b1    -0.258104 -0.2255877 -0.2089168 -0.192804 -0.159269
-# mu_b2    -0.669687 -0.6364458 -0.6197568 -0.603694 -0.569960
-# mu_b3     0.001057  0.0119329  0.0177250  0.023662  0.036489
-
+#              2.5%       25%        50%      75%     97.5%
+# ...
+# mu_b0_r    -2.1087401 -1.990029 -1.9310915 -1.869688 -1.741797
+# mu_b0_s    -2.8085439 -2.591969 -2.4874513 -2.391457 -2.169679
+# mu_b1      -0.2584772 -0.225095 -0.2088925 -0.193078 -0.160210
+# mu_b2      -0.6731687 -0.638018 -0.6209557 -0.604735 -0.572977
+# mu_b3       0.0008228  0.011839  0.0174556  0.023837  0.036746
+# ...
 
 # Convert to ggplottable data frame
 cs_met_df <- ggs(cs_met)
 
-#**** Species intercepts (1/2 because to many species) =============================
+
+#**** Species metabolic type effects standard (1/2 because to many species) ========
 # Plot posterior densities of species intercepts
 unique(cs_met_df$Parameter)
 
 p1a <- cs_met_df %>% 
-  filter(Parameter %in% c("b0[1]", "b0[2]", "b0[3]", "b0[4]", "b0[5]", "b0[6]", "b0[7]", 
-                          "b0[8]", "b0[9]", "b0[10]", "b0[11]", "b0[12]", "b0[13]",
-                          "b0[14]", "b0[15]", "b0[16]", "b0[17]")) %>% 
+  filter(Parameter %in% c("b0_s[1]", "b0_s[2]", "b0_s[3]", "b0_s[4]", "b0_s[5]", "b0_s[6]", "b0_s[7]", 
+                          "b0_s[8]", "b0_s[9]", "b0_s[10]", "b0_s[11]", "b0_s[12]", "b0_s[13]",
+                          "b0_s[14]", "b0_s[15]", "b0_s[16]", "b0_s[17]")) %>% 
   ggs_density(.) + 
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_density(alpha = 0.05) +
@@ -258,9 +283,9 @@ pWord1a <- p1a + theme_classic() + theme(text = element_text(size = 8),
 
 # Traceplot for evaluating chain convergence
 p2a <- cs_met_df %>% 
-  filter(Parameter %in% c("b0[1]", "b0[2]", "b0[3]", "b0[4]", "b0[5]", "b0[6]", "b0[7]", 
-                          "b0[8]", "b0[9]", "b0[10]", "b0[11]", "b0[12]", "b0[13]",
-                          "b0[14]", "b0[15]", "b0[16]", "b0[17]")) %>% 
+  filter(Parameter %in% c("b0_s[1]", "b0_s[2]", "b0_s[3]", "b0_s[4]", "b0_s[5]", "b0_s[6]", "b0_s[7]", 
+                          "b0_s[8]", "b0_s[9]", "b0_s[10]", "b0_s[11]", "b0_s[12]", "b0_s[13]",
+                          "b0_s[14]", "b0_s[15]", "b0_s[16]", "b0_s[17]")) %>% 
   ggs_traceplot(.) +
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_line(alpha = 0.3) +
@@ -271,18 +296,18 @@ p2a <- cs_met_df %>%
 pWord2a <- p2a + theme_classic() + theme(text = element_text(size = 8),
                                          axis.text = element_text(size = 5))
 pWord1a + pWord2a
-ggsave("figures/supp/log_linear/met_con/validation_met_intercepts_1.2.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/validation_met_type_effects_s_1.2.png", width = 6.5, height = 6.5, dpi = 600)
 
 
-#**** Species intercepts (2/2 because to many species) =============================
+#**** Species metabolic type effects standard (2/2 because to many species) ========
 # Plot posterior densities of species intercepts
 unique(cs_df$Parameter)
 
 p1b <- cs_met_df %>% 
-  filter(Parameter %in% c("b0[18]", "b0[19]",
-                          "b0[20]", "b0[21]", "b0[22]", "b0[23]", "b0[24]", "b0[25]",
-                          "b0[25]", "b0[26]", "b0[27]", "b0[28]", "b0[29]", "b0[30]",
-                          "b0[31]", "b0[32]", "b0[33]", "b0[34]")) %>% 
+  filter(Parameter %in% c("b0_s[18]", "b0_s[19]",
+                          "b0_s[20]", "b0_s[21]", "b0_s[22]", "b0_s[23]", "b0_s[24]", "b0_s[25]",
+                          "b0_s[25]", "b0_s[26]", "b0_s[27]", "b0_s[28]", "b0_s[29]", "b0_s[30]",
+                          "b0_s[31]", "b0_s[32]", "b0_s[33]", "b0_s[34]")) %>% 
   ggs_density(.) + 
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_density(alpha = 0.05) +
@@ -296,10 +321,10 @@ pWord1b <- p1b + theme_classic() + theme(text = element_text(size = 8),
 
 # Traceplot for evaluating chain convergence
 p2b <- cs_met_df %>% 
-  filter(Parameter %in% c("b0[18]", "b0[19]",
-                          "b0[20]", "b0[21]", "b0[22]", "b0[23]", "b0[24]", "b0[25]",
-                          "b0[25]", "b0[26]", "b0[27]", "b0[28]", "b0[29]", "b0[30]",
-                          "b0[31]", "b0[32]", "b0[33]", "b0[34]")) %>% 
+  filter(Parameter %in% c("b0_s[18]", "b0_s[19]",
+                          "b0_s[20]", "b0_s[21]", "b0_s[22]", "b0_s[23]", "b0_s[24]", "b0_s[25]",
+                          "b0_s[25]", "b0_s[26]", "b0_s[27]", "b0_s[28]", "b0_s[29]", "b0_s[30]",
+                          "b0_s[31]", "b0_s[32]", "b0_s[33]", "b0_s[34]")) %>% 
   ggs_traceplot(.) +
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_line(alpha = 0.3) +
@@ -310,7 +335,83 @@ p2b <- cs_met_df %>%
 pWord2b <- p2b + theme_classic() + theme(text = element_text(size = 8),
                                          axis.text = element_text(size = 5))
 pWord1b + pWord2b
-ggsave("figures/supp/log_linear/met_con/validation_met_intercepts_2.2.png", width = 6.5, height = 6.5, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/validation_met_type_effects_s_2.2.png", width = 6.5, height = 6.5, dpi = 600)
+
+
+#**** Species metabolic type effects routine (1/2 because to many species) =================
+# Plot posterior densities of species intercepts
+unique(cs_met_df$Parameter)
+
+p1a <- cs_met_df %>% 
+  filter(Parameter %in% c("b0_r[1]", "b0_r[2]", "b0_r[3]", "b0_r[4]", "b0_r[5]", "b0_r[6]", "b0_r[7]", 
+                          "b0_r[8]", "b0_r[9]", "b0_r[10]", "b0_r[11]", "b0_r[12]", "b0_r[13]",
+                          "b0_r[14]", "b0_r[15]", "b0_r[16]", "b0_r[17]")) %>% 
+  ggs_density(.) + 
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+  geom_density(alpha = 0.05) +
+  scale_color_brewer(palette = "Dark2") + 
+  scale_fill_brewer(palette = "Dark2") +
+  labs(x = "Value", y = "Density", fill = "Chain #") +
+  guides(color = FALSE, fill = FALSE) +
+  NULL
+pWord1a <- p1a + theme_classic() + theme(text = element_text(size = 8),
+                                         axis.text = element_text(size = 5))
+
+# Traceplot for evaluating chain convergence
+p2a <- cs_met_df %>% 
+  filter(Parameter %in% c("b0_r[1]", "b0_r[2]", "b0_r[3]", "b0_r[4]", "b0_r[5]", "b0_r[6]", "b0_r[7]", 
+                          "b0_r[8]", "b0_r[9]", "b0_r[10]", "b0_r[11]", "b0_r[12]", "b0_r[13]",
+                          "b0_r[14]", "b0_r[15]", "b0_r[16]", "b0_r[17]")) %>% 
+  ggs_traceplot(.) +
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+  geom_line(alpha = 0.3) +
+  scale_color_brewer(palette = "Dark2") + 
+  labs(x = "Iteration", y = "Value", color = "Chain #") +
+  guides(color = guide_legend(override.aes = list(alpha = 1))) +
+  NULL
+pWord2a <- p2a + theme_classic() + theme(text = element_text(size = 8),
+                                         axis.text = element_text(size = 5))
+pWord1a + pWord2a
+ggsave("figures/supp/log_linear/met_con/validation_met_type_effects_r_1.2.png", width = 6.5, height = 6.5, dpi = 600)
+
+
+#**** Species metabolic type effects routine (2/2 because to many species) =========
+# Plot posterior densities of species intercepts
+unique(cs_df$Parameter)
+
+p1b <- cs_met_df %>% 
+  filter(Parameter %in% c("b0_r[18]", "b0_r[19]",
+                          "b0_r[20]", "b0_r[21]", "b0_r[22]", "b0_r[23]", "b0_r[24]", "b0_r[25]",
+                          "b0_r[25]", "b0_r[26]", "b0_r[27]", "b0_r[28]", "b0_r[29]", "b0_r[30]",
+                          "b0_r[31]", "b0_r[32]", "b0_r[33]", "b0_r[34]")) %>% 
+  ggs_density(.) + 
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+  geom_density(alpha = 0.05) +
+  scale_color_brewer(palette = "Dark2") + 
+  scale_fill_brewer(palette = "Dark2") +
+  labs(x = "Value", y = "Density", fill = "Chain #") +
+  guides(color = FALSE, fill = FALSE) +
+  NULL
+pWord1b <- p1b + theme_classic() + theme(text = element_text(size = 8),
+                                         axis.text = element_text(size = 5))
+
+# Traceplot for evaluating chain convergence
+p2b <- cs_met_df %>% 
+  filter(Parameter %in% c("b0_r[18]", "b0_r[19]",
+                          "b0_r[20]", "b0_r[21]", "b0_r[22]", "b0_r[23]", "b0_r[24]", "b0_r[25]",
+                          "b0_r[25]", "b0_r[26]", "b0_r[27]", "b0_r[28]", "b0_r[29]", "b0_r[30]",
+                          "b0_r[31]", "b0_r[32]", "b0_r[33]", "b0_r[34]")) %>% 
+  ggs_traceplot(.) +
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+  geom_line(alpha = 0.3) +
+  scale_color_brewer(palette = "Dark2") + 
+  labs(x = "Iteration", y = "Value", color = "Chain #") +
+  guides(color = guide_legend(override.aes = list(alpha = 1))) +
+  NULL
+pWord2b <- p2b + theme_classic() + theme(text = element_text(size = 8),
+                                         axis.text = element_text(size = 5))
+pWord1b + pWord2b
+ggsave("figures/supp/log_linear/met_con/validation_met_type_effects_r_2.2.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Species mass-effects (1/2 because to many species) ===========================
@@ -493,7 +594,7 @@ pWord7a + pWord8a
 ggsave("figures/supp/log_linear/met_con/validation_met_inter_1.2.png", width = 6.5, height = 6.5, dpi = 600)
 
 
-#**** Species temperature-effects (2/2 because to many species) ====================
+#**** Species interaction-effects (2/2 because to many species) ====================
 # Plot posterior densities of temperature-effects
 p7b <- cs_met_df %>% 
   filter(Parameter %in% c("b3[18]", "b3[19]",
@@ -530,10 +631,10 @@ pWord7b + pWord8b
 ggsave("figures/supp/log_linear/met_con/validation_met_inter_2.2.png", width = 6.5, height = 6.5, dpi = 600)
 
 
-#**** Group-level means ============================================================
-# Plot posterior densities of group-level means and standard deviations
+#**** Global means =================================================================
+# Plot posterior densities of global means and standard deviations
 p9 <- cs_met_df %>% 
-  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", "mu_b3",
+  filter(Parameter %in% c("mu_b0", "mu_b0_r", "mu_b0_s", "mu_b1", "mu_b2", "mu_b3",
                           "sigma_b0", "sigma_b1", "sigma_b2", "sigma_b3")) %>% 
   ggs_density(.) + 
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
@@ -548,7 +649,7 @@ pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 10),
 
 # Traceplot for evaluating chain convergence
 p10 <- cs_met_df %>% 
-  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", "mu_b3",
+  filter(Parameter %in% c("mu_b0", "mu_b0_r", "mu_b0_s", "mu_b1", "mu_b2", "mu_b3",
                           "sigma_b0", "sigma_b1", "sigma_b2", "sigma_b3")) %>% 
   ggs_traceplot(.) +
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
@@ -567,7 +668,7 @@ ggsave("figures/supp/log_linear/met_con/validation_met.png", width = 6.5, height
 p11 <- cs_met_df %>% 
   ggs_Rhat(.) + 
   xlab("R_hat") +
-  xlim(0.999, 1.03) +
+  xlim(0.999, 1.02) +
   geom_point(size = 1) +
   NULL
 pWord11 <- p11 + theme_classic() + theme(text = element_text(size = 10),
@@ -578,11 +679,12 @@ ggsave("figures/supp/log_linear/met_con/validation_rhat_met.png", width = 6.5, h
 #**** Prior vs posterior ===========================================================
 # https://cran.r-project.org/web/packages/MCMCvis/vignettes/MCMCvis.html
 
-# Priors from JAGS
-# mu_b0 ~ dnorm(0, 0.04)   # mean of all species intercept
-# mu_b1 ~ dnorm(-0.25, 1)  # mean of all species mass-exponent
-# mu_b2 ~ dnorm(-0.6, 1)   # mean of all species temperature coefficients
-# mu_b3 ~ dnorm(0, 1)      # mean of all species interaction coefficients
+# Priors from JAGS (global means)
+# mu_b0_s ~ dnorm(-2, 0.04)
+# mu_b0_r ~ dnorm(-1, 0.04)
+# mu_b1 ~ dnorm(-0.25, 1)  
+# mu_b2 ~ dnorm(-0.6, 1)   
+# mu_b3 ~ dnorm(0, 1)     
 
 # Remember: distributions in JAGS have arguments mean and precision (inverse of variance)
 # tau = 1/variance
@@ -595,19 +697,20 @@ ggsave("figures/supp/log_linear/met_con/validation_rhat_met.png", width = 6.5, h
 tau <- 1
 tau_int <- 0.04
 
-mu_b0 <- rnorm(25000, 0, sqrt(1/tau_int))  
-mu_b1 <- rnorm(25000, -0.25, sqrt(1/tau))  
+mu_b0_s <- rnorm(25000, -2, sqrt(1/tau_int))
+mu_b0_r <- rnorm(25000, -1, sqrt(1/tau_int)) 
+mu_b1 <- rnorm(25000, -0.25, sqrt(1/tau)) # hist(rnorm(25000, -2, sqrt(1/tau)))
 mu_b2 <- rnorm(25000, -0.6, sqrt(1/tau))   
 mu_b3 <- rnorm(25000, 0, sqrt(1/tau))         
 
-PR <- as.matrix(cbind(mu_b0, mu_b1, mu_b2, mu_b3))
+PR <- as.matrix(cbind(mu_b0_s, mu_b0_r, mu_b1, mu_b2, mu_b3))
 
 # This is not a ggplot...
 png(file = "/Users/maxlindmark/Desktop/R_STUDIO_PROJECTS/scaling/figures/supp/log_linear/met_con/validation_prior_post_met.png", 
     units = "px", width = 1800, height = 1800, res = 300)
 
 MCMCtrace(cs_met,
-          params = c("mu_b0", "mu_b1", "mu_b2", "mu_b3"),
+          params = c("mu_b0_s", "mu_b0_r", "mu_b1", "mu_b2", "mu_b3"),
           ISB = FALSE,
           priors = PR,
           pdf = FALSE,
@@ -632,11 +735,12 @@ cs_con <- coda.samples(jm_con,
 
 # summary(cs_con)
 # 2. Quantiles for each variable:
-#   
-#          2.5%     25%     50%     75%    97.5%
-# mu_b0    -3.46443 -3.1237 -2.9576 -2.7944 -2.44343
-# mu_b1    -0.45399 -0.3997 -0.3750 -0.3489 -0.29574
-# mu_b2    -0.84680 -0.7429 -0.6945 -0.6430 -0.54058
+#           2.5%     25%     50%     75%    97.5%
+# ...
+# mu_b0    -3.46441 -3.1249 -2.9497 -2.7855 -2.44612
+# mu_b1    -0.45559 -0.4014 -0.3757 -0.3508 -0.29598
+# mu_b2    -0.84977 -0.7425 -0.6920 -0.6427 -0.53789
+# ...
 
 # Convert to ggplottable data frame
 cs_con_df <- ggs(cs_con)
@@ -750,8 +854,8 @@ pWord5 + pWord6
 ggsave("figures/supp/log_linear/met_con/validation_con_temp.png", width = 6.5, height = 6.5, dpi = 600)
 
 
-#**** Group-level means ============================================================
-# Plot posterior densities of group-level means and standard deviations
+#**** Global means =================================================================
+# Plot posterior densities of global means and standard deviations
 p7 <- cs_con_df %>% 
   filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", 
                           "sigma_b0", "sigma_b1", "sigma_b2")) %>% 
@@ -882,7 +986,6 @@ pp_m <- ggplot() +
         legend.text = element_text(size = 8),
         legend.position = c(0.2, 0.95),
         legend.key.size = unit(0.3, "cm"))
-
 
 #-- Residual vs fitted
 df_y_sim_met <- df_y_sim_met %>%
@@ -1039,25 +1142,93 @@ cs_con <- coda.samples(jm_con,
 
 # Metabolic rate - NOTE I'm also sampling b3 here! That parameter is not in consumption
 cs_met <- coda.samples(jm_met,
-                       variable.names = c("b0", "b1", "b2", "b3",
-                                          "mu_b0", "mu_b1", "mu_b2", "mu_b3",
-                                          "sigma_b0", "sigma_b1", "sigma_b2", "sigma_b3",
+                       variable.names = c("b0_s", "b0_r", "b1", "b2", "b3",
+                                          "mu_b0_s", "mu_b0_r", "mu_b1", "mu_b2", "mu_b3",
+                                          "sigma_b0_s", "sigma_b0_r", "sigma_b1", "sigma_b2", "sigma_b3",
                                           "sigma"),
                        n.iter = n.iter, 
                        thin = thin)
 
 
+#**** Plot species-intercepts ======================================================
+cs_met2 <- coda.samples(jm_met,
+                        variable.names = c("b0_s", "mu_b0_s", "b0_r", "mu_b0_r"), 
+                        n.iter = n.iter, 
+                        thin = thin)
+
+summary(cs_met2)[2]
+
+species_intercepts <- data.frame(summary(cs_met2)[2]) %>% 
+  rownames_to_column("param") %>% 
+  mutate(param = factor(param)) %>% 
+  mutate(standard = stringr::str_detect(param, 'b0_s')) %>% 
+  mutate(met_type_est = ifelse(standard == TRUE, "standard", "routine/resting")) %>% 
+  rownames_to_column("species_n") %>%  
+  mutate(species_n = as.numeric(species_n)) %>% 
+  mutate(species_n = factor(ifelse(species_n > 34, species_n-34, species_n)))
+
+# Now find which species(index) have which data
+spec_type <- met %>%
+  group_by(species_n) %>%
+  distinct(met_type) %>%
+  ungroup() %>% 
+  mutate(species_n = factor(species_n)) %>%
+  mutate(met_type_data = factor(ifelse(met_type == 1, "standard", "routine/resting"))) %>%
+  select(species_n, met_type_data) %>% 
+  data.frame()
+
+species_intercepts <- left_join(species_intercepts, spec_type)
+
+pal = RColorBrewer::brewer.pal(n = 3, name = "Dark2")
+
+# Add in the correct species names
+met_names <- met %>%
+  distinct(common_name, .keep_all = TRUE) %>% 
+  dplyr::select(species_ab, species_n) %>% 
+  mutate(species_n = factor(species_n))
+
+species_intercepts <- left_join(species_intercepts, met_names, by = "species_n")
+
+species_intercepts %>% 
+  drop_na(met_type_data) %>% 
+  filter(!quantiles.50. == 0) %>% 
+  ggplot(., aes(factor(species_ab), quantiles.50., color = factor(met_type_data))) + 
+  geom_errorbar(aes(ymin = quantiles.2.5., ymax = quantiles.97.5., x = factor(species_ab))) +
+  geom_hline(yintercept = filter(species_intercepts, param %in% c("mu_b0_r"))$quantiles.50.,
+             alpha = 0.5, linetype = 1, color = pal[1], size = 1) +
+  geom_hline(yintercept = filter(species_intercepts, param %in% c("mu_b0_s"))$quantiles.50.,
+             alpha = 0.5, linetype = 1, color = pal[2], size = 1) +
+  geom_hline(yintercept = filter(species_intercepts, param %in% c("mu_b0_r"))$quantiles.97.5.,
+             alpha = 0.5, linetype = 2, color = pal[1], size = 1) +
+  geom_hline(yintercept = filter(species_intercepts, param %in% c("mu_b0_s"))$quantiles.97.5.,
+             alpha = 0.5, linetype = 2, color = pal[2], size = 1) +
+  geom_hline(yintercept = filter(species_intercepts, param %in% c("mu_b0_r"))$quantiles.2.5.,
+             alpha = 0.5, linetype = 2, color = pal[1], size = 1) +
+  geom_hline(yintercept = filter(species_intercepts, param %in% c("mu_b0_s"))$quantiles.2.5.,
+             alpha = 0.5, linetype = 2, color = pal[2], size = 1) +
+  scale_color_brewer(palette = "Dark2", name = "Metabolic\ntype") +
+  geom_point(size = 3) +
+  coord_flip() +
+  #facet_wrap(~ met_type_est) +
+  labs(y = "Intercept", x = "") + 
+  theme_classic(base_size = 12) +
+  theme(axis.text.y = element_text(face = "italic"))
+
+ggsave("figures/supp/log_linear/met_con/metabolism_intercepts_type.png", width = 7, height = 7, dpi = 600)
+
+# Test it's correct using a few species...
+# head(filter(met, species_n == 4), 1) %>% dplyr::select(species_n, type, met_type, species_ab)
+# head(filter(met, species_n == 17), 1) %>% dplyr::select(species_n, type, met_type, species_ab)
+# head(filter(met, species_n == 23), 1) %>% dplyr::select(species_n, type, met_type, species_ab)
+# head(filter(met, species_n == 31), 1) %>% dplyr::select(species_n, type, met_type, species_ab)
+# head(filter(met, species_n == 9), 1) %>% dplyr::select(species_n, type, met_type, species_ab)
+# head(filter(met, species_n == 22), 1) %>% dplyr::select(species_n, type, met_type, species_ab)
+
+
 #**** Plot species-predictions =====================================================
 # Maximum consumption
-# First get the species names in order as they appear in the output. This is based on 
-# the order of the factor level (1:n), based on the species names in alphabetical order,
-# which is not the same as the order they appear in the data(!).
-con_spec <- unique(arrange(con, species_n)$species_ab)
-# unique(con$species_n)
-# unique(con$species_ab)
-# sort(unique(con$species_n))
-# sort(unique(con$species_ab))
-# con %>% select(species_n, species_ab)
+# First get the species names and match them to the parameter (1:n species)
+con_spec <- unique(con$species_ab)
 
 con_df <- data.frame(summary(cs_con)[2]) # Extract quantiles
 con_df$Parameter <- rownames(con_df)
@@ -1083,10 +1254,8 @@ con_e$pred <- filter(con_df, Parameter == "mu_b2")$quantiles.50.
 con_e$pred_sd <- filter(std_con, Parameter == "mu_b2")$statistics.SD
 
 # Metabolism
-# First get the species names in order as they appear in the output. This is based on 
-# the order of the factor level (1:n), based on the species names in alphabetical order,
-# which is not the same as the order they appear in the data.
-met_spec <- unique(arrange(met, species_n)$species_ab)
+# First get the species names and match them to the parameter (1:n species)
+met_spec <- unique(met$species_ab)
 
 met_df <- data.frame(summary(cs_met)[2])
 met_df$Parameter <- rownames(met_df)
@@ -1125,7 +1294,7 @@ df <- rbind(con_b, con_e, met_b, met_e, met_c)
 # Define color palettes
 pal <- brewer.pal("Dark2", n = 5)[c(1,3)]
 
-# Convert temperature ceofficient to activation energy by multiplying with -1
+# Convert temperature coefficient to activation energy by multiplying with -1
 df$quantiles.2.5. <- ifelse(df$Parameter_mte == "Activation energy",
                             df$quantiles.2.5. * -1,
                             df$quantiles.2.5.)
@@ -1161,6 +1330,7 @@ df_std$ymin <- df_std$pred - 2*df_std$pred_sd
 
 
 #** Make a combined plot ===========================================================
+# Rates vs data and species-level intercepts (3 in one)
 colourCount = length(unique(con$species))
 getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
 pal <- getPalette(colourCount)
@@ -1183,9 +1353,12 @@ p14 <- ggplot(c_pred_df, aes(mass_g, median)) +
        y = "ln(maximum consumption rate [g/g/day])") +
   annotate("text", 0.1, -8, label = paste("n=", nrow(con), sep = ""), size = 3,
            hjust = -0.5, vjust = 1.3) +
+  ggtitle("A") +
   NULL
 
-pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 14), aspect.ratio =  1)
+pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 14),
+                                         aspect.ratio = 1,
+                                         plot.title = element_text(face = "bold"))
 
 colourCount = length(unique(met$species))
 getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
@@ -1211,9 +1384,12 @@ p15 <- ggplot(m_pred_df, aes(mass_g, median)) +
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
   annotate("text", 0.1, -8, label = paste("n=", nrow(met), sep = ""), size = 3,
            hjust = -0.5, vjust = 1.3) +
+  ggtitle("B") +
   NULL
 
-pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 14), aspect.ratio = 1)
+pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 14),
+                                         aspect.ratio = 1,
+                                         plot.title = element_text(face = "bold"))
 
 pWord14 | pWord15
 
@@ -1255,19 +1431,22 @@ p16 <- df %>%
   geom_point(size = 1.5, fill = "white") +
   labs(x = "", y = "") + 
   guides(color = FALSE, shape = FALSE, fill = FALSE) +
+  ggtitle("C") +
   NULL 
 
 pWord16 <- p16 + theme_classic() + theme(text = element_text(size = 14),
                                          axis.text.x = element_text(size = 7, face = "italic", angle = 90),
+                                         title = element_text(face = "bold"),
                                          aspect.ratio = 1/2,
                                          legend.position = "bottom",
                                          legend.title = element_blank())
 
 (pWord14 + pWord15) / pWord16 + 
-  plot_layout(heights = unit(c(7.15, 1), c('cm', 'null'))) +
-  plot_annotation(tag_levels = "A")
+  plot_layout(heights = unit(c(7.15, 1), c('cm', 'null'))) #+
+  #plot_annotation(tag_levels = "A")
 
 ggsave("figures/meta_cons_combined.png", width = 22, height = 22, dpi = 600, units = "cm")
+ggsave("figures/meta_cons_combined.pdf", width = 22, height = 22, dpi = 600, units = "cm")
 
 
 #**** Plot global-predictions ======================================================
@@ -1372,9 +1551,22 @@ js = jags.samples(jm_met,
                   thin = thin)
 
 1-ecdf(js$mu_b1)(-0.25) 
-# 0.04544444
+# [1] 0.9538889
 
 1-ecdf(js$mu_b3)(0) # how much is above 0??
+
+# How much does the mass exponent decline per change in unit C?
+#summary(cs)
+dat <- data.frame(temp = seq(0, 20, 1))
+dat$temp_arr <- 1/((dat$temp + 273.15) * 8.617332e-05)
+
+# Coefficient is 0.018. It means per unit Arrhenius temp, the exponent declines with 0.018
+dat$b_a <- 0.75 + (0.018 * dat$temp_arr)
+summary(lm(b_a ~ temp_arr, data = dat))
+
+# Now fit the same exponents to C
+summary(lm(b_a ~ temp, data = dat))
+
 
 # How much does the mass exponent decline per change in unit T?
 #summary(cs)
@@ -1400,19 +1592,6 @@ ecdf(js$mu_b1)(-0.25)
 # [1] 0.9972222
 
 #ecdf(js$b3)(0) # how much is below?
-
-# How much does the mass exponent decline per change in unit C?
-#summary(cs)
-
-dat <- data.frame(temp = seq(0, 20, 1))
-dat$temp_arr <- 1/((dat$temp + 273.15) * 8.617332e-05)
-
-# Coefficient is 0.018. It means per unit Arrhenius temp, the exponent declines with 0.018
-dat$b_a <- 0.75 + (0.018 * dat$temp_arr)
-summary(lm(b_a ~ temp_arr, data = dat))
-
-# Now fit the same exponents to C
-summary(lm(b_a ~ temp, data = dat))
 
 
 

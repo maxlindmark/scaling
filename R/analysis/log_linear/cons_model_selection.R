@@ -1,7 +1,7 @@
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # 2019.12.02: Max Lindmark
 #
-# - Code to fit hierarchicals model to maximum consumption using a log-linear model 
+# - Code to fit hierarchical model to maximum consumption using a log-linear model 
 # inspired by the MTE, and perform model selection using WAIC
 # 
 # A. Load libraries
@@ -91,7 +91,7 @@ thin <- 5        # Save every 5th sample
 #**** M1 ===========================================================================
 # M1  - all coefficients vary by species
 
-model1 = "R/analysis/JAGS_models/log_linear/m1.txt"
+model1 = "JAGS_models/log_linear/growth_consumption/m1.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 # NOTE I don't do it for all parameters...
@@ -169,7 +169,7 @@ waic_m1 <- lppd1 + 2*pd.WAIC1
 #**** M2 ===========================================================================
 # M2  - intercept, mass, temperature vary by species
 
-model2 = "R/analysis/JAGS_models/log_linear/m2.txt"
+model2 = "JAGS_models/log_linear/growth_consumption/m2.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -246,7 +246,7 @@ summary(test)
 #**** M3a ==========================================================================
 # M3a - intercept and mass vary by species
 
-model3a = "R/analysis/JAGS_models/log_linear/m3a.txt"
+model3a = "JAGS_models/log_linear/growth_consumption/m3a.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -312,7 +312,7 @@ waic_m3a <- lppd3a + 2*pd.WAIC3a
 #**** M3b ==========================================================================
 # M3b - intercept and temperature vary by species
 
-model3b = "R/analysis/JAGS_models/log_linear/m3b.txt"
+model3b = "JAGS_models/log_linear/growth_consumption/m3b.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -378,7 +378,7 @@ waic_m3b <- lppd3b + 2*pd.WAIC3b
 #**** M4 ===========================================================================
 # M4  - intercept varies by species
 
-model4 = "R/analysis/JAGS_models/log_linear/m4.txt"
+model4 = "JAGS_models/log_linear/growth_consumption/m4.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -441,7 +441,7 @@ waic_m4 <- lppd4 + 2*pd.WAIC4
 #**** M5 ===========================================================================
 # M5  - no interaction, all coefficients vary by species
 
-model5 = "R/analysis/JAGS_models/log_linear/m5.txt"
+model5 = "JAGS_models/log_linear/growth_consumption/m5.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -507,7 +507,7 @@ waic_m5 <- lppd5 + 2*pd.WAIC5
 #**** M6a ===========================================================================
 # M6a - no interaction, intercept and mass vary by species
 
-model6a = "R/analysis/JAGS_models/log_linear/m6a.txt"
+model6a = "JAGS_models/log_linear/growth_consumption/m6a.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -569,7 +569,7 @@ waic_m6a <- lppd6a + 2*pd.WAIC6a
 
 #**** M6b ===========================================================================
 # M6b - no interaction, intercept and temperature vary by species
-model6b = "R/analysis/JAGS_models/log_linear/m6b.txt"
+model6b = "JAGS_models/log_linear/growth_consumption/m6b.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -631,7 +631,7 @@ waic_m6b <- lppd6b + 2*pd.WAIC6b
 
 #**** M7 ===========================================================================
 # M7  - no interaction, intercept varies by species
-model7 = "R/analysis/JAGS_models/log_linear/m7.txt"
+model7 = "JAGS_models/log_linear/growth_consumption/m7.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -701,16 +701,17 @@ waic_m6b
 waic_m7
 
 # WAIC suggests model 5 is best fitting with model 2 as a close runner up
+# > # WAIC
 # > waic_m1
 # [1] 564.5484
 # > waic_m2
-# [1] 561.9578
+# [1] 563.3664
 # > waic_m3a
-# [1] 708.5617
+# [1] 708.3846
 # > waic_m3b
-# [1] 629.4864
+# [1] 630.3754
 # > waic_m4
-# [1] 750.4202
+# [1] 750.1536
 # > waic_m5
 # [1] 560.2499
 # > waic_m6a
@@ -731,3 +732,21 @@ waic_m6a - waic_m5
 waic_m6b - waic_m5
 waic_m7 - waic_m5
 
+# > waic_m1 - waic_m5
+# [1] 4.298438
+# > waic_m2 - waic_m5
+# [1] 3.116463
+# > waic_m3a - waic_m5
+# [1] 148.1346
+# > waic_m3b - waic_m5
+# [1] 70.12543
+# > waic_m4 - waic_m5
+# [1] 189.9037
+# > waic_m5 - waic_m5
+# [1] 0
+# > waic_m6a - waic_m5
+# [1] 166.069
+# > waic_m6b - waic_m5
+# [1] 74.14731
+# > waic_m7 - waic_m5
+# [1] 213.9391
