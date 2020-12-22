@@ -11,6 +11,7 @@ rm(list = ls())
 library(RCurl)
 library(readxl)
 library(magrittr)
+library(tidyverse)
 
 
 # B. READ IN DATA ==================================================================
@@ -100,36 +101,36 @@ con %>%
 
 
 # Growth ===========================================================================
-dat <- 
+gro <- 
   read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/growth_analysis.csv"))
 
-str(dat)
+str(gro)
 
 # Count data
-length(unique(dat$common_name))
-nrow(dat)
+length(unique(gro$common_name))
+nrow(gro)
 
 # How many temperatures? 
-dat %>%
+gro %>%
   group_by(species) %>% 
   summarise(n_unique_temp = length(unique(round(temp_c, digits = 0)))) %>% 
   as.data.frame()
 
 # Average # of temperatures per species?
-dat %>%
+gro %>%
   group_by(species) %>% 
   summarise(n_unique_temp = length(unique(round(temp_c, digits = 0)))) %>% 
   ungroup() %>% 
   summarise(mean_n = mean(n_unique_temp))
 
 # How many masses? 
-dat %>%
+gro %>%
   group_by(species) %>% 
   summarise(n_unique_mass = length(unique(round(mass_g, digits = 0)))) %>% 
   as.data.frame()
 
 # Average # of masses per species?
-dat %>%
+gro %>%
   group_by(species) %>% 
   summarise(n_unique_mass = length(unique(round(mass_g, digits = 0)))) %>% 
   ungroup() %>% 
@@ -144,3 +145,29 @@ topt <-
 # Count data
 length(unique(topt$common_name))
 nrow(topt)
+
+# Total # of unique species
+met_spec <- met %>% dplyr::select(species_ab) %>% distinct()
+con_spec <- con %>% dplyr::select(species_ab) %>% distinct()
+gro_spec <- gro %>% dplyr::select(species_ab) %>% distinct()
+topt_spec <- topt %>% dplyr::select(species_ab) %>% distinct()
+
+all_spec <- rbind(met_spec, con_spec, gro_spec, topt_spec)
+
+length(unique(all_spec$species_ab))
+
+# Total # of data points
+met <- 
+  read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/met_analysis.csv"))
+
+con <- 
+  read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/con_analysis.csv"))
+
+gro <- 
+  read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/growth_analysis.csv"))
+
+nrow(met) + nrow(con) + nrow(gro)
+nrow(met) + nrow(con) + nrow(dat) + nrow(topt)
+
+
+
