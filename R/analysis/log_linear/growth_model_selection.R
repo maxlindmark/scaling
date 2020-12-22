@@ -26,10 +26,10 @@ library(viridis)
 library(patchwork)
 library(bayesplot)
 
+# sessionInfo()
 # other attached packages:
-# [1] bayesplot_1.7.1    patchwork_0.0.1    viridis_0.5.1      viridisLite_0.3.0  magrittr_1.5       readxl_1.3.1      
-# [7] RCurl_1.95-4.12    bitops_1.0-6       ggmcmc_1.3         ggplot2_3.2.1      tidyr_1.0.0        dplyr_0.8.3       
-# [13] RColorBrewer_1.1-2 rjags_4-10         coda_0.19-3    
+# [1] bayesplot_1.7.2    patchwork_1.0.1    viridis_0.5.1      viridisLite_0.3.0  magrittr_2.0.1     readxl_1.3.1       RCurl_1.98-1.2    
+# [8] ggmcmc_1.4.1       ggplot2_3.3.2      tidyr_1.1.2        dplyr_1.0.2        RColorBrewer_1.1-2 rjags_4-10         coda_0.19-4   
 
 
 # B. READ IN DATA ==================================================================
@@ -92,7 +92,7 @@ thin <- 5        # Save every 5th sample
 #**** M1 ===========================================================================
 # M1  - all coefficients vary by species
 
-model1 = "R/analysis/JAGS_models/log_linear/growth_consumption/m1.txt"
+model1 = "JAGS_models/log_linear/growth_consumption/m1.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 # NOTE I don't do it for all parameters...
@@ -170,7 +170,7 @@ waic_m1 <- lppd1 + 2*pd.WAIC1
 #**** M2 ===========================================================================
 # M2  - intercept, mass, temperature vary by species
 
-model2 = "R/analysis/JAGS_models/log_linear/growth_consumption/m2.txt"
+model2 = "JAGS_models/log_linear/growth_consumption/m2.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -237,7 +237,7 @@ waic_m2 <- lppd2 + 2*pd.WAIC2
 #**** M3a ==========================================================================
 # M3a - intercept and mass vary by species
 
-model3a = "R/analysis/JAGS_models/log_linear/growth_consumption/m3a.txt"
+model3a = "JAGS_models/log_linear/growth_consumption/m3a.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -301,7 +301,7 @@ waic_m3a <- lppd3a + 2*pd.WAIC3a
 #**** M3b ==========================================================================
 # M3b - intercept and temperature vary by species
 
-model3b = "R/analysis/JAGS_models/log_linear/growth_consumption/m3b.txt"
+model3b = "JAGS_models/log_linear/growth_consumption/m3b.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -365,7 +365,7 @@ waic_m3b <- lppd3b + 2*pd.WAIC3b
 #**** M4 ===========================================================================
 # M4  - intercept varies by species
 
-model4 = "R/analysis/JAGS_models/log_linear/growth_consumption/m4.txt"
+model4 = "JAGS_models/log_linear/growth_consumption/m4.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -426,7 +426,7 @@ waic_m4 <- lppd4 + 2*pd.WAIC4
 #**** M5 ===========================================================================
 # M5  - no interaction, all coefficients vary by species
 
-model5 = "R/analysis/JAGS_models/log_linear/growth_consumption/m5.txt"
+model5 = "JAGS_models/log_linear/growth_consumption/m5.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -490,7 +490,7 @@ waic_m5 <- lppd5 + 2*pd.WAIC5
 #**** M6a ===========================================================================
 # M6a - no interaction, intercept and mass vary by species
 
-model6a = "R/analysis/JAGS_models/log_linear/growth_consumption/m6a.txt"
+model6a = "JAGS_models/log_linear/growth_consumption/m6a.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -550,7 +550,7 @@ waic_m6a <- lppd6a + 2*pd.WAIC6a
 
 #**** M6b ===========================================================================
 # M6b - no interaction, intercept and temperature vary by species
-model6b = "R/analysis/JAGS_models/log_linear/growth_consumption/m6b.txt"
+model6b = "JAGS_models/log_linear/growth_consumption/m6b.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -610,7 +610,7 @@ waic_m6b <- lppd6b + 2*pd.WAIC6b
 
 #**** M7 ===========================================================================
 # M7  - no interaction, intercept varies by species
-model7 = "R/analysis/JAGS_models/log_linear/growth_consumption/m7.txt"
+model7 = "JAGS_models/log_linear/growth_consumption/m7.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(

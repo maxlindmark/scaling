@@ -33,10 +33,10 @@ library(bayesplot)
 library(MCMCvis)
 library(scales)
 
+# sessionInfo()
 # other attached packages:
-# [1] bayesplot_1.7.1    patchwork_0.0.1    viridis_0.5.1      viridisLite_0.3.0  magrittr_1.5       readxl_1.3.1      
-# [7] RCurl_1.95-4.12    bitops_1.0-6       ggmcmc_1.3         ggplot2_3.2.1      tidyr_1.0.0        dplyr_0.8.3       
-# [13] RColorBrewer_1.1-2 rjags_4-10         coda_0.19-3    
+# [1] bayesplot_1.7.2    patchwork_1.0.1    viridis_0.5.1      viridisLite_0.3.0  magrittr_2.0.1     readxl_1.3.1       RCurl_1.98-1.2    
+# [8] ggmcmc_1.4.1       ggplot2_3.3.2      tidyr_1.1.2        dplyr_1.0.2        RColorBrewer_1.1-2 rjags_4-10         coda_0.19-4   
 
 
 # B. READ IN DATA ==================================================================
@@ -58,6 +58,8 @@ unique(dat$species_n)
 # Mean-center predictor variables
 dat$log_mass_ct <- dat$log_mass - mean(dat$log_mass)
 dat$temp_arr_ct <- dat$temp_arr - mean(dat$temp_arr)
+
+# filter(dat, temp_arr_ct < 0.05 & dat$temp_arr_ct > -0.05) # just checking the average temp in unit C
 
 # Use only positive growth rates
 dat <- dat %>% filter(y > 0)
@@ -88,6 +90,7 @@ data = list(
 )
 
 mean(dat$temp_c)
+
 
 # C. FIT MODEL =====================================================================
 # Some settings:

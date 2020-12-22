@@ -40,7 +40,6 @@ met_pred$log_mass_ct <- met_pred$log_mass - mean(met$log_mass)
 # Using the intercept for routine metabolic rate
 # mu_b0 <- -1.9310915
 # mu_b1 <- -0.2088925
-# mu_b2 <- -0.6209557
 
 # Temperature-independent allometric function (valid at 19C, which is the mean temperature)
 met_pred$log_y_spec <- mu_b0 + mu_b1*met_pred$log_mass_ct
@@ -86,7 +85,6 @@ con_pred$log_mass_ct <- con_pred$log_mass - mean(con$log_mass)
 # Regression coefficients: see meta_cons_analysis.R
 mu_b0 <- -2.9497
 mu_b1 <- -0.3757
-mu_b2 <- -0.6920
 
 # Temperature-independent allometric function (valid at 19C, which is the mean temperature)
 con_pred$log_y_spec <- mu_b0 + mu_b1*con_pred$log_mass_ct

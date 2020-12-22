@@ -209,7 +209,8 @@ waic_m2-waic_m1
 # [1] 177.3295
 # > waic_m2
 # [1] 178.2945
-
+# > waic_m2-waic_m1
+# [1] 0.9649845
 
 # D. MODEL VALIDATION ==============================================================
 # CODA - Nice for getting the raw posteriors
@@ -228,10 +229,10 @@ summary(cs)
 # sigma     1.17733  1.3901  1.51670  1.66081  1.97838
 # sigma_b0  0.01205  0.1274  0.25706  0.44737  0.95766
 
-
 # Evaluate convergence =============================================================
 # Convert to ggplottable data frame
 cs_df <- ggs(cs)
+
 
 #**** Species intercepts ===========================================================
 # Plot posterior densities of species intercepts
@@ -526,7 +527,7 @@ js2 = jags.samples(jm1,
                    thin = thin)
 
 ecdf(js2$mu_b1)(0) 
-# [1] 0.9943333
+#[1] 0.9232222
 
 
 # G. PLOT TEMPERATURE DATA =========================================================
