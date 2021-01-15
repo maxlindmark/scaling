@@ -366,7 +366,47 @@ pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 8), # 12
 pWord1
 
 ggsave("figures/concept.png", width = 11, height = 11, dpi = 600, unit = "cm")
-ggsave("figures/concept.pdf", width = 11, height = 11, dpi = 600, unit = "cm")
+
+
+# Larger version for preprint
+p2 <- dat %>% filter(y_g_d_temp > 0 & temp_c_ct > t_min & temp_c_ct < t_max) %>% 
+  ggplot(., aes(temp_c_ct, y_g_d_temp, color = factor(rate),
+                linetype = factor(mass_g), alpha = factor(rate))) +
+  geom_ribbon(data = filter(ribbon, temp_c_ct > t_min & temp_c_ct < t_max & diff > 0),
+              inherit.aes = FALSE,
+              aes(x = temp_c_ct, ymin = Metabolic_rate, ymax = `Maximum consumption`),
+              fill = "grey95", color = NA) +
+  geom_line(size = 0.5) +
+  coord_cartesian(expand = 0) + 
+  scale_color_manual(values = pal) +
+  scale_linetype_manual(values = c(1, 1)) +
+  scale_alpha_manual(values = c(0.5, 0.5, 1)) +
+  labs(x = expression(paste("Rescaled temperature [", degree*C, "]")),
+       y = "Rescaled rates [g/day]",
+       color = "Rate") +
+  geom_segment(data = filter(peak, y_g_d_temp > 0 & temp_c_ct > t_min & temp_c_ct < t_max),
+               aes(x = temp_c_ct, xend = temp_c_ct, y = y_g_d_temp, yend = 0),
+               size = 0.5, arrow = arrow(length = unit(0.25, "cm")), show.legend = FALSE) +
+  guides(linetype = FALSE) +
+  guides(alpha = FALSE) +
+  guides(color = guide_legend(ncol = 1)) +
+  facet_wrap(~ mass_facet, scales = "free_y", ncol = 1) + # new addition that is needed for the larger size range
+  geom_point(data = filter(dummy, y_g_d_temp > 0 & temp_c_ct > t_min & temp_c_ct < t_max),
+             aes(temp_c_ct, y_g_d_temp), inherit.aes = F, color = "white", fill = "white")
+
+pWord2 <- p2 + theme_classic() + theme(text = element_text(size = 12), # 12
+                                       aspect.ratio = 1,
+                                       legend.title = element_text(size = 6), # 10
+                                       legend.key.size = unit(0.2, 'cm'), 
+                                       legend.text = element_text(size = 8), 
+                                       legend.margin = margin(-0.3, 0, 0, 0, unit="cm"),
+                                       #legend.position = c(0.85, 0.55),
+                                       legend.position = "bottom",
+                                       legend.background = element_rect(fill = NA))
+
+pWord2
+
+ggsave("figures/concept_v2.png", width = 15, height = 15, dpi = 600, unit = "cm")
 
 
 # Just a quick calculation here...

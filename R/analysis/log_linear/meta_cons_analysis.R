@@ -671,7 +671,7 @@ p11 <- cs_met_df %>%
   NULL
 pWord11 <- p11 + theme_classic() + theme(text = element_text(size = 10),
                                          axis.text = element_text(size = 5))
-ggsave("figures/supp/log_linear/met_con/validation_rhat_met.png", width = 6.5, height = 8.3, dpi = 600)
+ggsave("figures/supp/log_linear/met_con/validation_rhat_met.png", width = 6.5, height = 12, dpi = 600)
 
 
 #**** Prior vs posterior ===========================================================

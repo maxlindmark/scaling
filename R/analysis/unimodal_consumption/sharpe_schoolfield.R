@@ -541,7 +541,7 @@ p9 <- ggplot(pred_df, aes(temp, median)) +
   geom_point(data = con, aes(peak_temp_c_model_ct, y_ct, fill = species_ab),
              size = 1.2, alpha = 0.8, shape = 21, color = "white", stroke = 0.2) +
   scale_fill_manual(values = pal, name = "Species") +
-  annotate("text", 11, 2.8, label = paste("n=", nrow(con), sep = ""), size = 2) +
+  annotate("text", 5, 2.8, label = paste("n=", nrow(con), sep = ""), size = 2) +
   labs(x = "Rescaled temperature",
        y = "Rescaled consumption rate")
   
@@ -556,4 +556,30 @@ pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 8),
 pWord9
 
 ggsave("figures/SharpeSchool_scatter.png", width = 6, height = 6, dpi = 600, unit = "cm")
-ggsave("figures/SharpeSchool_scatter.pdf", width = 6, height = 6, dpi = 600, unit = "cm")
+
+# Large version
+p10 <- ggplot(pred_df, aes(temp, median)) +
+  geom_ribbon(data = pred_df, aes(x = temp, ymin = lwr_95, ymax = upr_95),
+              size = 0.3, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
+  geom_ribbon(data = pred_df, aes(x = temp, ymin = lwr_80, ymax = upr_80), 
+              size = 0.3, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
+  geom_line(size = 0.8, alpha = 1, col = "black") +
+  geom_point(data = con, aes(peak_temp_c_model_ct, y_ct, fill = species_ab),
+             size = 2, alpha = 0.8, shape = 21, color = "white", stroke = 0.2) +
+  scale_fill_manual(values = pal, name = "Species") +
+  annotate("text", 5, 2.8, label = paste("n=", nrow(con), sep = ""), size = 2) +
+  labs(x = "Rescaled temperature",
+       y = "Rescaled consumption rate")
+
+pWord10 <- p10 + theme_classic() + theme(text = element_text(size = 10),
+                                         aspect.ratio = 1,
+                                         legend.spacing.x = unit(0, 'cm'),
+                                         legend.box.spacing = unit(0, 'cm'),
+                                         legend.key.size = unit(0.1, 'cm'), 
+                                         legend.title = element_text(size = 7),
+                                         legend.position = c(0.15, 0.8),
+                                         legend.text = element_text(size = 7, face = "italic"))
+pWord10
+
+ggsave("figures/SharpeSchool_scatter_v2.png", width = 10, height = 10, dpi = 600, unit = "cm")
+
