@@ -571,7 +571,7 @@ p10 <- ggplot(pred_df, aes(temp, median)) +
   labs(x = "Rescaled temperature",
        y = "Rescaled consumption rate")
 
-pWord10 <- p10 + theme_classic() + theme(text = element_text(size = 10),
+pWord10 <- p10 + theme_classic() + theme(text = element_text(size = 12),
                                          aspect.ratio = 1,
                                          legend.spacing.x = unit(0, 'cm'),
                                          legend.box.spacing = unit(0, 'cm'),
