@@ -3,14 +3,14 @@ Project investigating the intraspecific temperature- and size dependence of thes
 
 **Authors:** [Max Lindmark](https://maxlindmark.netlify.app/), [Jan Ohlberger](http://janohlberger.com/Homepage/), [Anna Gårdmark](https://internt.slu.se/en/cv-originals/anna-gardmark/)
 
-This repository contains all data and code used for analyses and figures from Lindmark et al (20XX). 
+This repository contains all data and code used for analyses and figures from Lindmark et al (2021). 
 
 ## How to replicate our analyses
 
 ### Data
 `data`: Data on growth, maximum consumption rate, metabolic rate (oxygen consumption) and optimum temperature for growth as acquired from authors or extracted from figures and tables, including additional biological information of the species, in .xlsx format. .csv files are used for the analysis and contain only key columns. For info on how these data were compiled, see below and Appendix S1.
 
-`R/exploration`: Code for exploring growth, consumption and metabolism data, filtering data and exporting for model fitting scripts ( as .csv).
+`R/exploration`: Code for exploring growth, consumption and metabolism data, filtering data and exporting for model fitting scripts (as .csv).
 
 `data/lists_of_papers_from_lit_search`: .txt files containing all articles found through the literature search, before applying selection criteria.
 

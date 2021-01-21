@@ -341,7 +341,7 @@ p1 <- dat %>% filter(y_g_d_temp > 0 & temp_c_ct > t_min & temp_c_ct < t_max) %>%
   scale_linetype_manual(values = c(1, 1)) +
   scale_alpha_manual(values = c(0.5, 0.5, 1)) +
   labs(x = expression(paste("Rescaled temperature [", degree*C, "]")),
-       y = "Rescaled rates [g/day]",
+       y = "Rescaled rates",
        color = "Rate") +
   geom_segment(data = filter(peak, y_g_d_temp > 0 & temp_c_ct > t_min & temp_c_ct < t_max),
                aes(x = temp_c_ct, xend = temp_c_ct, y = y_g_d_temp, yend = 0),
@@ -382,7 +382,7 @@ p2 <- dat %>% filter(y_g_d_temp > 0 & temp_c_ct > t_min & temp_c_ct < t_max) %>%
   scale_linetype_manual(values = c(1, 1)) +
   scale_alpha_manual(values = c(0.5, 0.5, 1)) +
   labs(x = expression(paste("Rescaled temperature [", degree*C, "]")),
-       y = "Rescaled rates [g/day]",
+       y = "Rescaled rates",
        color = "Rate") +
   geom_segment(data = filter(peak, y_g_d_temp > 0 & temp_c_ct > t_min & temp_c_ct < t_max),
                aes(x = temp_c_ct, xend = temp_c_ct, y = y_g_d_temp, yend = 0),
