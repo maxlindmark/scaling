@@ -83,7 +83,7 @@ con_pred$log_mass_ct <- con_pred$log_mass - mean(con$log_mass)
 
 # Calculate log maximum consumption rate
 # Regression coefficients: see meta_cons_analysis.R
-mu_b0 <- -2.9497
+mu_b0 <- -2.9576
 mu_b1 <- -0.3757
 
 # Temperature-independent allometric function (valid at 19C, which is the mean temperature)
@@ -115,31 +115,10 @@ diff$y_g_g_d2 <- con_pred_sub$y_g_d/con_pred_sub$mass_g - met_pred_sub$y_g_d/met
 # Now calculate the slopes
 # Net gain vs mass (log-log) in unit g per day
 summary(lm(log(diff$y_g_d) ~ log(diff$mass_g)))
-# mass-slope = 0.62429
-# The mass-specific slope is therefore 0.62429-1 = -0.37571
-# The mass-exponent of specific growth rate is: -0.362649
-# The whole-organism rate is therefore: 0.637351
+# mass-slope = 6.243e-01 = 0.6243
+# The mass-specific slope is therefore 0.6243-1 = -0.3757
 diff$y_g_g_d <- diff$y_g_d / diff$mass_g
 summary(lm(log(diff$y_g_g_d) ~ log(diff$mass_g)))
-# -0.3756
+# -3.757e-01 = -0.3757
 
-# What if I now calculate it based on the mass-specific rates?
-summary(lm(log(diff$y_g_g_d2) ~ log(diff$mass_g)))
-# -0.3756
-
-# consumption vs mass (log-log)
-summary(lm(log(con_pred_sub$y_g_d) ~ log(con_pred_sub$mass_g)))
-
-# metabolism vs mass (log-log)
-summary(lm(log(met_pred_sub$y_g_d) ~ log(met_pred_sub$mass_g)))
-
-dat <- rbind(met_pred_sub, con_pred_sub, diff)
-
-ggplot(dat, aes(log(mass_g), log(y_g_d), color = rate)) +
-  geom_line(size = 1.5) +
-  scale_color_brewer(palette = "Dark2") + 
-  theme_classic() + 
-  theme(aspect.ratio = 1) +
-  geom_abline(intercept = -2, slope = 0.64, linetype = 2, color = "grey")
-  NULL
 

@@ -568,19 +568,6 @@ js = jags.samples(jm,
                   thin = thin)
  
 ecdf(js$mu_b2)(-0.65) 
-# [1] 0.8321111
+# [1] 0.8045556
 
 ecdf(js$mu_b3)(0) # how much is below?
-
-# How much does the mass exponent decline per change in unit T?
-#summary(cs)
-
-# Coefficient is 0.016
-# head(dat)
-# dat$b_a <- 0.016 * dat$temp_norm_arr_ct
-# 
-# summary(lm(b_a ~ temp_norm_arr_ct, data = dat))
-
-# Now fit the same exponents to C
-#summary(lm(b_a ~ temp_norm, data = dat))
-

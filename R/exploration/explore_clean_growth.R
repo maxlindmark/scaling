@@ -277,14 +277,9 @@ pWord9 / pWord10
 ggsave("figures/supp/data/growth_rate_temp_mass.png", width = 6.5, height = 6.5, dpi = 600)
 
 
-# Calculate number of unique studies
-# > length(unique(dat$reference))
-# [1] 13
-
-
 # C. SAVE DATA =====================================================================
 glimpse(dat)
 dat %>%
   select(y, `growth_rate_%/day`, geom_mean_mass_g, size_group, mass_g, log_mass, mass_norm, log_mass_norm, 
-         temp_c, temp_arr, median_temp, above_peak_temp, common_name, species, species_ab, env_temp_min, env_temp_max)# %>%
-  #write_csv(., "data/growth_analysis.csv", ";")
+         temp_c, temp_arr, median_temp, above_peak_temp, common_name, species, species_ab, env_temp_min, env_temp_max) %>%
+  write_csv(., "data/growth_analysis.csv", ";")

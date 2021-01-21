@@ -531,7 +531,7 @@ p10 <- ggplot(pred_df, aes(mass, median)) +
   guides(fill = guide_legend(ncol = 1, override.aes = list(size = 1)),
          size = guide_legend(override.aes = list(fill = "black",
                                                  color = "black"))) +
-  annotate("text", -8, -4, label = paste("n=", nrow(dat), sep = ""), size = 1.5,
+  annotate("text", -8, -4, label = paste("n=", nrow(dat), sep = ""), size = 3,
            hjust = -0.5, vjust = 1.3) +
   labs(x = "ln(rescaled mass)",
        y = expression(paste("Rescaled ", italic(T[opt]))),
@@ -561,7 +561,7 @@ js2 = jags.samples(jm1,
                    thin = thin)
 
 ecdf(js2$mu_b1)(0) 
-#[1] 0.9232222
+# [1] 0.926
 
 
 # G. PLOT TEMPERATURE DATA =========================================================

@@ -332,7 +332,6 @@ dat %>% filter(rate == "consumption"
   NULL
 
 
-
 #** Loop through species and save plots ==========================================================
 # This is for identifying which data points are below optimum and for inspecting data by species
 t <- c()
@@ -397,14 +396,12 @@ for(i in unique(s_datm$common_name)) {
 glimpse(s_datm)
 s_datm %>%
  select(y, mass_g, log_mass, mass_norm, log_mass_norm, temp_c, temp_arr, median_temp, 
-        above_peak_temp, common_name, species, species_ab, unit, type) #%>%
-#write_csv(., "data/met_analysis.csv", ";")
-
+        above_peak_temp, common_name, species, species_ab, unit, type) %>%
+write_csv(., "data/met_analysis.csv", ";")
 
 glimpse(s_datc) 
 s_datc %>%
   select(y, mass_g, log_mass, mass_norm, log_mass_norm, temp_c, temp_arr, median_temp, 
-         above_peak_temp, common_name, species, species_ab, unit, type) #%>%
-#write_csv(., "data/con_analysis.csv", ";")
-
+         above_peak_temp, common_name, species, species_ab, unit, type) %>%
+write_csv(., "data/con_analysis.csv", ";")
 

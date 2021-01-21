@@ -2,7 +2,7 @@
 # 2020.04.29: Max Lindmark
 #
 # - Code to exemplify the different temperature dependencies of metabolism and 
-#   consumption using allometric relationships.
+#   consumption using allometric relationships and the effect on net energy gain
 #   Note that the models for metabolism and (non-linear) consumption use different
 #   predictor and response variables (consumption uses normalized consumption ~ mass_g
 #   and centered temperature in Celcius, whereas metabolism is modeled as
@@ -51,7 +51,7 @@ mass_range <- c(5, 1000)
 # This is the mass-range in the respective datasets
 # > summary(met$mass_g)
 # Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
-# 0.025     9.545    85.530   310.779   238.818 21340.920 
+# 0.025     9.399    85.135   310.324   238.558 21340.920 
 # > summary(con$mass_g)
 # Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
 # 0.0515    1.1794   25.9101  103.5015  161.6000 1167.8281 

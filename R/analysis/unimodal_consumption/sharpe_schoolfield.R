@@ -55,10 +55,7 @@ con <- con %>% filter(species %in% spec) %>% droplevels()
 # Center temperature relative to mean in environment by species
 con$temp_env_ct <- con$temp_c - con$median_temp
 
-# Mean-center mass
-con$mass_g_ct <- con$mass_g - mean(con$mass_g)
-
-# Add mass-specific consumption
+# Mass-normalize consumption (whole organism exponent based on log-linear consumption model)
 con$y_spec <- con$y / con$mass_g^0.62
 
 # Express consumption rate as fraction of mean within species
@@ -68,29 +65,9 @@ con <- con %>%
          y_ct = y_spec / y_mean_species) %>% 
   ungroup()
 
-# Center consumption relative to the one where it is maximized and express consumption as % of max
-# con <- con %>%
-#   group_by(species) %>%
-#   mutate(con_percent = y_spec/max(y_spec)) %>%
-#   ungroup()
-
-# Now summarize this data
-# sum <- con %>%
-#   group_by(species) %>%
-#   filter(con_percent == 1) %>%
-#   mutate(peak_temp = temp_c) %>% 
-#   as.data.frame() %>% 
-#   select(peak_temp, common_name)
-
-# Now do a left_join
-# con <- left_join(con, sum, by = "common_name") %>% as.data.frame()
-
-# Standardize temperature
-# con <- con %>% mutate(temp_ct = temp_c - peak_temp)
-
-# Standardize to modeled peak temperature
+# Standardize to modeled peak temperature within each species
 # Loop through each species and fit a model with a quadratic temperature term
-# Then filter the temperature at peak rate
+# Then filter the temperature at peak rate, which we will subtract from y further down
 tmp_dat <- data.frame()
 datalist <- list()
 
@@ -98,8 +75,10 @@ for(i in unique(con$species_ab)) {
   
   tmp_dat <- con %>% filter(species_ab == i)
   
+  # Get squared variable
   tmp_dat$temp_c_sq <- tmp_dat$temp_c*tmp_dat$temp_c
   
+  # Fit simple lm
   fit <- lm(y_ct ~ temp_c + temp_c_sq, data = tmp_dat)
   
   summary(fit)
@@ -112,13 +91,17 @@ for(i in unique(con$species_ab)) {
   
   new_data$preds <- predict(fit, newdata = new_data)
   
+  # Filter the prediction that corresponds to max rate
+  # Select the temperature where that occurs and rename that
   topt <- new_data %>%
     filter(preds == max(preds)) %>%
     select(temp_c) %>% 
     rename(peak_temp_c_model = temp_c)
   
+  # Add in the species name
   topt$species_ab <- i
   
+  # Plot and save for reference
   ggplot(tmp_dat, aes(temp_c, y_ct)) +
     geom_point() +
     geom_line(data = new_data, aes(temp_c, preds), col = 'blue') +
@@ -145,7 +128,7 @@ con <- left_join(con, est)
 
 head(con)
 
-# Center temperature now with modeled temp
+# Center temperature now with modeled peak temperature within species
 con$peak_temp_c_model_ct <- con$temp_c - con$peak_temp_c_model
 
 # Filter species without a peak temperature
@@ -567,7 +550,7 @@ p10 <- ggplot(pred_df, aes(temp, median)) +
   geom_point(data = con, aes(peak_temp_c_model_ct, y_ct, fill = species_ab),
              size = 2, alpha = 0.8, shape = 21, color = "white", stroke = 0.2) +
   scale_fill_manual(values = pal, name = "Species") +
-  annotate("text", 5, 2.8, label = paste("n=", nrow(con), sep = ""), size = 2) +
+  annotate("text", 5, 2.8, label = paste("n=", nrow(con), sep = ""), size = 3) +
   labs(x = "Rescaled temperature",
        y = "Rescaled consumption rate")
 

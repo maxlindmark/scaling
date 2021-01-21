@@ -735,9 +735,9 @@ cs_con <- coda.samples(jm_con,
 # 2. Quantiles for each variable:
 #           2.5%     25%     50%     75%    97.5%
 # ...
-# mu_b0    -3.46441 -3.1249 -2.9497 -2.7855 -2.44612
-# mu_b1    -0.45559 -0.4014 -0.3757 -0.3508 -0.29598
-# mu_b2    -0.84977 -0.7425 -0.6920 -0.6427 -0.53789
+# mu_b0    -3.46443 -3.1237 -2.9576 -2.7944 -2.44343
+# mu_b1    -0.45399 -0.3997 -0.3750 -0.3489 -0.29574
+# mu_b2    -0.84680 -0.7429 -0.6945 -0.6430 -0.54058
 # ...
 
 # Convert to ggplottable data frame
@@ -1549,7 +1549,7 @@ js = jags.samples(jm_met,
                   thin = thin)
 
 1-ecdf(js$mu_b1)(-0.25) 
-# [1] 0.9538889
+# [1] 0.9505556
 
 1-ecdf(js$mu_b3)(0) # how much is above 0??
 
@@ -1566,20 +1566,6 @@ summary(lm(b_a ~ temp_arr, data = dat))
 summary(lm(b_a ~ temp, data = dat))
 
 
-# How much does the mass exponent decline per change in unit T?
-#summary(cs)
-
-# Coefficient is 0.016
-# head(dat)
-# dat$b_a <- 0.016 * dat$temp_norm_arr_ct
-# 
-# summary(lm(b_a ~ temp_norm_arr_ct, data = dat))
-
-# Now fit the same exponents to C
-#summary(lm(b_a ~ temp_norm, data = dat))
-
-
-
 # Calculate the proportion of the posterior of activation energy that is less than zero
 js = jags.samples(jm_con,
                   variable.names = c("mu_b1", "mu_b2"),
@@ -1587,9 +1573,6 @@ js = jags.samples(jm_con,
                   thin = thin)
 
 ecdf(js$mu_b1)(-0.25) 
-# [1] 0.9972222
-
-#ecdf(js$b3)(0) # how much is below?
-
+# [1] 0.9964444
 
 

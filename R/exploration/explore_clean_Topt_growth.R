@@ -118,7 +118,6 @@ dat$mass_norm_max <- dat$mass_g / dat$w_max_published_g
 dat$mass_norm_mat <- dat$mass_g / dat$w_maturation_g
 
 
-
 #** Plot general data ==============================================================
 # Extend color palette
 colourCount = length(unique(dat$species))

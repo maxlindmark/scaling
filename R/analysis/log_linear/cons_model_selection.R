@@ -671,9 +671,9 @@ update(jm7, n.iter = n.iter)
 
 # Monitor the likelihood to calculate WAIC
 zj7 = jags.samples(jm7, 
-                  variable.names = c("pd", "log_pd"), 
-                  n.iter = n.iter, 
-                  thin = thin)
+                   variable.names = c("pd", "log_pd"), 
+                   n.iter = n.iter, 
+                   thin = thin)
 
 # Calculate model fit by summing over the log of means of the posterior distribution of 
 # the PPD and multiply by -2 (i.e. negative log likelihood).

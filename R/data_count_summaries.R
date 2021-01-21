@@ -23,7 +23,10 @@ met <-
 con <- 
   read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/con_analysis.csv"))
 
-length(unique(con$common_name))
+# Which species are in both data sets?
+con_spec <- sort(unique(con$common_name))
+met_spec <- sort(unique(met$common_name))
+common_spec <- met_spec[met_spec %in% con_spec]
 
 test <- con %>% filter(above_peak_temp == "Y")
 length(unique(test$common_name))
@@ -105,6 +108,15 @@ gro <-
   read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/growth_analysis.csv"))
 
 str(gro)
+
+# Which species are in the growth data and any of the metabolism and consumption data sets?
+gro_spec <- sort(unique(gro$common_name))
+con_spec <- sort(unique(con$common_name))
+met_spec <- sort(unique(met$common_name))
+
+all_con_met_species <- c(con_spec, met_spec)
+
+gro_spec[gro_spec %in% all_con_met_species]
 
 # Count data
 length(unique(gro$common_name))
