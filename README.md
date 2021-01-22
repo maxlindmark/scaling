@@ -1,9 +1,10 @@
-# Scaling of growth, metabolism and maximum consumption with temperature and body size within species of fish
-Project investigating the intraspecific temperature- and size dependence of these rates using data from a systematic literature search.
+# Optimum growth temperature declines with body size within fish species
 
 **Authors:** [Max Lindmark](https://maxlindmark.netlify.app/), [Jan Ohlberger](http://janohlberger.com/Homepage/), [Anna Gårdmark](https://internt.slu.se/en/cv-originals/anna-gardmark/)
 
-This repository contains all data and code used for analyses and figures from Lindmark et al (2021). 
+This repository contains all data and code used for analyses and figures from [Lindmark et al (2021)](https://www.biorxiv.org/content/10.1101/2021.01.21.427580v1).
+
+Citation: Lindmark, M., Ohlberger, J. & Gårdmark, A. (2021). Optimum growth temperature declines with body size within fish species. bioRxiv, 2021.01.21.427580.
 
 ## How to replicate our analyses
 
