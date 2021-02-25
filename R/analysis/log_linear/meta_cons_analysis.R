@@ -1351,7 +1351,7 @@ p14 <- ggplot(c_pred_df, aes(mass_g, median)) +
        y = "ln(maximum consumption rate [g/g/day])") +
   annotate("text", 0.1, -8, label = paste("n=", nrow(con), sep = ""), size = 3,
            hjust = -0.5, vjust = 1.3) +
-  ggtitle("A") +
+  ggtitle("a") +
   NULL
 
 pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 14),
@@ -1382,7 +1382,7 @@ p15 <- ggplot(m_pred_df, aes(mass_g, median)) +
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
   annotate("text", 0.1, -8, label = paste("n=", nrow(met), sep = ""), size = 3,
            hjust = -0.5, vjust = 1.3) +
-  ggtitle("B") +
+  ggtitle("b") +
   NULL
 
 pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 14),
@@ -1429,7 +1429,7 @@ p16 <- df %>%
   geom_point(size = 1.5, fill = "white") +
   labs(x = "", y = "") + 
   guides(color = FALSE, shape = FALSE, fill = FALSE) +
-  ggtitle("C") +
+  ggtitle("c") +
   NULL 
 
 pWord16 <- p16 + theme_classic() + theme(text = element_text(size = 14),
@@ -1441,7 +1441,6 @@ pWord16 <- p16 + theme_classic() + theme(text = element_text(size = 14),
 
 (pWord14 + pWord15) / pWord16 + 
   plot_layout(heights = unit(c(7.15, 1), c('cm', 'null'))) #+
-  #plot_annotation(tag_levels = "A")
 
 ggsave("figures/meta_cons_combined.png", width = 22, height = 22, dpi = 600, units = "cm")
 ggsave("figures/meta_cons_combined.pdf", width = 22, height = 22, dpi = 600, units = "cm")
