@@ -34,6 +34,9 @@ library(bayesplot)
 library(MCMCvis)
 library(scales)
 library(tidylog)
+library(rTPC)
+library(nls.multstart)
+library(broom)
 
 # sessionInfo()
 # other attached packages:
@@ -56,13 +59,13 @@ con <- con %>% filter(species %in% spec) %>% droplevels()
 con$temp_env_ct <- con$temp_c - con$median_temp
 
 # Mass-normalize consumption (whole organism exponent based on log-linear consumption model)
-con$y_spec <- con$y / con$mass_g^0.62
+con$y_spec <- con$y / con$mass_g^0.63
 
 # Express consumption rate as fraction of mean within species
 con <- con %>%
   group_by(species_ab) %>%
   mutate(y_mean_species = mean(y_spec),
-         y_ct = y_spec / y_mean_species) %>% 
+         y_ct = y_spec / y_mean_species) %>%
   ungroup()
 
 # Standardize to modeled peak temperature within each species
@@ -75,51 +78,50 @@ for(i in unique(con$species_ab)) {
   
   tmp_dat <- con %>% filter(species_ab == i)
   
-  # Get squared variable
-  tmp_dat$temp_c_sq <- tmp_dat$temp_c*tmp_dat$temp_c
+  # Get starting values
+  start_vals <- get_start_vals(con$temp_c, con$y_ct, model_name = 'sharpeschoolhigh_1981')
   
-  # Fit simple lm
-  fit <- lm(y_ct ~ temp_c + temp_c_sq, data = tmp_dat)
+  # Get limits
+  low_lims <- get_lower_lims(con$temp_c, con$y_ct, model_name = 'sharpeschoolhigh_1981')
+  upper_lims <- get_upper_lims(con$temp_c, con$y_ct, model_name = 'sharpeschoolhigh_1981')
   
-  summary(fit)
+  # Fit Sharpe-Schoolfield
+  fit <- nls_multstart(y_ct ~ sharpeschoolhigh_1981(temp = temp_c, r_tref, e, eh, th, tref = 0),
+                       data = tmp_dat,
+                       iter = 500,
+                       start_lower = start_vals - 10,
+                       start_upper = start_vals + 10,
+                       lower = low_lims,
+                       upper = upper_lims,
+                       supp_errors = 'Y')
   
   # Predict
-  new_data <- data.frame(temp_c = seq(min(tmp_dat$temp_c), max(tmp_dat$temp_c),
-                                      length.out = 50))
+  new_data <- data.frame(temp_c = seq(min(tmp_dat$temp_c), max(tmp_dat$temp_c), length.out = 50))
+  preds <- augment(fit, newdata = new_data)
   
-  new_data$temp_c_sq <- new_data$temp_c*new_data$temp_c
-  
-  new_data$preds <- predict(fit, newdata = new_data)
-  
-  # Filter the prediction that corresponds to max rate
-  # Select the temperature where that occurs and rename that
-  topt <- new_data %>%
-    filter(preds == max(preds)) %>%
-    select(temp_c) %>% 
-    rename(peak_temp_c_model = temp_c)
-  
-  # Add in the species name
-  topt$species_ab <- i
-  
-  # Plot and save for reference
+  # Extract T_opt and add in species name
+  topt <- calc_params(fit) %>%
+    mutate_all(round, 2) %>% 
+    select(topt) %>% 
+    rename("peak_temp_c_model" = "topt") %>% 
+    mutate(species_ab = i)
+
+  # Plot data and model fit
   ggplot(tmp_dat, aes(temp_c, y_ct)) +
     geom_point() +
-    geom_line(data = new_data, aes(temp_c, preds), col = 'blue') +
+    geom_line(aes(temp_c, .fitted), preds, col = 'blue') +
     theme_bw(base_size = 12) +
-    geom_vline(xintercept = topt$peak_temp_c_model) +
-    labs(x = 'Temperature_centered (ºC)',
-         y = 'Consumption rate') + 
-    ggtitle(i)
-  
-  ggsave(paste("figures/supp/unimodal_consumption/single_species_SH_models/", i, ".png", sep = ""))
+    labs(x = 'Temperature [ºC]',
+         y = 'Maximum consumption rate') %>% 
+    ggtitle(i) 
+    
+  ggsave(paste("figures/supp/unimodal_consumption/single_species_sharpe_schoolfield_models/", i, ".png", sep = ""))
   
   datalist[[i]] <- topt
   
 }
 
 est <- dplyr::bind_rows(datalist)
-
-est
 
 # Add in modeled peak temperature
 colnames(con)
@@ -174,6 +176,8 @@ model = "JAGS_models/unimodal_consumption/sharpe_school.txt"
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
   list(
+    alpha.sigma = 0.1,
+    b1.sigma = 0.1,
     mu_b0 = 0.1,
     sigma_b0 = 0.1,
     mu_E = 0.1,
@@ -182,6 +186,8 @@ inits = list(
     .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples
   ),
   list(
+    alpha.sigma = 1,
+    b1.sigma = 1,
     mu_b0 = 1,
     sigma_b0 = 1,
     mu_E = 1,
@@ -190,6 +196,8 @@ inits = list(
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
+    alpha.sigma = 2,
+    b1.sigma = 2,
     mu_b0 = 2,
     sigma_b0 = 2,
     mu_E = 2,
@@ -202,17 +210,81 @@ jm = jags.model(model,
                 data = data, 
                 n.adapt = 5000, 
                 n.chains = 3,
-                inits = inits
-)
+                inits = inits)
 
 update(jm, n.iter = n.iter)
+
+
+# Evaluate model fit & residuals =================================================
+# https://rpubs.com/Niko/332320
+
+# Extract generated data and data
+cs_fit = coda.samples(jm, n.iter = n.iter, thin = thin,
+                      variable.names = c("mean_y", "mean_y_sim", "p_mean"))
+
+# Convert to data frames
+cs_fit_df <- data.frame(as.matrix(cs_fit))
+
+#-- Model fit
+p_fit <- ggplot(cs_fit_df, aes(mean_y_sim)) + 
+  coord_cartesian(expand = 0) +
+  geom_histogram(bins = round(1 + 3.2*log(nrow(cs_fit_df)))) +
+  geom_vline(xintercept = cs_fit_df$mean_y, color = "white", 
+             linetype = 2, size = 0.4) +
+  labs(x = "mean simulated data", y = "count") +
+  theme_classic() +
+  annotate("text", -Inf, Inf, label = round(mean(cs_fit_df$p_mean), digits = 3), 
+           size = 3, hjust = -0.5, vjust = 1.3) +
+  theme(text = element_text(size = 12), aspect.ratio = 1) +
+  NULL
+
+
+#-- Posterior predictive distributions
+# https://www.weirdfishes.blog/blog/fitting-bayesian-models-with-stan-and-r/#posterior-predictive-analysis
+
+# Extract posteriors for each data point for calculation of residuals
+y_sim <- coda.samples(jm, variable.names = c("y_sim"), n.iter = n.iter, thin = thin)
+
+# Tidy-up
+df_y_sim <- ggs(y_sim)
+
+pal <- brewer.pal(n = 3, name = "Dark2")
+
+pp <- ggplot() +
+  geom_density(data = df_y_sim, aes(value, fill = 'Posterior\nPredictive'), alpha = 0.6) +
+  geom_density(data = con, aes(y_ct, fill = 'Observed'), alpha = 0.6) +
+  scale_fill_manual(values = pal[c(3,2)]) +
+  coord_cartesian(expand = 0) +
+  theme_classic() +
+  theme(text = element_text(size = 12), aspect.ratio = 1,
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8),
+        legend.position = c(0.2, 0.95),
+        legend.key.size = unit(0.3, "cm"))
+
+
+#-- Residual vs fitted
+df_y_sim <- df_y_sim %>%
+  ungroup() %>%
+  group_by(Parameter) %>%
+  summarize(median = median(value)) %>% 
+  rename("yhat" = "median") %>% 
+  mutate(y = con$y_ct,
+         resid = y - yhat)
+
+p_resid <- ggplot(df_y_sim, aes(yhat, resid)) +
+  geom_point(fill = "black", color = "white", shape = 21) + 
+  theme_classic() +
+  theme(text = element_text(size = 12)) 
+
+(p_fit | pp) / p_resid + plot_annotation(tag_levels = 'A')
 
 
 # D. MODEL VALIDATION ==============================================================
 # CODA - Nice for getting the raw posteriors
 cs <- coda.samples(jm,
                    variable.names = c("mu_b0", "sigma_b0", "mu_E", "Eh", "Th",
-                                      "E", "b0"), 
+                                      "E", "b", "b0", "alpha.sigma", "b1.sigma"), 
                    n.iter = n.iter, 
                    thin = thin)
 
@@ -220,34 +292,34 @@ summary(cs)
 
 # 2. Quantiles for each variable:
 #   
-#          2.5%    25%    50%    75%  97.5%
-# E[1]     0.5452 0.6096 0.6467 0.6861 0.7664
-# E[2]     0.3319 0.3865 0.4170 0.4506 0.5212
-# E[3]     0.4356 0.5639 0.6360 0.7116 0.8665
-# E[4]     0.5499 0.6413 0.6912 0.7439 0.8517
-# E[5]     0.3656 0.5001 0.5723 0.6494 0.7953
-# E[6]     0.3632 0.4798 0.5406 0.6026 0.7243
-# E[7]     0.4378 0.5393 0.5960 0.6549 0.7755
-# E[8]     0.4115 0.5394 0.6109 0.6846 0.8470
-# E[9]     0.2938 0.3460 0.3742 0.4035 0.4640
-# E[10]    0.5237 0.6345 0.6964 0.7587 0.8892
-# b0[1]    0.6476 0.7155 0.7519 0.7865 0.8547
-# b0[2]    1.0107 1.0995 1.1448 1.1896 1.2772
-# b0[3]    0.4048 0.5205 0.5809 0.6485 0.7825
-# b0[4]    0.4544 0.5258 0.5647 0.6040 0.6781
-# b0[5]    0.3978 0.4956 0.5541 0.6165 0.7409
-# b0[6]    0.4611 0.5493 0.5995 0.6525 0.7651
-# b0[7]    0.5248 0.6289 0.6863 0.7425 0.8529
-# b0[8]    0.3780 0.4875 0.5439 0.6063 0.7252
-# b0[9]    0.9177 0.9841 1.0187 1.0541 1.1207
-# b0[10]   0.4161 0.5064 0.5568 0.6070 0.7077
-
-#          2.5%    25%    50%    75%  97.5%
-# Eh       2.1712 2.4675 2.6374 2.8278 3.2211
-# Th       2.8158 3.6412 4.0288 4.3708 4.9798
-# mu_E     0.4454 0.5308 0.5770 0.6254 0.7359
-# mu_b0    0.5204 0.6463 0.7029 0.7611 0.8853
-# sigma_b0 0.1498 0.2046 0.2463 0.3012 0.4666
+#   2.5%      25%      50%     75%   97.5%
+# E[1]         0.45298  0.89937 1.051809 1.21292 1.39428
+# E[2]         0.38517  0.51482 0.583727 0.66916 1.09824
+# E[3]         0.38446  0.70007 0.873999 1.06291 1.34961
+# E[4]         0.38365  0.56724 0.652049 0.71965 1.04992
+# E[5]         0.10223  0.47523 0.633397 0.78552 1.05235
+# E[6]         0.30874  0.70108 0.863073 1.02000 1.31352
+# E[7]         0.38198  0.72067 0.853395 0.95558 1.15428
+# E[8]         0.36835  0.67684 0.830539 0.99191 1.26530
+# E[9]         0.27123  0.34609 0.410310 0.47575 1.01065
+# E[10]        0.48491  0.63700 0.782850 1.26993 1.44250
+# Eh           1.73860  1.97662 2.235974 3.01434 4.50733
+# Th          -0.74556  0.33763 1.021721 1.81156 2.86339
+# alpha.sigma  0.07338  0.08504 0.362772 0.57645 0.63164
+# b0[1]        0.34414  0.47159 0.534638 0.62776 1.01586
+# b0[2]        0.48965  0.97085 1.137622 1.21379 1.34371
+# b0[3]        0.31866  0.45749 0.564035 0.70088 1.07003
+# b0[4]        0.47605  0.80606 0.854789 0.89694 1.05917
+# b0[5]        0.43152  0.58148 0.673427 0.77736 1.14237
+# b0[6]        0.27205  0.41909 0.507635 0.61164 0.96394
+# b0[7]        0.42177  0.59390 0.642112 0.72874 1.05740
+# b0[8]        0.32442  0.46180 0.548401 0.65647 0.97458
+# b0[9]        0.46592  0.94929 1.226879 1.32676 1.41380
+# b0[10]       0.33377  0.40191 0.731734 0.87208 1.30073
+# b1.sigma    -0.21672 -0.19931 0.007145 0.04132 0.04525
+# mu_E         0.37689  0.63111 0.753781 0.88988 1.11006
+# mu_b0        0.44434  0.63128 0.744991 0.84202 1.04750
+# sigma_b0     0.04630  0.19799 0.287570 0.37223 0.59507
 
 
 # Evaluate convergence =============================================================
@@ -329,7 +401,7 @@ ggsave("figures/supp/unimodal_consumption/validation_SharpeSchool_b0.png", width
 unique(cs_df$Parameter)
 
 p5 <- cs_df %>% 
-  filter(Parameter %in% c("mu_b0", "sigma_b0", "mu_E", "Eh", "Th")) %>%
+  filter(Parameter %in% c("b1", "mu_b0", "sigma_b0", "mu_E", "Eh", "Th")) %>%
   ggs_density(.) + 
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_density(alpha = 0.05) +
@@ -344,7 +416,7 @@ pWord5 <- p5 + theme_classic() + theme(text = element_text(size = 10),
 
 # Traceplot for evaluating chain convergence
 p6 <- cs_df %>% 
-  filter(Parameter %in% c("mu_b0", "sigma_b0", "mu_E", "Eh", "Th")) %>%
+  filter(Parameter %in% c("b1", "mu_b0", "sigma_b0", "mu_E", "Eh", "Th")) %>%
   ggs_traceplot(.) +
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_line(alpha = 0.3) +
@@ -363,7 +435,7 @@ ggsave("figures/supp/unimodal_consumption/validation_SharpeSchool.png", width = 
 p7 <- cs_df %>% 
   ggs_Rhat(.) + 
   xlab("R_hat") +
-  xlim(0.999, 1.003) +
+  xlim(0.999, 1.01) +
   geom_point(size = 2) +
   NULL
 
@@ -377,11 +449,13 @@ ggsave("figures/supp/unimodal_consumption/validation_rhat_SharpeSchool.png", wid
 # https://cran.r-project.org/web/packages/MCMCvis/vignettes/MCMCvis.html
 
 # Priors from JAGS
+# b ~ dnorm(0.6, 1)
 # mu_b0 ~ dnorm(1, 1)
 # mu_E ~ dnorm(0.5, 4)
-# sigma_b0 ~ dunif(0, 3) 
-# sigma_E ~ dunif(0, 3)
 # sigma ~ dunif(0, 3) 
+# sigma_b0 ~ dunif(0, 3) 
+# sigma_b ~ dunif(0, 3) 
+# sigma_E ~ dunif(0, 3)
 # Eh ~ dnorm(2, 0.25)
 # Th ~ dnorm(5, 0.25)
 
@@ -524,7 +598,7 @@ p9 <- ggplot(pred_df, aes(temp, median)) +
   geom_point(data = con, aes(peak_temp_c_model_ct, y_ct, fill = species_ab),
              size = 1.2, alpha = 0.8, shape = 21, color = "white", stroke = 0.2) +
   scale_fill_manual(values = pal, name = "Species") +
-  annotate("text", 5, 2.8, label = paste("n=", nrow(con), sep = ""), size = 2) +
+  annotate("text", 5, 2.5, label = paste("n=", nrow(con), sep = ""), size = 2) +
   labs(x = "Rescaled temperature",
        y = "Rescaled consumption rate")
   
@@ -550,7 +624,7 @@ p10 <- ggplot(pred_df, aes(temp, median)) +
   geom_point(data = con, aes(peak_temp_c_model_ct, y_ct, fill = species_ab),
              size = 2, alpha = 0.8, shape = 21, color = "white", stroke = 0.2) +
   scale_fill_manual(values = pal, name = "Species") +
-  annotate("text", 5, 2.8, label = paste("n=", nrow(con), sep = ""), size = 3) +
+  annotate("text", 5, 2.5, label = paste("n=", nrow(con), sep = ""), size = 3) +
   labs(x = "Rescaled temperature",
        y = "Rescaled consumption rate")
 
