@@ -71,18 +71,24 @@ met_pred$log_mass_ct <- met_pred$log_mass - mean(met$log_mass)
 
 # Calculate log metabolic rate
 # Regression coefficients: see meta_cons_analysis.R. Ignore the mass-temp interaction(!)
-mu_b0 <- -1.9310915 # This is for routine metabolic rate
-mu_b1 <- -0.2088925
-mu_b2 <- -0.6209557
-
+#              2.5%       25%        50%      75%     97.5%
+# mu_b0_r     1.681766  1.7997409  1.8598459  1.920484  2.04625
+# mu_b0_s     0.974255  1.1908261  1.2925437  1.395646  1.61421
+# mu_b1       0.741257  0.7749627  0.7909194  0.807061  0.83924
+# mu_b2      -0.671663 -0.6374733 -0.6209867 -0.604387 -0.57241
+mu_b0_r <- 1.8598459
+mu_b1 <- 0.7909194
+mu_b2 <- -0.6209867
+  
 # Temperature-independent allometric function (valid at 19C = mean temperature)
-met_pred$log_y_spec <- mu_b0 + mu_b1*met_pred$log_mass_ct
+#met_pred$log_y_spec <- mu_b0 + mu_b1*met_pred$log_mass_ct
+met_pred$log_y <- mu_b0_r + mu_b1*met_pred$log_mass_ct
 
 # Exponentiate prediction - Note it's still mass-specific
-met_pred$y_spec <- exp(met_pred$log_y_spec)
+met_pred$y <- exp(met_pred$log_y)
 
 # Whole organism rate
-met_pred$y <- met_pred$y_spec * met_pred$mass_g
+#met_pred$y <- met_pred$y_spec * met_pred$mass_g
 
 # Now convert to g/d using the same values as Jan in Ohlberger et al (2012) Oikos
 # 1 kcal = 295 mg O2 
@@ -174,18 +180,23 @@ con_pred$log_mass_ct <- con_pred$log_mass - mean(con$log_mass)
 
 # Calculate log maximum consumption rate
 # Regression coefficients: see meta_cons_analysis.R
-mu_b0 <- -2.9576
-mu_b1 <- -0.3750
-mu_b2 <- -0.6945
+#           2.5%     25%       50%       75%       97.5%
+# ...
+# mu_b0    -0.85268 -0.511181 -0.34097 -0.17422  0.16574
+# mu_b1     0.54904  0.600763  0.62663  0.65332  0.70743
+# mu_b2    -0.84671 -0.743781 -0.69353 -0.64283 -0.53869
+mu_b0 <- -0.34097
+mu_b1 <- 0.62663
+mu_b2 <- -0.69353
 
 # Temperature-independent allometric function (valid at 19C = mean temperature)
-con_pred$log_y_spec <- mu_b0 + mu_b1*con_pred$log_mass_ct
+con_pred$log_y <- mu_b0 + mu_b1*con_pred$log_mass_ct
 
 # Exponentiate prediction - note it's mass-specific
-con_pred$y_spec <- exp(con_pred$log_y_spec)
+con_pred$y <- exp(con_pred$log_y)
 
 # Whole organism rate
-con_pred$y <- con_pred$y * con_pred$mass_g
+#con_pred$y <- con_pred$y * con_pred$mass_g
 
 # Specify unit
 con_pred$y_g_d <- con_pred$y
@@ -196,20 +207,21 @@ con_pred$temp_c <- con_pred$temp_c_ct + 19
 # Calculate temp scalar
 # Coefficients from Sharpe-Schoolfield model
 
-# With peak_temp_ct
 # 2. Quantiles for each variable:
 #   
-#          2.5%    25%    50%    75%  97.5%
-# Eh       2.1712 2.4675 2.6374 2.8278 3.2211
-# Th       2.8158 3.6412 4.0288 4.3708 4.9798
-# mu_E     0.4454 0.5308 0.5770 0.6254 0.7359
-# mu_b0    0.5204 0.6463 0.7029 0.7611 0.8853
+#              2.5%     25%     50%      75%     97.5%
+# Eh           1.73860  1.97662 2.235974 3.01434 4.50733
+# Th          -0.74556  0.33763 1.021721 1.81156 2.86339
+# alpha.sigma  0.07338  0.08504 0.362772 0.57645 0.63164
+# b1.sigma    -0.21672 -0.19931 0.007145 0.04132 0.04525
+# mu_E         0.37689  0.63111 0.753781 0.88988 1.11006
+# mu_b0        0.44434  0.63128 0.744991 0.84202 1.04750
 
 # Median
-Eh <- 2.6374
-Th <- 4.0288
-mu_E <- 0.5770
-mu_b0 <- 0.7029
+Eh <- 2.235974
+Th <- 1.021721
+mu_E <- 0.753781
+mu_b0 <- 0.744991
 
 # Define the constants in the Sharpe-Schoolfield equations
 tref <- -10
