@@ -2,13 +2,10 @@ model{
   
   for(i in 1:n_obs){
   
-  # Likelihood    
-    y[i] ~ dnorm(mu[i], tau)
+  # Likelihood
+    y[i] ~ dnorm(mu[i], tau)            
     mu[i] <- b0[species_n[i]] + b1*mass[i] + b2*temp[i] + b3[species_n[i]]*mass_intra[i] + b4[species_n[i]]*temp_intra[i] + b5[species_n[i]]*mass_intra[i]*temp_intra[i]  
-  
-  # Simulate for comparison with data (evalute fit)
-    y_sim[i] ~ dnorm(mu[i], tau)
-  
+    
   # Add log likelihood computation for each observation
     pd[i] <- dnorm(y[i], mu[i], tau)
     
@@ -24,20 +21,6 @@ model{
     b5[j] ~ dnorm(mu_b5, tau_b5)
   }
   
-  # Predictions
-  for(k in 1:length(mass_pred)){
-    pred[k] <- mu_b0 + b1*mass_pred[k] + b2*temp_pred + mu_b3*mass_intra_pred[k] + mu_b4*temp_intra_pred + mu_b5*temp_pred*mass_pred[k]
-  } 
-
-  # Model fit
-    mean_y <- mean(y[])
-    mean_y_sim <- mean(y_sim[])
-    p_mean <- step(mean_y_sim - mean_y) # Proportion of data above and below 
-    
-    cv_y <- sd(y[])/mean(y[])
-    cv_y_sim <- sd(y_sim[])/max(0.0000001, mean(y_sim[])) # Not to divide by 0
-    p_cv <- step(cv_y_sim - cv_y)
-  
   # Priors	
     mu_b0 ~ dnorm(0, 0.04) # remember the second argument is precision (1/variance)   
     b1 ~ dnorm(-0.25, 1)  
@@ -50,7 +33,7 @@ model{
     sigma_b3 ~ dunif(0, 10)
     sigma_b4 ~ dunif(0, 10)
     sigma_b5 ~ dunif(0, 10)
-
+  
   # Derived quantiles
     tau <- 1/(sigma*sigma)
     tau_b0 <- 1/(sigma_b0*sigma_b0)

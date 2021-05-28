@@ -55,7 +55,7 @@ dat$log_mass_ct <- dat$log_mass - mean(dat$log_mass)
 dat$temp_arr_ct <- dat$temp_arr - mean(dat$temp_arr)
 
 # Use mass-specific values
-dat$y_spec <- dat$y / dat$mass_g
+#dat$y_spec <- dat$y / dat$mass_g
 
 # Add dummy variable for metabolic type (0 for routine/resting, 1 for standard)
 dat$met_type <- ifelse(dat$type == "Standard", 1, 0)
@@ -72,7 +72,7 @@ dat <- dat %>% arrange(species_n)
 
 # Data in list-format for JAGS
 data = list(
-  y = log(dat$y_spec), 
+  y = log(dat$y), 
   n_obs = length(dat$y), 
   species_n = dat$species_n,
   mass = dat$log_mass_ct,
@@ -747,23 +747,23 @@ waic_m7
 
 # WAIC suggests model 1, closely followed by model 2
 # > waic_m1
-# [1] 274.7977
+# [1] 274.5855
 # > waic_m2
-# [1] 275.6669
+# [1] 274.895
 # > waic_m3a
-# [1] 580.7304
+# [1] 580.2645
 # > waic_m3b
-# [1] 659.1574
+# [1] 659.8612
 # > waic_m4
-# [1] 923.1733
+# [1] 923.1542
 # > waic_m5
-# [1] 281.1196
+# [1] 280.6449
 # > waic_m6a
-# [1] 622.5134
+# [1] 622.775
 # > waic_m6b
-# [1] 661.4648
+# [1] 661.1844
 # > waic_m7
-# [1] 955.5913
+# [1] 956.0734
 
 # Calculate delta WAIC
 waic_m1 - waic_m1
@@ -779,18 +779,18 @@ waic_m7 - waic_m1
 # > waic_m1 - waic_m1
 # [1] 0
 # > waic_m2 - waic_m1
-# [1] 0.8692302
+# [1] 0.3094687
 # > waic_m3a - waic_m1
-# [1] 305.9327
+# [1] 305.6789
 # > waic_m3b - waic_m1
-# [1] 384.3596
+# [1] 385.2756
 # > waic_m4 - waic_m1
-# [1] 648.3756
+# [1] 648.5686
 # > waic_m5 - waic_m1
-# [1] 6.321836
+# [1] 6.059374
 # > waic_m6a - waic_m1
-# [1] 347.7157
+# [1] 348.1895
 # > waic_m6b - waic_m1
-# [1] 386.6671
+# [1] 386.5988
 # > waic_m7 - waic_m1
-# [1] 680.7936
+# [1] 681.4878

@@ -53,6 +53,13 @@ unique(dat$species_n)
 # Mean-center predictor variables
 dat$log_mass_ct <- dat$log_mass - mean(dat$log_mass)
 dat$temp_arr_ct <- dat$temp_arr - mean(dat$temp_arr)
+dat <- dat %>%
+  group_by(species_ab) %>%
+  mutate(log_mass_intra = log_mass - mean(log_mass),
+         temp_intra_arr = temp_arr - mean(temp_arr)) %>% 
+  ungroup() %>% 
+  mutate(log_mass_intra_ct = log_mass_intra - mean(log_mass_intra),
+         temp_intra_arr_ct = temp_intra_arr - mean(temp_intra_arr))
 
 # Prepare data for JAGS
 data = NULL # Clear any old data lists that might confuse things
@@ -66,7 +73,9 @@ data = list(
   n_obs = length(dat$y), 
   species_n = dat$species_n,
   mass = dat$log_mass_ct,
-  temp = dat$temp_arr_ct
+  mass_intra = dat$log_mass_intra_ct,
+  temp = dat$temp_arr_ct,
+  temp_intra = dat$temp_intra_arr_ct
 )
 
 
@@ -92,45 +101,51 @@ thin <- 5        # Save every 5th sample
 #**** M1 ===========================================================================
 # M1  - all coefficients vary by species
 
-model1 = "JAGS_models/log_linear/growth_consumption/m1.txt"
+model1 = "JAGS_models/log_linear/growth/m1.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 # NOTE I don't do it for all parameters...
 inits = list(
   list(
     mu_b0 = 0.1,
-    mu_b1 = 0.1,
-    mu_b2 = 0.1,
+    b1 = 0.1,
+    b2 = 0.1,
     mu_b3 = 0.1,
+    mu_b4 = 0.1,
+    mu_b5 = 0.1,
     sigma = 0.1,
     sigma_b0 = 0.1,
-    sigma_b1 = 0.1,
-    sigma_b2 = 0.1,
     sigma_b3 = 0.1,
+    sigma_b4 = 0.1,
+    sigma_b5 = 0.1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples, see JAGS 4.3 user manual
   ),
   list(
     mu_b0 = 1,
-    mu_b1 = 1,
-    mu_b2 = 1,
+    b1 = 1,
+    b2 = 1,
     mu_b3 = 1,
+    mu_b4 = 1,
+    mu_b5 = 1,
     sigma = 1,
     sigma_b0 = 1,
-    sigma_b1 = 1,
-    sigma_b2 = 1,
     sigma_b3 = 1,
+    sigma_b4 = 1,
+    sigma_b5 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
     mu_b0 = 2,
-    mu_b1 = 2,
-    mu_b2 = 2,
+    b1 = 2,
+    b2 = 2,
     mu_b3 = 2,
+    mu_b4 = 2,
+    mu_b5 = 2,
     sigma = 2,
     sigma_b0 = 2,
-    sigma_b1 = 2,
-    sigma_b2 = 2,
     sigma_b3 = 2,
+    sigma_b4 = 2,
+    sigma_b5 = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ))
 
@@ -170,41 +185,47 @@ waic_m1 <- lppd1 + 2*pd.WAIC1
 #**** M2 ===========================================================================
 # M2  - intercept, mass, temperature vary by species
 
-model2 = "JAGS_models/log_linear/growth_consumption/m2.txt"
+model2 = "JAGS_models/log_linear/growth/m2.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
   list(
     mu_b0 = 0.1,
-    mu_b1 = 0.1,
-    mu_b2 = 0.1,
-    b3 = 1,
+    b1 = 0.1,
+    b2 = 0.1,
+    mu_b3 = 0.1,
+    mu_b4 = 0.1,
+    b5 = 0.1,
     sigma = 0.1,
     sigma_b0 = 0.1,
-    sigma_b1 = 0.1,
-    sigma_b2 = 0.1,
-    .RNG.name = "base::Super-Duper", .RNG.seed = 2
+    sigma_b3 = 0.1,
+    sigma_b4 = 0.1,
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples, see JAGS 4.3 user manual
   ),
   list(
     mu_b0 = 1,
-    mu_b1 = 1,
-    mu_b2 = 1,
-    b3 = 1,
+    b1 = 1,
+    b2 = 1,
+    mu_b3 = 1,
+    mu_b4 = 1,
+    b5 = 1,
     sigma = 1,
     sigma_b0 = 1,
-    sigma_b1 = 1,
-    sigma_b2 = 1,
+    sigma_b3 = 1,
+    sigma_b4 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
     mu_b0 = 2,
-    mu_b1 = 2,
-    mu_b2 = 2,
-    b3 = 2,
+    b1 = 2,
+    b2 = 2,
+    mu_b3 = 2,
+    mu_b4 = 2,
+    b5 = 2,
     sigma = 2,
     sigma_b0 = 2,
-    sigma_b1 = 2,
-    sigma_b2 = 2,
+    sigma_b3 = 2,
+    sigma_b4 = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ))
 
@@ -237,38 +258,44 @@ waic_m2 <- lppd2 + 2*pd.WAIC2
 #**** M3a ==========================================================================
 # M3a - intercept and mass vary by species
 
-model3a = "JAGS_models/log_linear/growth_consumption/m3a.txt"
+model3a = "JAGS_models/log_linear/growth/m3a.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
   list(
     mu_b0 = 0.1,
-    mu_b1 = 0.1,
+    b1 = 0.1,
     b2 = 0.1,
-    b3 = 1,
+    mu_b3 = 0.1,
+    b4 = 0.1,
+    b5 = 0.1,
     sigma = 0.1,
     sigma_b0 = 0.1,
-    sigma_b1 = 0.1,
-    .RNG.name = "base::Super-Duper", .RNG.seed = 2
+    sigma_b3 = 0.1,
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples, see JAGS 4.3 user manual
   ),
   list(
     mu_b0 = 1,
-    mu_b1 = 1,
+    b1 = 1,
     b2 = 1,
-    b3 = 1,
+    mu_b3 = 1,
+    b4 = 1,
+    b5 = 1,
     sigma = 1,
     sigma_b0 = 1,
-    sigma_b1 = 1,
+    sigma_b3 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
     mu_b0 = 2,
-    mu_b1 = 2,
+    b1 = 2,
     b2 = 2,
-    b3 = 2,
+    mu_b3 = 2,
+    b4 = 2,
+    b5 = 2,
     sigma = 2,
     sigma_b0 = 2,
-    sigma_b1 = 2,
+    sigma_b3 = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ))
 
@@ -301,38 +328,44 @@ waic_m3a <- lppd3a + 2*pd.WAIC3a
 #**** M3b ==========================================================================
 # M3b - intercept and temperature vary by species
 
-model3b = "JAGS_models/log_linear/growth_consumption/m3b.txt"
+model3b = "JAGS_models/log_linear/growth/m3b.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
   list(
     mu_b0 = 0.1,
     b1 = 0.1,
-    mu_b2 = 0.1,
+    b2 = 0.1,
     b3 = 0.1,
+    mu_b4 = 0.1,
+    b5 = 0.1,
     sigma = 0.1,
     sigma_b0 = 0.1,
-    sigma_b2 = 0.1,
-    .RNG.name = "base::Super-Duper", .RNG.seed = 2
+    sigma_b4 = 0.1,
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples, see JAGS 4.3 user manual
   ),
   list(
     mu_b0 = 1,
     b1 = 1,
-    mu_b2 = 1,
+    b2 = 1,
     b3 = 1,
+    mu_b4 = 1,
+    b5 = 1,
     sigma = 1,
     sigma_b0 = 1,
-    sigma_b2 = 1,
+    sigma_b4 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
     mu_b0 = 2,
     b1 = 2,
-    mu_b2 = 2,
+    b2 = 2,
     b3 = 2,
+    mu_b4 = 2,
+    b5 = 2,
     sigma = 2,
     sigma_b0 = 2,
-    sigma_b2 = 2,
+    sigma_b4 = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ))
 
@@ -365,7 +398,7 @@ waic_m3b <- lppd3b + 2*pd.WAIC3b
 #**** M4 ===========================================================================
 # M4  - intercept varies by species
 
-model4 = "JAGS_models/log_linear/growth_consumption/m4.txt"
+model4 = "JAGS_models/log_linear/growth/m4.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
@@ -374,15 +407,19 @@ inits = list(
     b1 = 0.1,
     b2 = 0.1,
     b3 = 0.1,
+    b4 = 0.1,
+    b5 = 0.1,
     sigma = 0.1,
     sigma_b0 = 0.1,
-    .RNG.name = "base::Super-Duper", .RNG.seed = 2
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples, see JAGS 4.3 user manual
   ),
   list(
     mu_b0 = 1,
     b1 = 1,
     b2 = 1,
     b3 = 1,
+    b4 = 1,
+    b5 = 1,
     sigma = 1,
     sigma_b0 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
@@ -392,6 +429,8 @@ inits = list(
     b1 = 2,
     b2 = 2,
     b3 = 2,
+    b4 = 2,
+    b5 = 2,
     sigma = 2,
     sigma_b0 = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
@@ -426,38 +465,44 @@ waic_m4 <- lppd4 + 2*pd.WAIC4
 #**** M5 ===========================================================================
 # M5  - no interaction, all coefficients vary by species
 
-model5 = "JAGS_models/log_linear/growth_consumption/m5.txt"
+model5 = "JAGS_models/log_linear/growth/m5.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
   list(
     mu_b0 = 0.1,
-    mu_b1 = 0.1,
-    mu_b2 = 0.1,
+    b1 = 0.1,
+    b2 = 0.1,
+    mu_b3 = 0.1,
+    mu_b4 = 0.1,
     sigma = 0.1,
     sigma_b0 = 0.1,
-    sigma_b1 = 0.1,
-    sigma_b2 = 0.1,
-    .RNG.name = "base::Super-Duper", .RNG.seed = 2
+    sigma_b3 = 0.1,
+    sigma_b4 = 0.1,
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples, see JAGS 4.3 user manual
   ),
   list(
     mu_b0 = 1,
-    mu_b1 = 1,
-    mu_b2 = 1,
+    b1 = 1,
+    b2 = 1,
+    mu_b3 = 1,
+    mu_b4 = 1,
     sigma = 1,
     sigma_b0 = 1,
-    sigma_b1 = 1,
-    sigma_b2 = 1,
+    sigma_b3 = 1,
+    sigma_b4 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
     mu_b0 = 2,
-    mu_b1 = 2,
-    mu_b2 = 2,
+    b1 = 2,
+    b2 = 2,
+    mu_b3 = 2,
+    mu_b4 = 2,
     sigma = 2,
     sigma_b0 = 2,
-    sigma_b1 = 2,
-    sigma_b2 = 2,
+    sigma_b3 = 2,
+    sigma_b4 = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ))
 
@@ -490,35 +535,41 @@ waic_m5 <- lppd5 + 2*pd.WAIC5
 #**** M6a ===========================================================================
 # M6a - no interaction, intercept and mass vary by species
 
-model6a = "JAGS_models/log_linear/growth_consumption/m6a.txt"
+model6a = "JAGS_models/log_linear/growth/m6a.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
   list(
     mu_b0 = 0.1,
-    mu_b1 = 0.1,
+    b1 = 0.1,
     b2 = 0.1,
+    mu_b3 = 0.1,
+    b4 = 0.1,
     sigma = 0.1,
     sigma_b0 = 0.1,
-    sigma_b1 = 0.1,
-    .RNG.name = "base::Super-Duper", .RNG.seed = 2
+    sigma_b3 = 0.1,
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples, see JAGS 4.3 user manual
   ),
   list(
     mu_b0 = 1,
-    mu_b1 = 1,
+    b1 = 1,
     b2 = 1,
+    mu_b3 = 1,
+    b4 = 1,
     sigma = 1,
     sigma_b0 = 1,
-    sigma_b1 = 1,
+    sigma_b3 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
     mu_b0 = 2,
-    mu_b1 = 2,
+    b1 = 2,
     b2 = 2,
+    mu_b3 = 2,
+    b4 = 2,
     sigma = 2,
     sigma_b0 = 2,
-    sigma_b1 = 2,
+    sigma_b3 = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ))
 
@@ -550,35 +601,41 @@ waic_m6a <- lppd6a + 2*pd.WAIC6a
 
 #**** M6b ===========================================================================
 # M6b - no interaction, intercept and temperature vary by species
-model6b = "JAGS_models/log_linear/growth_consumption/m6b.txt"
+model6b = "JAGS_models/log_linear/growth/m6b.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
   list(
     mu_b0 = 0.1,
     b1 = 0.1,
-    mu_b2 = 0.1,
+    b2 = 0.1,
+    b3 = 0.1,
+    mu_b4 = 0.1,
     sigma = 0.1,
     sigma_b0 = 0.1,
-    sigma_b2 = 0.1,
-    .RNG.name = "base::Super-Duper", .RNG.seed = 2
+    sigma_b4 = 0.1,
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples, see JAGS 4.3 user manual
   ),
   list(
     mu_b0 = 1,
     b1 = 1,
-    mu_b2 = 1,
+    b2 = 1,
+    b3 = 1,
+    mu_b4 = 1,
     sigma = 1,
     sigma_b0 = 1,
-    sigma_b2 = 1,
+    sigma_b4 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
     mu_b0 = 2,
     b1 = 2,
-    mu_b2 = 2,
+    b2 = 2,
+    b3 = 2,
+    mu_b4 = 2,
     sigma = 2,
     sigma_b0 = 2,
-    sigma_b2 = 2,
+    sigma_b4 = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ))
 
@@ -610,22 +667,26 @@ waic_m6b <- lppd6b + 2*pd.WAIC6b
 
 #**** M7 ===========================================================================
 # M7  - no interaction, intercept varies by species
-model7 = "JAGS_models/log_linear/growth_consumption/m7.txt"
+model7 = "JAGS_models/log_linear/growth/m7.txt"
 
 # Manually set initial values, because otherwise all the chains get the same
-inits = list(
+inits = listinits = list(
   list(
     mu_b0 = 0.1,
     b1 = 0.1,
     b2 = 0.1,
+    b3 = 0.1,
+    b4 = 0.1,
     sigma = 0.1,
     sigma_b0 = 0.1,
-    .RNG.name = "base::Super-Duper", .RNG.seed = 2
+    .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples, see JAGS 4.3 user manual
   ),
   list(
     mu_b0 = 1,
     b1 = 1,
     b2 = 1,
+    b3 = 1,
+    b4 = 1,
     sigma = 1,
     sigma_b0 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
@@ -634,6 +695,8 @@ inits = list(
     mu_b0 = 2,
     b1 = 2,
     b2 = 2,
+    b3 = 2,
+    b4 = 2,
     sigma = 2,
     sigma_b0 = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
@@ -680,23 +743,23 @@ waic_m7
 # WAIC suggests model 1 is best fitting with model
 
 # > waic_m1
-# [1] 47.20224
+# [1] 42.08208
 # > waic_m2
-# [1] 54.40601
+# [1] 47.05241
 # > waic_m3a
-# [1] 70.6371
+# [1] 70.70402
 # > waic_m3b
-# [1] 79.75376
+# [1] 78.97334
 # > waic_m4
-# [1] 90.66608
+# [1] 93.1804
 # > waic_m5
-# [1] 52.72265
+# [1] 44.45653
 # > waic_m6a
-# [1] 69.2529
+# [1] 68.72634
 # > waic_m6b
-# [1] 81.47716
+# [1] 76.14678
 # > waic_m7
-# [1] 92.05313
+# [1] 90.99446
 
 # Calculate delta WAIC
 waic_m1 - waic_m1
@@ -709,20 +772,21 @@ waic_m6a - waic_m1
 waic_m6b - waic_m1
 waic_m7 - waic_m1
 
+# > waic_m1 - waic_m1
 # [1] 0
 # > waic_m2 - waic_m1
-# [1] 7.203766
+# [1] 4.97033
 # > waic_m3a - waic_m1
-# [1] 23.43486
+# [1] 28.62194
 # > waic_m3b - waic_m1
-# [1] 32.55152
+# [1] 36.89126
 # > waic_m4 - waic_m1
-# [1] 43.46383
+# [1] 51.09832
 # > waic_m5 - waic_m1
-# [1] 5.520408
+# [1] 2.374446
 # > waic_m6a - waic_m1
-# [1] 22.05066
+# [1] 26.64426
 # > waic_m6b - waic_m1
-# [1] 34.27492
+# [1] 34.0647
 # > waic_m7 - waic_m1
-# [1] 44.85089
+# [1] 48.91238

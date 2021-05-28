@@ -1,8 +1,10 @@
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # 2019.12.02: Max Lindmark
 #
-# - Define and save models for rjags for model selection using WAIC 
-# - These models are used for metabolism data
+# - Define and save models for rjags for model selection using WAIC
+# - These models are used for growth and consumption data. For metabolism
+# - data we in addition have a fixed effect of metabolic type (routine or standard),
+# - so those models are written in another script.
 # 
 # A. Specify models for model selection
 # 
@@ -33,7 +35,7 @@ cat(
   
   # Likelihood
     y[i] ~ dnorm(mu[i], tau)            
-    mu[i] <- b0_r[species_n[i]]*met_r[i] + b0_s[species_n[i]]*met_s[i] + b1[species_n[i]]*mass[i] + b2[species_n[i]]*temp[i] + b3[species_n[i]]*mass[i]*temp[i]  
+    mu[i] <- b0[species_n[i]] + b1[species_n[i]]*mass[i] + b2[species_n[i]]*temp[i] + b3[species_n[i]]*mass[i]*temp[i]  
     
   # Add log likelihood computation for each observation
     pd[i] <- dnorm(y[i], mu[i], tau)
@@ -44,37 +46,31 @@ cat(
   
   # Second level (species-level effects)
   for(j in 1:max(species_n)){
-    b0s[j] ~ dnorm(mu_b0_s, tau_b0_s)
-    b0_s[j] <- spec_s[j] * b0s[j]
-    b0r[j] ~ dnorm(mu_b0_r, tau_b0_r)
-    b0_r[j] <- spec_r[j] * b0r[j]
+    b0[j] ~ dnorm(mu_b0, tau_b0)
     b1[j] ~ dnorm(mu_b1, tau_b1)
     b2[j] ~ dnorm(mu_b2, tau_b2)
     b3[j] ~ dnorm(mu_b3, tau_b3)
   }
   
   # Priors	
-    mu_b0_s ~ dnorm(-2, 0.04)
-    mu_b0_r ~ dnorm(-1, 0.04)
-    mu_b1 ~ dnorm(-0.25, 1)  
+    mu_b0 ~ dnorm(0, 0.04) # remember the second argument is precision (1/variance)   
+    mu_b1 ~ dnorm(0.75, 1)  
     mu_b2 ~ dnorm(-0.6, 1)   
     mu_b3 ~ dnorm(0, 1)      
     sigma ~ dunif(0, 10) 
-    sigma_b0_s ~ dunif(0, 10)
-    sigma_b0_r ~ dunif(0, 10)
+    sigma_b0 ~ dunif(0, 10)
     sigma_b1 ~ dunif(0, 10)
     sigma_b2 ~ dunif(0, 10)
     sigma_b3 ~ dunif(0, 10)
   
   # Derived quantiles
     tau <- 1/(sigma*sigma)
-    tau_b0_s <- 1/(sigma_b0_s*sigma_b0_s)
-    tau_b0_r <- 1/(sigma_b0_r*sigma_b0_r)
+    tau_b0 <- 1/(sigma_b0*sigma_b0)
     tau_b1 <- 1/(sigma_b1*sigma_b1)
     tau_b2 <- 1/(sigma_b2*sigma_b2)
     tau_b3 <- 1/(sigma_b3*sigma_b3)
   
-}", fill = TRUE, file = "JAGS_models/log_linear/metabolism/m1.txt")
+}", fill = TRUE, file = "JAGS_models/log_linear/consumption/m1.txt")
 
 
 #**** M2 ===========================================================================
@@ -86,7 +82,7 @@ cat(
   
   # Likelihood
     y[i] ~ dnorm(mu[i], tau)
-    mu[i] <- b0_r[species_n[i]]*met_r[i] + b0_s[species_n[i]]*met_s[i] + b1[species_n[i]]*mass[i] + b2[species_n[i]]*temp[i] + b3*mass[i]*temp[i]
+    mu[i] <- b0[species_n[i]] + b1[species_n[i]]*mass[i] + b2[species_n[i]]*temp[i] + b3*mass[i]*temp[i]
   
   # Add log likelihood computation for each observation
     pd[i] <- dnorm(y[i], mu[i], tau)
@@ -97,34 +93,28 @@ cat(
   
   # Second level (species-level effects)
   for(j in 1:max(species_n)){
-    b0s[j] ~ dnorm(mu_b0_s, tau_b0_s)
-    b0_s[j] <- spec_s[j] * b0s[j]
-    b0r[j] ~ dnorm(mu_b0_r, tau_b0_r)
-    b0_r[j] <- spec_r[j] * b0r[j]
+    b0[j] ~ dnorm(mu_b0, tau_b0)
     b1[j] ~ dnorm(mu_b1, tau_b1)
     b2[j] ~ dnorm(mu_b2, tau_b2)
   }
   
   # Priors	
-    mu_b0_s ~ dnorm(-2, 0.04)
-    mu_b0_r ~ dnorm(-1, 0.04)
-    mu_b1 ~ dnorm(-0.25, 1)  
+    mu_b0 ~ dnorm(0, 0.04)      
+    mu_b1 ~ dnorm(0.75, 1)  
     mu_b2 ~ dnorm(-0.6, 1)   
     b3 ~ dnorm(0, 1)         
     sigma ~ dunif(0, 10) 
-    sigma_b0_s ~ dunif(0, 10)
-    sigma_b0_r ~ dunif(0, 10)
+    sigma_b0 ~ dunif(0, 10)
     sigma_b1 ~ dunif(0, 10)
     sigma_b2 ~ dunif(0, 10)
   
   # Derived quantiles
     tau <- 1/(sigma*sigma)
-    tau_b0_s <- 1/(sigma_b0_s*sigma_b0_s)
-    tau_b0_r <- 1/(sigma_b0_r*sigma_b0_r)
+    tau_b0 <- 1/(sigma_b0*sigma_b0)
     tau_b1 <- 1/(sigma_b1*sigma_b1)
     tau_b2 <- 1/(sigma_b2*sigma_b2)
   
-  }", fill = TRUE, file = "JAGS_models/log_linear/metabolism/m2.txt")
+  }", fill = TRUE, file = "JAGS_models/log_linear/consumption/m2.txt")
 
 
 #**** M3a =========================================================================
@@ -136,7 +126,7 @@ cat(
     
   # Likelihood
     y[i] ~ dnorm(mu[i], tau)
-    mu[i] <- b0_r[species_n[i]]*met_r[i] + b0_s[species_n[i]]*met_s[i] + b1[species_n[i]]*mass[i] + b2*temp[i] + b3*mass[i]*temp[i]  
+    mu[i] <- b0[species_n[i]] + b1[species_n[i]]*mass[i] + b2*temp[i] + b3*mass[i]*temp[i]  
     
   # Add log likelihood computation for each observation
     pd[i] <- dnorm(y[i], mu[i], tau)
@@ -147,31 +137,25 @@ cat(
   
   # Second level (species-level effects)
   for(j in 1:max(species_n)){
-    b0s[j] ~ dnorm(mu_b0_s, tau_b0_s)
-    b0_s[j] <- spec_s[j] * b0s[j]
-    b0r[j] ~ dnorm(mu_b0_r, tau_b0_r)
-    b0_r[j] <- spec_r[j] * b0r[j]
+    b0[j] ~ dnorm(mu_b0, tau_b0)
     b1[j] ~ dnorm(mu_b1, tau_b1)
   }
   
   # Priors	
-    mu_b0_s ~ dnorm(-2, 0.04)
-    mu_b0_r ~ dnorm(-1, 0.04)
-    mu_b1 ~ dnorm(-0.25, 1)
+    mu_b0 ~ dnorm(0, 0.04)
+    mu_b1 ~ dnorm(0.75, 1)
     b2 ~ dnorm(-0.6, 1)
     b3 ~ dnorm(0, 1)
     sigma ~ dunif(0, 10) 
-    sigma_b0_s ~ dunif(0, 10)
-    sigma_b0_r ~ dunif(0, 10)
+    sigma_b0 ~ dunif(0, 10)
     sigma_b1 ~ dunif(0, 10)
   
   # Derived quantiles
     tau <- 1/(sigma*sigma)
-    tau_b0_s <- 1/(sigma_b0_s*sigma_b0_s)
-    tau_b0_r <- 1/(sigma_b0_r*sigma_b0_r)
+    tau_b0 <- 1/(sigma_b0*sigma_b0)
     tau_b1 <- 1/(sigma_b1*sigma_b1)
   
-  }", fill = TRUE, file = "JAGS_models/log_linear/metabolism/m3a.txt")
+  }", fill = TRUE, file = "JAGS_models/log_linear/consumption/m3a.txt")
 
 
 #**** M3b ==========================================================================
@@ -182,7 +166,7 @@ cat(
   for(i in 1:n_obs){
   # Likelihood
     y[i] ~ dnorm(mu[i], tau)
-    mu[i] <- b0_r[species_n[i]]*met_r[i] + b0_s[species_n[i]]*met_s[i] + b1*mass[i] + b2[species_n[i]]*temp[i] + b3*mass[i]*temp[i]
+    mu[i] <- b0[species_n[i]] + b1*mass[i] + b2[species_n[i]]*temp[i] + b3*mass[i]*temp[i]
     
   # Add log likelihood computation for each observation
     pd[i] <- dnorm(y[i], mu[i], tau)
@@ -193,31 +177,25 @@ cat(
   
   # Second level (species-level effects)
   for(j in 1:max(species_n)){
-    b0s[j] ~ dnorm(mu_b0_s, tau_b0_s)
-    b0_s[j] <- spec_s[j] * b0s[j]
-    b0r[j] ~ dnorm(mu_b0_r, tau_b0_r)
-    b0_r[j] <- spec_r[j] * b0r[j]
+    b0[j] ~ dnorm(mu_b0, tau_b0)
     b2[j] ~ dnorm(mu_b2, tau_b2)
   }
   
   # Priors	
-    mu_b0_s ~ dnorm(-2, 0.04)
-    mu_b0_r ~ dnorm(-1, 0.04)
-    b1 ~ dnorm(-0.25, 1)
+    mu_b0 ~ dnorm(0, 0.04)
+    b1 ~ dnorm(0.75, 1)
     mu_b2 ~ dnorm(-0.6, 1)
     b3 ~ dnorm(0, 1)
     sigma ~ dunif(0, 10) 
-    sigma_b0_s ~ dunif(0, 10)
-    sigma_b0_r ~ dunif(0, 10)
+    sigma_b0 ~ dunif(0, 10)
     sigma_b2 ~ dunif(0, 10)
   
   # Derived quantiles
     tau <- 1/(sigma*sigma)
-    tau_b0_s <- 1/(sigma_b0_s*sigma_b0_s)
-    tau_b0_r <- 1/(sigma_b0_r*sigma_b0_r)
+    tau_b0 <- 1/(sigma_b0*sigma_b0)
     tau_b2 <- 1/(sigma_b2*sigma_b2)
   
-  }", fill = TRUE, file = "JAGS_models/log_linear/metabolism/m3b.txt")
+  }", fill = TRUE, file = "JAGS_models/log_linear/consumption/m3b.txt")
 
 
 #**** M4 ===========================================================================
@@ -229,7 +207,7 @@ cat(
     
   # Likelihood
     y[i] ~ dnorm(mu[i], tau)
-    mu[i] <- b0_r[species_n[i]]*met_r[i] + b0_s[species_n[i]]*met_s[i] + b1*mass[i] + b2*temp[i] + b3*mass[i]*temp[i] 
+    mu[i] <- b0[species_n[i]] + b1*mass[i] + b2*temp[i] + b3*mass[i]*temp[i] 
       
   # Add log likelihood computation for each observation!
     pd[i] <- dnorm(y[i], mu[i], tau)
@@ -240,28 +218,22 @@ cat(
   
   # Second level (species-level effects)
   for(j in 1:max(species_n)){
-    b0s[j] ~ dnorm(mu_b0_s, tau_b0_s)
-    b0_s[j] <- spec_s[j] * b0s[j]
-    b0r[j] ~ dnorm(mu_b0_r, tau_b0_r)
-    b0_r[j] <- spec_r[j] * b0r[j]
+    b0[j] ~ dnorm(mu_b0, tau_b0)
   }
   
   # Priors	
-    mu_b0_s ~ dnorm(-2, 0.04)
-    mu_b0_r ~ dnorm(-1, 0.04)
-    b1 ~ dnorm(-0.25, 1)
+    mu_b0 ~ dnorm(0, 0.04)
+    b1 ~ dnorm(0.75, 1)
     b2 ~ dnorm(-0.6, 1)
     b3 ~ dnorm(0, 1)
     sigma ~ dunif(0, 10) 
-    sigma_b0_s ~ dunif(0, 10)
-    sigma_b0_r ~ dunif(0, 10)
+    sigma_b0 ~ dunif(0, 10)
   
   # Derived quantiles
     tau <- 1/(sigma*sigma)
-    tau_b0_s <- 1/(sigma_b0_s*sigma_b0_s)
-    tau_b0_r <- 1/(sigma_b0_r*sigma_b0_r)
+    tau_b0 <- 1/(sigma_b0*sigma_b0)
   
-  }", fill = TRUE, file = "JAGS_models/log_linear/metabolism/m4.txt")
+  }", fill = TRUE, file = "JAGS_models/log_linear/consumption/m4.txt")
 
 
 #**** M5 ===========================================================================
@@ -273,7 +245,7 @@ cat(
   
   # Likelihood  
     y[i] ~ dnorm(mu[i], tau)
-    mu[i] <- b0_r[species_n[i]]*met_r[i] + b0_s[species_n[i]]*met_s[i] + b1[species_n[i]]*mass[i] + b2[species_n[i]]*temp[i] 
+    mu[i] <- b0[species_n[i]] + b1[species_n[i]]*mass[i] + b2[species_n[i]]*temp[i] 
     
   # Add log likelihood computation for each observation
     pd[i] <- dnorm(y[i], mu[i], tau)
@@ -284,33 +256,27 @@ cat(
   
   # Second level (species-level effects)
   for(j in 1:max(species_n)){
-    b0s[j] ~ dnorm(mu_b0_s, tau_b0_s)
-    b0_s[j] <- spec_s[j] * b0s[j]
-    b0r[j] ~ dnorm(mu_b0_r, tau_b0_r)
-    b0_r[j] <- spec_r[j] * b0r[j]
+    b0[j] ~ dnorm(mu_b0, tau_b0)
     b1[j] ~ dnorm(mu_b1, tau_b1)
     b2[j] ~ dnorm(mu_b2, tau_b2)
   }
   
   # Priors	
-    mu_b0_s ~ dnorm(-2, 0.04)
-    mu_b0_r ~ dnorm(-1, 0.04)
-    mu_b1 ~ dnorm(-0.25, 1)          
+    mu_b0 ~ dnorm(0, 0.04)              
+    mu_b1 ~ dnorm(0.75, 1)          
     mu_b2 ~ dnorm(-0.6, 1)           
     sigma ~ dunif(0, 10) 
-    sigma_b0_s ~ dunif(0, 10)
-    sigma_b0_r ~ dunif(0, 10)
+    sigma_b0 ~ dunif(0, 10)
     sigma_b1 ~ dunif(0, 10)
     sigma_b2 ~ dunif(0, 10)
   
   # Derived quantiles
     tau <- 1/(sigma*sigma)
-    tau_b0_s <- 1/(sigma_b0_s*sigma_b0_s)
-    tau_b0_r <- 1/(sigma_b0_r*sigma_b0_r)
+    tau_b0 <- 1/(sigma_b0*sigma_b0)
     tau_b1 <- 1/(sigma_b1*sigma_b1)
     tau_b2 <- 1/(sigma_b2*sigma_b2)
   
-  }", fill = TRUE, file = "JAGS_models/log_linear/metabolism/m5.txt")
+  }", fill = TRUE, file = "JAGS_models/log_linear/consumption/m5.txt")
 
 
 #**** M6a ==========================================================================
@@ -322,7 +288,7 @@ cat(
   
   # Likelihood
     y[i] ~ dnorm(mu[i], tau)
-    mu[i] <- b0_r[species_n[i]]*met_r[i] + b0_s[species_n[i]]*met_s[i] + b1[species_n[i]]*mass[i] + b2*temp[i] 
+    mu[i] <- b0[species_n[i]] + b1[species_n[i]]*mass[i] + b2*temp[i] 
   
   # Add log likelihood computation for each observation
     pd[i] <- dnorm(y[i], mu[i], tau)
@@ -333,30 +299,24 @@ cat(
   
   # Second level (species-level effects)
   for(j in 1:max(species_n)){
-    b0s[j] ~ dnorm(mu_b0_s, tau_b0_s)
-    b0_s[j] <- spec_s[j] * b0s[j]
-    b0r[j] ~ dnorm(mu_b0_r, tau_b0_r)
-    b0_r[j] <- spec_r[j] * b0r[j]
+    b0[j] ~ dnorm(mu_b0, tau_b0)
     b1[j] ~ dnorm(mu_b1, tau_b1)
   }
   
   # Priors	
-    mu_b0_s ~ dnorm(-2, 0.04)
-    mu_b0_r ~ dnorm(-1, 0.04)
-    mu_b1 ~ dnorm(-0.25, 1)          
+    mu_b0 ~ dnorm(0, 0.04)              
+    mu_b1 ~ dnorm(0.75, 1)          
     b2 ~ dnorm(-0.6, 1)              
     sigma ~ dunif(0, 10) 
-    sigma_b0_s ~ dunif(0, 10)
-    sigma_b0_r ~ dunif(0, 10)
+    sigma_b0 ~ dunif(0, 10)
     sigma_b1 ~ dunif(0, 10)
   
   # Derived quantiles
     tau <- 1/(sigma*sigma)
-    tau_b0_s <- 1/(sigma_b0_s*sigma_b0_s)
-    tau_b0_r <- 1/(sigma_b0_r*sigma_b0_r)
+    tau_b0 <- 1/(sigma_b0*sigma_b0)
     tau_b1 <- 1/(sigma_b1*sigma_b1)
     
-  }", fill = TRUE, file = "JAGS_models/log_linear/metabolism/m6a.txt")
+  }", fill = TRUE, file = "JAGS_models/log_linear/consumption/m6a.txt")
 
 
 #**** M6b ==========================================================================
@@ -368,7 +328,7 @@ cat(
   
   # Likelihood
     y[i] ~ dnorm(mu[i], tau)
-    mu[i] <- b0_r[species_n[i]]*met_r[i] + b0_s[species_n[i]]*met_s[i] + b1*mass[i] + b2[species_n[i]]*temp[i] 
+    mu[i] <- b0[species_n[i]] + b1*mass[i] + b2[species_n[i]]*temp[i] 
   
   # Add log likelihood computation for each observation
     pd[i] <- dnorm(y[i], mu[i], tau)
@@ -379,31 +339,24 @@ cat(
   
   # Second level (species-level effects)
   for(j in 1:max(species_n)){
-    b0s[j] ~ dnorm(mu_b0_s, tau_b0_s)
-    b0_s[j] <- spec_s[j] * b0s[j]
-    b0r[j] ~ dnorm(mu_b0_r, tau_b0_r)
-    b0_r[j] <- spec_r[j] * b0r[j]
+    b0[j] ~ dnorm(mu_b0, tau_b0)
     b2[j] ~ dnorm(mu_b2, tau_b2)
   }
   
   # Priors	
-    mu_b0_s ~ dnorm(-2, 0.04)
-    mu_b0_r ~ dnorm(-1, 0.04)
-    b0_type ~ dnorm(0, 0.04)
-    b1 ~ dnorm(-0.25, 1)            
+    mu_b0 ~ dnorm(0, 0.04)             
+    b1 ~ dnorm(0.75, 1)            
     mu_b2 ~ dnorm(-0.6, 1)          
     sigma ~ dunif(0, 10) 
-    sigma_b0_s ~ dunif(0, 10)
-    sigma_b0_r ~ dunif(0, 10)
+    sigma_b0 ~ dunif(0, 10)
     sigma_b2 ~ dunif(0, 10)
   
   # Derived quantiles
     tau <- 1/(sigma*sigma)
-    tau_b0_s <- 1/(sigma_b0_s*sigma_b0_s)
-    tau_b0_r <- 1/(sigma_b0_r*sigma_b0_r)
+    tau_b0 <- 1/(sigma_b0*sigma_b0)
     tau_b2 <- 1/(sigma_b2*sigma_b2)
   
-  }", fill = TRUE, file = "JAGS_models/log_linear/metabolism/m6b.txt")
+  }", fill = TRUE, file = "JAGS_models/log_linear/consumption/m6b.txt")
 
 
 #**** M7 ===========================================================================
@@ -415,7 +368,7 @@ cat(
   
   # Likelihood
     y[i] ~ dnorm(mu[i], tau)
-    mu[i] <- b0_r[species_n[i]]*met_r[i] + b0_s[species_n[i]]*met_s[i] + b1*mass[i] + b2*temp[i] 
+    mu[i] <- b0[species_n[i]] + b1*mass[i] + b2*temp[i] 
   
   # Add log likelihood computation for each observation
     pd[i] <- dnorm(y[i], mu[i], tau)
@@ -426,66 +379,56 @@ cat(
   
   # Second level (species-level effects)
   for(j in 1:max(species_n)){
-    b0s[j] ~ dnorm(mu_b0_s, tau_b0_s)
-    b0_s[j] <- spec_s[j] * b0s[j]
-    b0r[j] ~ dnorm(mu_b0_r, tau_b0_r)
-    b0_r[j] <- spec_r[j] * b0r[j]
+    b0[j] ~ dnorm(mu_b0, tau_b0)
   }
   
   # Priors	
-    mu_b0_s ~ dnorm(-2, 0.04)
-    mu_b0_r ~ dnorm(-1, 0.04)
-    b1 ~ dnorm(-0.25, 1)
+    mu_b0 ~ dnorm(0, 0.04)              
+    b1 ~ dnorm(0.75, 1)
     b2 ~ dnorm(-0.6, 1)
     sigma ~ dunif(0, 10) 
-    sigma_b0_s ~ dunif(0, 10)
-    sigma_b0_r ~ dunif(0, 10)
+    sigma_b0 ~ dunif(0, 10)
   
   # Derived quantiles
     tau <- 1/(sigma*sigma)
-    tau_b0_s <- 1/(sigma_b0_s*sigma_b0_s)
-    tau_b0_r <- 1/(sigma_b0_r*sigma_b0_r)
+    tau_b0 <- 1/(sigma_b0*sigma_b0)
     
-  }", fill = TRUE, file = "JAGS_models/log_linear/metabolism/m7.txt")
+  }", fill = TRUE, file = "JAGS_models/log_linear/consumption/m7.txt")
 
 
 # B. Add predictions to selected models ============================================
-#**** M1 ===========================================================================
-# All coefficients vary by species
+#** Consumption ====================================================================
+#**** M5 ===========================================================================
+# No interaction, full random
 cat(
   "model{
   
   for(i in 1:n_obs){
   
-  # Likelihood    
+  # Likelihood
     y[i] ~ dnorm(mu[i], tau)
-    
-    mu[i] <- b0_r[species_n[i]]*met_r[i] + b0_s[species_n[i]]*met_s[i] + b1[species_n[i]]*mass[i] + b2[species_n[i]]*temp[i] + b3[species_n[i]]*mass[i]*temp[i] # this works nicely
+    mu[i] <- b0[species_n[i]] + b1[species_n[i]]*mass[i] + b2[species_n[i]]*temp[i]
   
   # Simulate for comparison with data (evalute fit)
     y_sim[i] ~ dnorm(mu[i], tau)
   
   # Add log likelihood computation for each observation
     pd[i] <- dnorm(y[i], mu[i], tau)
-    
+  
   # Calculates the log PPD
     log_pd[i] <- log(dnorm(y[i], mu[i], tau))
   }
   
   # Second level (species-level effects)
   for(j in 1:max(species_n)){
-    b0s[j] ~ dnorm(mu_b0_s, tau_b0_s)
-    b0_s[j] <- spec_s[j] * b0s[j]
-    b0r[j] ~ dnorm(mu_b0_r, tau_b0_r)
-    b0_r[j] <- spec_r[j] * b0r[j]
+    b0[j] ~ dnorm(mu_b0, tau_b0)
     b1[j] ~ dnorm(mu_b1, tau_b1)
     b2[j] ~ dnorm(mu_b2, tau_b2)
-    b3[j] ~ dnorm(mu_b3, tau_b3)
   }
   
-  # Predictions (assuming met_type[i] = 0; i.e. resting or routine metabolic rate)
+  # Predictions
   for(k in 1:length(mass_pred)){
-    pred[k] <- mu_b0_r + mu_b1*mass_pred[k] + mu_b2*temp_pred + mu_b3*temp_pred*mass_pred[k]
+    pred[k] <- mu_b0 + mu_b1*mass_pred[k] + mu_b2*temp_pred
   } 
 
   # Model fit
@@ -498,25 +441,18 @@ cat(
     p_cv <- step(cv_y_sim - cv_y)
   
   # Priors	
-    mu_b0_s ~ dnorm(-2, 0.04)
-    mu_b0_r ~ dnorm(-1, 0.04)
-    mu_b1 ~ dnorm(-0.25, 1)  
-    mu_b2 ~ dnorm(-0.6, 1)   
-    mu_b3 ~ dnorm(0, 1)      
+    mu_b0 ~ dnorm(0, 0.04)              
+    mu_b1 ~ dnorm(0.75, 1)          
+    mu_b2 ~ dnorm(-0.6, 1)           
     sigma ~ dunif(0, 10) 
-    sigma_b0_s ~ dunif(0, 10)
-    sigma_b0_r ~ dunif(0, 10)
+    sigma_b0 ~ dunif(0, 10)
     sigma_b1 ~ dunif(0, 10)
     sigma_b2 ~ dunif(0, 10)
-    sigma_b3 ~ dunif(0, 10)
   
   # Derived quantiles
     tau <- 1/(sigma*sigma)
-    tau_b0_s <- 1/(sigma_b0_s*sigma_b0_s)
-    tau_b0_r <- 1/(sigma_b0_r*sigma_b0_r)
+    tau_b0 <- 1/(sigma_b0*sigma_b0)
     tau_b1 <- 1/(sigma_b1*sigma_b1)
     tau_b2 <- 1/(sigma_b2*sigma_b2)
-    tau_b3 <- 1/(sigma_b3*sigma_b3)
   
-}", fill = TRUE, file = "JAGS_models/log_linear/selected_models/m1_pred_fit_met.txt")
-
+  }", fill = TRUE, file = "JAGS_models/log_linear/selected_models/m5_pred_fit_con.txt")
