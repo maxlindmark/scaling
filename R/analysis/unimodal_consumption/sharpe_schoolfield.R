@@ -176,8 +176,6 @@ model = "JAGS_models/unimodal_consumption/sharpe_school.txt"
 # Manually set initial values, because otherwise all the chains get the same
 inits = list(
   list(
-    alpha.sigma = 0.1,
-    b1.sigma = 0.1,
     mu_b0 = 0.1,
     sigma_b0 = 0.1,
     mu_E = 0.1,
@@ -186,8 +184,6 @@ inits = list(
     .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples
   ),
   list(
-    alpha.sigma = 1,
-    b1.sigma = 1,
     mu_b0 = 1,
     sigma_b0 = 1,
     mu_E = 1,
@@ -196,8 +192,6 @@ inits = list(
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
-    alpha.sigma = 2,
-    b1.sigma = 2,
     mu_b0 = 2,
     sigma_b0 = 2,
     mu_E = 2,
@@ -215,76 +209,10 @@ jm = jags.model(model,
 update(jm, n.iter = n.iter)
 
 
-# Evaluate model fit & residuals =================================================
-# https://rpubs.com/Niko/332320
-
-# Extract generated data and data
-cs_fit = coda.samples(jm, n.iter = n.iter, thin = thin,
-                      variable.names = c("mean_y", "mean_y_sim", "p_mean"))
-
-# Convert to data frames
-cs_fit_df <- data.frame(as.matrix(cs_fit))
-
-#-- Model fit
-p_fit <- ggplot(cs_fit_df, aes(mean_y_sim)) + 
-  coord_cartesian(expand = 0) +
-  geom_histogram(bins = round(1 + 3.2*log(nrow(cs_fit_df)))) +
-  geom_vline(xintercept = cs_fit_df$mean_y, color = "white", 
-             linetype = 2, size = 0.4) +
-  labs(x = "mean simulated data", y = "count") +
-  theme_classic() +
-  annotate("text", -Inf, Inf, label = round(mean(cs_fit_df$p_mean), digits = 3), 
-           size = 3, hjust = -0.5, vjust = 1.3) +
-  theme(text = element_text(size = 12), aspect.ratio = 1) +
-  NULL
-
-
-#-- Posterior predictive distributions
-# https://www.weirdfishes.blog/blog/fitting-bayesian-models-with-stan-and-r/#posterior-predictive-analysis
-
-# Extract posteriors for each data point for calculation of residuals
-y_sim <- coda.samples(jm, variable.names = c("y_sim"), n.iter = n.iter, thin = thin)
-
-# Tidy-up
-df_y_sim <- ggs(y_sim)
-
-pal <- brewer.pal(n = 3, name = "Dark2")
-
-pp <- ggplot() +
-  geom_density(data = df_y_sim, aes(value, fill = 'Posterior\nPredictive'), alpha = 0.6) +
-  geom_density(data = con, aes(y_ct, fill = 'Observed'), alpha = 0.6) +
-  scale_fill_manual(values = pal[c(3,2)]) +
-  coord_cartesian(expand = 0) +
-  theme_classic() +
-  theme(text = element_text(size = 12), aspect.ratio = 1,
-        legend.title = element_blank(),
-        legend.text = element_text(size = 8),
-        legend.position = c(0.2, 0.95),
-        legend.key.size = unit(0.3, "cm"))
-
-
-#-- Residual vs fitted
-df_y_sim <- df_y_sim %>%
-  ungroup() %>%
-  group_by(Parameter) %>%
-  summarize(median = median(value)) %>% 
-  rename("yhat" = "median") %>% 
-  mutate(y = con$y_ct,
-         resid = y - yhat)
-
-p_resid <- ggplot(df_y_sim, aes(yhat, resid)) +
-  geom_point(fill = "black", color = "white", shape = 21) + 
-  theme_classic() +
-  theme(text = element_text(size = 12)) 
-
-(p_fit | pp) / p_resid + plot_annotation(tag_levels = 'A')
-
-
 # D. MODEL VALIDATION ==============================================================
 # CODA - Nice for getting the raw posteriors
 cs <- coda.samples(jm,
-                   variable.names = c("mu_b0", "sigma_b0", "mu_E", "Eh", "Th",
-                                      "E", "b", "b0", "alpha.sigma", "b1.sigma"), 
+                   variable.names = c("mu_b0", "sigma_b0", "mu_E", "Eh", "Th", "E", "b0"), 
                    n.iter = n.iter, 
                    thin = thin)
 
@@ -292,34 +220,32 @@ summary(cs)
 
 # 2. Quantiles for each variable:
 #   
-#   2.5%      25%      50%     75%   97.5%
-# E[1]         0.45298  0.89937 1.051809 1.21292 1.39428
-# E[2]         0.38517  0.51482 0.583727 0.66916 1.09824
-# E[3]         0.38446  0.70007 0.873999 1.06291 1.34961
-# E[4]         0.38365  0.56724 0.652049 0.71965 1.04992
-# E[5]         0.10223  0.47523 0.633397 0.78552 1.05235
-# E[6]         0.30874  0.70108 0.863073 1.02000 1.31352
-# E[7]         0.38198  0.72067 0.853395 0.95558 1.15428
-# E[8]         0.36835  0.67684 0.830539 0.99191 1.26530
-# E[9]         0.27123  0.34609 0.410310 0.47575 1.01065
-# E[10]        0.48491  0.63700 0.782850 1.26993 1.44250
-# Eh           1.73860  1.97662 2.235974 3.01434 4.50733
-# Th          -0.74556  0.33763 1.021721 1.81156 2.86339
-# alpha.sigma  0.07338  0.08504 0.362772 0.57645 0.63164
-# b0[1]        0.34414  0.47159 0.534638 0.62776 1.01586
-# b0[2]        0.48965  0.97085 1.137622 1.21379 1.34371
-# b0[3]        0.31866  0.45749 0.564035 0.70088 1.07003
-# b0[4]        0.47605  0.80606 0.854789 0.89694 1.05917
-# b0[5]        0.43152  0.58148 0.673427 0.77736 1.14237
-# b0[6]        0.27205  0.41909 0.507635 0.61164 0.96394
-# b0[7]        0.42177  0.59390 0.642112 0.72874 1.05740
-# b0[8]        0.32442  0.46180 0.548401 0.65647 0.97458
-# b0[9]        0.46592  0.94929 1.226879 1.32676 1.41380
-# b0[10]       0.33377  0.40191 0.731734 0.87208 1.30073
-# b1.sigma    -0.21672 -0.19931 0.007145 0.04132 0.04525
-# mu_E         0.37689  0.63111 0.753781 0.88988 1.11006
-# mu_b0        0.44434  0.63128 0.744991 0.84202 1.04750
-# sigma_b0     0.04630  0.19799 0.287570 0.37223 0.59507
+#           2.5%   25%    50%    75%    97.5%
+# E[1]      0.8534 0.9628 1.0250 1.0885 1.2123
+# E[2]      0.5252 0.6162 0.6708 0.7279 0.8462
+# E[3]      0.5742 0.7250 0.8158 0.9062 1.0967
+# E[4]      0.4592 0.5516 0.6022 0.6560 0.7665
+# E[5]      0.3814 0.5340 0.6115 0.6923 0.8533
+# E[6]      0.6439 0.7968 0.8838 0.9715 1.1376
+# E[7]      0.6441 0.7814 0.8537 0.9302 1.0871
+# E[8]      0.5581 0.7123 0.7978 0.8853 1.0604
+# E[9]      0.3370 0.3951 0.4272 0.4605 0.5327
+# E[10]     0.4639 0.5743 0.6390 0.7019 0.8294
+# Eh        1.6753 1.8099 1.8849 1.9578 2.0987
+# Th       -0.8571 0.1837 0.7463 1.2769 2.3665
+# b0[1]     0.4756 0.5516 0.5923 0.6338 0.7179
+# b0[2]     0.9363 1.0478 1.1072 1.1665 1.2809
+# b0[3]     0.4407 0.5710 0.6419 0.7165 0.8627
+# b0[4]     0.7769 0.8535 0.8945 0.9363 1.0172
+# b0[5]     0.5651 0.6753 0.7352 0.8020 0.9353
+# b0[6]     0.3615 0.4538 0.5114 0.5736 0.7015
+# b0[7]     0.4848 0.5998 0.6658 0.7318 0.8585
+# b0[8]     0.4223 0.5392 0.6026 0.6716 0.8108
+# b0[9]     1.1216 1.2027 1.2473 1.2922 1.3844
+# b0[10]    0.6886 0.7893 0.8441 0.9015 1.0085
+# mu_E      0.5353 0.6591 0.7275 0.7962 0.9408
+# mu_b0     0.5769 0.7227 0.7880 0.8521 0.9908
+# sigma_b0  0.1658 0.2301 0.2776 0.3373 0.5227
 
 
 # Evaluate convergence =============================================================
