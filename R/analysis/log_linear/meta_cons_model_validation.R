@@ -300,7 +300,7 @@ ggsave("figures/supp/log_linear/met_con/validation_met_type_effects_s_1.2.png", 
 
 #**** Species metabolic type effects standard (2/2 because to many species) ========
 # Plot posterior densities of species intercepts
-unique(cs_df$Parameter)
+unique(cs_con_df$Parameter)
 
 p1b <- cs_met_df %>% 
   filter(Parameter %in% c("b0_s[18]", "b0_s[19]",
@@ -376,7 +376,7 @@ ggsave("figures/supp/log_linear/met_con/validation_met_type_effects_r_1.2.png", 
 
 #**** Species metabolic type effects routine (2/2 because to many species) =========
 # Plot posterior densities of species intercepts
-unique(cs_df$Parameter)
+unique(cs_con_df$Parameter)
 
 p1b <- cs_met_df %>% 
   filter(Parameter %in% c("b0_r[18]", "b0_r[19]",
@@ -667,7 +667,7 @@ ggsave("figures/supp/log_linear/met_con/validation_met.png", width = 6.5, height
 p11 <- cs_met_df %>% 
   ggs_Rhat(.) + 
   xlab("R_hat") +
-  xlim(0.999, 1.02) +
+  xlim(0.999, 1.01) +
   geom_point(size = 1) +
   NULL
 pWord11 <- p11 + theme_classic() + theme(text = element_text(size = 10),

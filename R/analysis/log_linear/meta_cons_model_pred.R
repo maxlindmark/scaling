@@ -499,6 +499,13 @@ colourCount = length(unique(con$species))
 getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
 pal <- getPalette(colourCount)
 
+# 2. Quantiles for each variable:
+#           2.5%     25%       50%       75%       97.5%
+# ...
+# mu_b0    -0.85268 -0.511181 -0.34097 -0.17422  0.16574
+# mu_b1     0.54904  0.600763  0.62663  0.65332  0.70743
+# mu_b2    -0.84671 -0.743781 -0.69353 -0.64283 -0.53869
+
 p14 <- ggplot(c_pred_df, aes(mass_g, median)) +
   geom_point(data = con, aes(mass_g, log(y), fill = species_ab),
              size = 2, shape = 21, alpha = 0.8, color = "white") +
@@ -516,7 +523,9 @@ p14 <- ggplot(c_pred_df, aes(mass_g, median)) +
   guides(fill = FALSE) +
   labs(x = "mass [g]",
        y = "ln(maximum consumption rate [g/day])") +
-  annotate("text", 0.1, -8, label = paste("n=", nrow(con), sep = ""), size = 3,
+  annotate("text", 0, 6, label = paste("n=", nrow(con), sep = ""), size = 3,
+           hjust = -0.5, vjust = 1.3) +
+  annotate("text", 0.5, -4, label = "ln(y)=-0.34 + ln(m)×0.64", size = 3,
            hjust = -0.5, vjust = 1.3) +
   ggtitle("a") +
   NULL
@@ -528,6 +537,16 @@ pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 14),
 colourCount = length(unique(met$species))
 getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
 pal <- getPalette(colourCount)
+
+# 2. Quantiles for each variable:
+#              2.5%       25%        50%      75%     97.5%
+#
+#...
+# mu_b0_r     1.681766  1.7997409  1.8598459  1.920484  2.04625
+# mu_b0_s     0.974255  1.1908261  1.2925437  1.395646  1.61421
+# mu_b1       0.741257  0.7749627  0.7909194  0.807061  0.83924
+# mu_b2      -0.671663 -0.6374733 -0.6209867 -0.604387 -0.57241
+# mu_b3       0.001489  0.0118398  0.0175755  0.023624  0.03670
 
 p15 <- ggplot(m_pred_df, aes(mass_g, median)) +
   geom_point(data = met, aes(mass_g, log(y), fill = species_ab),
@@ -548,7 +567,9 @@ p15 <- ggplot(m_pred_df, aes(mass_g, median)) +
        y = expression(paste("ln(metabolic rate [mg ", O[2], "/day]"))) +
   # annotate("text", 0.05, 1.2, label = "B", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", 0.1, -8, label = paste("n=", nrow(met), sep = ""), size = 3,
+  annotate("text", 0, 6, label = paste("n=", nrow(met), sep = ""), size = 3,
+           hjust = -0.5, vjust = 1.3) +
+  annotate("text", 0.5, -4, label = "ln(y)=-1.86 + ln(m)×0.79", size = 3,
            hjust = -0.5, vjust = 1.3) +
   ggtitle("b") +
   NULL
@@ -715,10 +736,11 @@ js = jags.samples(jm_met,
                   n.iter = n.iter,
                   thin = thin)
 
-1-ecdf(js$mu_b1)(-0.25) 
-# [1] 0.9505556
+1-ecdf(js$mu_b1)(0.75) 
+# [1] 0.9521111
 
 1-ecdf(js$mu_b3)(0) # how much is above 0??
+# [1] 0.9825556
 
 # How much does the mass exponent decline per change in unit C?
 #summary(cs)
@@ -739,7 +761,7 @@ js = jags.samples(jm_con,
                   n.iter = n.iter,
                   thin = thin)
 
-ecdf(js$mu_b1)(-0.25) 
-# [1] 0.9964444
+ecdf(js$mu_b1)(0.75) 
+# [1] 0.9985556
 
 
