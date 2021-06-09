@@ -419,7 +419,35 @@ pWord2
 ggsave("figures/concept_v2.png", width = 15, height = 15, dpi = 600, unit = "cm")
 
 
-# Just a quick calculation here...
+# Just some quick calculations here...
+d2 <- data.frame(mass_g = 1:1000)
+
+# Calculate log mass
+d2$log_mass <- log(d2$mass_g)
+
+# Calculate mean-centered log mass (as it's used for model fitting)
+d2$log_mass_ct <- d2$log_mass - mean(d2$log_mass)
+
+# Temperature-independent allometric metabolism (valid at 19C = mean temperature)
+d2$log_met <- 1.8598459 + 0.7909194*d2$log_mass_ct
+
+# Exponentiate prediction - Note it's still mass-specific
+d2$met <- exp(d2$log_met)
+
+# Temperature-independent allometric consumption (valid at 19C = mean temperature)
+d2$log_con <- -0.34097 + 0.62663*d2$log_mass_ct
+
+# Exponentiate prediction - note it's mass-specific
+d2$con <- exp(d2$log_con)
+
+# Calculate difference:
+d2$diff <- 100*d2$con - d2$met  
+
+summary(lm(log(d2$diff) ~ d2$log_mass_ct))
+
+
+
+
 # The difference in peak temperature here is 1.1C between a 5 g and 1000 g fish
 # Our empirical analysis of T_opt gives this relationship:
 # T_opt=-0.074-0.31×m 
