@@ -84,11 +84,8 @@ mu_b2 <- -0.6209867
 #met_pred$log_y_spec <- mu_b0 + mu_b1*met_pred$log_mass_ct
 met_pred$log_y <- mu_b0_r + mu_b1*met_pred$log_mass_ct
 
-# Exponentiate prediction - Note it's still mass-specific
+# Exponentiate prediction
 met_pred$y <- exp(met_pred$log_y)
-
-# Whole organism rate
-#met_pred$y <- met_pred$y_spec * met_pred$mass_g
 
 # Now convert to g/d using the same values as Jan in Ohlberger et al (2012) Oikos
 # 1 kcal = 295 mg O2 
@@ -192,11 +189,8 @@ mu_b2 <- -0.69353
 # Temperature-independent allometric function (valid at 19C = mean temperature)
 con_pred$log_y <- mu_b0 + mu_b1*con_pred$log_mass_ct
 
-# Exponentiate prediction - note it's mass-specific
+# Exponentiate prediction
 con_pred$y <- exp(con_pred$log_y)
-
-# Whole organism rate
-#con_pred$y <- con_pred$y * con_pred$mass_g
 
 # Specify unit
 con_pred$y_g_d <- con_pred$y
