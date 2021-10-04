@@ -4,7 +4,7 @@
 
 This repository contains all data and code used for analyses and figures from [Lindmark et al (2021)](https://www.biorxiv.org/content/10.1101/2021.01.21.427580v1).
 
-Citation: Lindmark, M., Ohlberger, J. & Gårdmark, A. (2021). Optimum growth temperature declines with body size within fish species. bioRxiv, 2021.01.21.427580.
+Citation: Lindmark, M., Ohlberger, J. & Gårdmark, A. (2021). [Optimum growth temperature declines with body size within fish species](https://www.biorxiv.org/content/10.1101/2021.01.21.427580v1). bioRxiv, 2021.01.21.427580.
 
 ## How to replicate our analyses
 
