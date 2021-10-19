@@ -2,9 +2,9 @@
 
 **Authors:** [Max Lindmark](https://maxlindmark.netlify.app/), [Jan Ohlberger](http://janohlberger.com/Homepage/), [Anna Gårdmark](https://internt.slu.se/en/cv-originals/anna-gardmark/)
 
-This repository contains all data and code used for analyses and figures from [Lindmark et al (2021)](https://www.biorxiv.org/content/10.1101/2021.01.21.427580v1).
+This repository contains all data and code used for analyses and figures from [Lindmark et al (2021)](https://www.biorxiv.org/content/10.1101/2021.01.21.427580v2).
 
-Citation: Lindmark, M., Ohlberger, J. & Gårdmark, A. (2021). [Optimum growth temperature declines with body size within fish species](https://www.biorxiv.org/content/10.1101/2021.01.21.427580v1). bioRxiv, 2021.01.21.427580.
+Citation: Lindmark, M., Ohlberger, J. & Gårdmark, A. (2021). [Optimum growth temperature declines with body size within fish species](https://www.biorxiv.org/content/10.1101/2021.01.21.427580v2). bioRxiv, 2021.01.21.427580.
 
 ## How to replicate our analyses
 
@@ -16,21 +16,17 @@ Citation: Lindmark, M., Ohlberger, J. & Gårdmark, A. (2021). [Optimum growth te
 `data/lists_of_papers_from_lit_search`: .txt files containing all articles found through the literature search, before applying selection criteria.
 
 ### Analysis
-`R/analysis`: Code for all analysis (defining models, model selection & validation, prediciton and fit) and corresponding figures.
-
 `JAGS_models`: .R files for generating .txt files of JAGS models for model selection. Split into three folders, one for each model type: log_linear, non_linear and T_opt.
+
+`R/analysis`: Code for all analysis (defining models, model selection & validation, prediction and fit) and corresponding figures.
 
 `R/analysis/log_linear`: Scripts for model selection and analysis (validation, fit and prediction) for log_linear models (growth, consumption and metabolism at sub-peak temperature).
 
-`R/analysis/unimodal_consumption`: Scripts for fitting the Sharpe-Schoolfield equation to consumption data including temperatures beyond peak (model validation, fit and prediction).
-
 `R/analysis/T_opt`: Scripts for linear model of optimum growth temperature as a funciton of body mass (model selection, validation, fit and prediction).
 
-`R/analysis/concept_model`: Conceptual figure on bioenergetics of growth using parameters estimated in this study for maximum consumption rate and metabolic rate, converted to common unit (g/g/d or g/d), rescaled and standardized for plotting purposes.
+`R/analysis/unimodal_consumption`: Scripts for fitting the Sharpe-Schoolfield equation to consumption data including temperatures beyond peak (model validation, fit and prediction).
 
-`R/analysis/log_linear/growth`: Hierarchical Multiple Regression model in JAGS for mass and temperature dependence of growth at sub-optimum temperatures. Code for model selection, validation, predictions and evalute model fit.
-
-`R/analysis/log_linear/meta_cons`: Hierarchical Multiple Regression model in JAGS for mass and temperature dependence of metabolism and growth at sub-optimum temperatures. Code for model selection, validation, predictions and evalute model fit.
+`R/analysis/concept_model.R`: Conceptual figure on bioenergetics of growth using parameters estimated in this study for maximum consumption rate and metabolic rate, converted to common unit (g/g/d or g/d), rescaled and standardized for plotting purposes.
 
 ### Figures
 `figures`: Figures for main text.
