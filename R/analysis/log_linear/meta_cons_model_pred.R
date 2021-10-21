@@ -295,6 +295,15 @@ c_pred_df$mass_g <- exp(c_pred_df$mass_con_non_ct)
 
 #** Parameter estimates ============================================================
 # CODA - Nice for getting the raw posteriors
+# Metabolic rate - NOTE I'm also sampling b3 here! That parameter is not in consumption
+cs_met <- coda.samples(jm_met,
+                       variable.names = c("b0_s", "b0_r", "b1", "b2", "b3",
+                                          "mu_b0_s", "mu_b0_r", "mu_b1", "mu_b2", "mu_b3",
+                                          "sigma_b0_s", "sigma_b0_r", "sigma_b1", "sigma_b2", "sigma_b3",
+                                          "sigma"),
+                       n.iter = n.iter, 
+                       thin = thin)
+
 # Maximum consumption rate
 cs_con <- coda.samples(jm_con,
                        variable.names = c("b0", "b1", "b2", 
@@ -304,14 +313,27 @@ cs_con <- coda.samples(jm_con,
                        n.iter = n.iter, 
                        thin = thin)
 
-# Metabolic rate - NOTE I'm also sampling b3 here! That parameter is not in consumption
-cs_met <- coda.samples(jm_met,
-                       variable.names = c("b0_s", "b0_r", "b1", "b2", "b3",
-                                          "mu_b0_s", "mu_b0_r", "mu_b1", "mu_b2", "mu_b3",
-                                          "sigma_b0_s", "sigma_b0_r", "sigma_b1", "sigma_b2", "sigma_b3",
-                                          "sigma"),
-                       n.iter = n.iter, 
-                       thin = thin)
+summary(cs_met)
+
+## Get samples from the mass-exponent for the conceptual model with added uncertainty
+cs_met_exponent <- coda.samples(jm_met, variable.names = "mu_b1", n.iter = 1700, thin = thin)
+cs_con_exponent <- coda.samples(jm_con, variable.names = "mu_b1", n.iter = 1700, thin = thin)
+
+cs_met_exponent_df <- ggs(cs_met_exponent) %>% mutate(rate = "met")
+cs_met_exponent_df <- cs_met_exponent_df[0:1000, ] # To get 1000 samples... Nice and even
+
+cs_con_exponent_df <- ggs(cs_con_exponent) %>% mutate(rate = "con")
+cs_con_exponent_df <- cs_con_exponent_df[0:1000, ] # To get 1000 samples... Nice and even
+
+ggplot() +
+  geom_density(data = cs_met_exponent_df, aes(value, fill = "met"), alpha = 0.5) +
+  geom_density(data = cs_con_exponent_df, aes(value, fill = "con"), alpha = 0.5) +
+  theme_bw(base_size = 12) + 
+  coord_cartesian(expand = 0)
+
+## Save
+write.csv(cs_met_exponent_df, "R/output/meta_exponent_samples.csv")
+write.csv(cs_con_exponent_df, "R/output/cons_exponent_samples.csv")
 
 
 #**** Plot species-intercepts ======================================================
