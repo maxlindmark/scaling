@@ -80,6 +80,15 @@ mu_b0_r <- 1.8598459
 mu_b1 <- 0.7909194
 mu_b2 <- -0.6209867
   
+# 1. Empirical mean and standard deviation for each variable,
+# plus standard error of the mean:
+#             Mean       SD  Naive SE Time-series SE
+# mu_b0_r     1.8568107 0.091813 9.678e-04      1.243e-03
+# mu_b0_s     1.2953078 0.158074 1.666e-03      1.763e-03
+# mu_b1       0.7904842 0.024648 2.598e-04      3.090e-04
+# mu_b2      -0.6221305 0.025235 2.660e-04      4.049e-04
+
+
 # Temperature-independent allometric function (valid at 19C = mean temperature)
 #met_pred$log_y_spec <- mu_b0 + mu_b1*met_pred$log_mass_ct
 met_pred$log_y <- mu_b0_r + mu_b1*met_pred$log_mass_ct
@@ -182,6 +191,15 @@ con_pred$log_mass_ct <- con_pred$log_mass - mean(con$log_mass)
 # mu_b0    -0.85268 -0.511181 -0.34097 -0.17422  0.16574
 # mu_b1     0.54904  0.600763  0.62663  0.65332  0.70743
 # mu_b2    -0.84671 -0.743781 -0.69353 -0.64283 -0.53869
+
+# 1. Empirical mean and standard deviation for each variable,
+# plus standard error of the mean:
+#   
+#          Mean       SD  Naive SE Time-series SE
+# mu_b0    -0.34211 0.257635 0.0027157      0.0029417
+# mu_b1     0.62697 0.040115 0.0004228      0.0005629
+# mu_b2    -0.69360 0.077931 0.0008215      0.0009032
+
 mu_b0 <- -0.34097
 mu_b1 <- 0.62663
 mu_b2 <- -0.69353

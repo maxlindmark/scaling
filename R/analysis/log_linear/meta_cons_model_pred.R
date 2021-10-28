@@ -541,7 +541,7 @@ p14 <- ggplot(c_pred_df, aes(mass_g, median)) +
   scale_fill_manual(values = pal) +
   scale_x_continuous(trans = scales::log_trans(),
                      #labels = scales::number_format(accuracy = .1), # Use this to get evenly space ticks, and the below to round them up!
-                     breaks = c(0.5, 7, 150)) +
+                     breaks = c(0.1, 2, 60, 1050)) +
   guides(fill = FALSE) +
   labs(x = "mass [g]",
        y = "ln(maximum consumption rate [g/day])") +
@@ -549,7 +549,7 @@ p14 <- ggplot(c_pred_df, aes(mass_g, median)) +
            hjust = -0.5, vjust = 1.3) +
   annotate("text", 0.5, -4, label = "ln(y)=-0.34 + ln(m)×0.64", size = 3,
            hjust = -0.5, vjust = 1.3) +
-  ggtitle("a") +
+  ggtitle("A") +
   NULL
 
 pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 14),
@@ -570,6 +570,8 @@ pal <- getPalette(colourCount)
 # mu_b2      -0.671663 -0.6374733 -0.6209867 -0.604387 -0.57241
 # mu_b3       0.001489  0.0118398  0.0175755  0.023624  0.03670
 
+options(scipen = 100) # To avoid scientific notation in plot
+
 p15 <- ggplot(m_pred_df, aes(mass_g, median)) +
   geom_point(data = met, aes(mass_g, log(y), fill = species_ab),
              size = 2, shape = 21, alpha = 0.8, color = "white") +
@@ -583,17 +585,17 @@ p15 <- ggplot(m_pred_df, aes(mass_g, median)) +
   scale_fill_manual(values = pal) +
   scale_x_continuous(trans = scales::log_trans(),
                      #labels = scales::number_format(accuracy = .1), # Use this to get evenly space ticks, and the below to round them up!
-                     breaks = c(0.5, 20, 1100)) +
+                     breaks = c(0.1, 5, 500, 19000)) +
   guides(fill = FALSE) +
   labs(x = "mass [g]",
-       y = expression(paste("ln(metabolic rate [mg ", O[2], "/day]"))) +
+       y = expression(paste("ln(metabolic rate [mg ", O[2], "/day])"))) +
   # annotate("text", 0.05, 1.2, label = "B", size = 4, 
   #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
   annotate("text", 0, 6, label = paste("n=", nrow(met), sep = ""), size = 3,
            hjust = -0.5, vjust = 1.3) +
   annotate("text", 0.5, -4, label = "ln(y)=-1.86 + ln(m)×0.79", size = 3,
            hjust = -0.5, vjust = 1.3) +
-  ggtitle("b") +
+  ggtitle("B") +
   NULL
 
 pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 14),
@@ -640,7 +642,7 @@ p16 <- df %>%
   geom_point(size = 1.5, fill = "white") +
   labs(x = "", y = "") + 
   guides(color = FALSE, shape = FALSE, fill = FALSE) +
-  ggtitle("c") +
+  ggtitle("C") +
   NULL 
 
 pWord16 <- p16 + theme_classic() + theme(text = element_text(size = 14),
