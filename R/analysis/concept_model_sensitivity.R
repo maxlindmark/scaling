@@ -11,6 +11,10 @@
 #   I have therefore plotted normalized rates (0:1 within each rate), to illustrate 
 #   the curves
 # 
+#   In this script, I in addition use posterior samples to populate the vector of
+#   mass-exponents, to visualize uncertainty in the prediction around the T_opt 
+#   declining.
+# 
 # A. Load libraries
 #
 # B. Generate data
@@ -34,6 +38,8 @@ library(ggplot2)
 library(tidyr)
 library(dplyr)
 
+set.seed(42)
+
 # B. GENERATE DATA =================================================================
 # First read in data so that we can take the means etc
 
@@ -48,10 +54,21 @@ con <-
 
 met_exponent_samples <- 
   read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/output/meta_exponent_samples.csv"))
+met_exponent_samples_full <- met_exponent_samples
+median_met_mub1 <- median(met_exponent_samples_full$value)
+
+met_exponent_samples <- met_exponent_samples[sample(nrow(met_exponent_samples), 50), ]
+median(met_exponent_samples$value)
+
 
 con_exponent_samples <- 
   read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/R/output/cons_exponent_samples.csv"))
-  
+
+con_exponent_samples_full <- con_exponent_samples
+median_con_mub1 <- median(con_exponent_samples_full$value)
+
+con_exponent_samples <- con_exponent_samples[sample(nrow(con_exponent_samples), 50), ]
+median(con_exponent_samples$value)
 
 #** Use log-log models to calculate temperature-independent rates ==================
 #**** Metabolism ===================================================================
@@ -69,7 +86,7 @@ mass_range <- c(5, 1000)
 
 # Create new prediction data frame
 met_pred <- data.frame(expand.grid(mass_g = mass_range,
-                                   mu_b1 = met_exponent_samples$value, # # We only use the posterior for the mass-exponent - rest are kept at their medians
+                                   mu_b1 = c(met_exponent_samples$value, median_met_mub1), # # We only use the posterior for the mass-exponent - rest are kept at their medians
                                    temp_c_ct = temp_c_ct))
                  
 # Add which rate it is
@@ -196,7 +213,7 @@ met_pred %>% filter(temp_c_ct == 0)
 #**** Consumption ==================================================================
 # Create new prediction data frame
 con_pred <- data.frame(expand.grid(mass_g = mass_range,
-                                   mu_b1 = con_exponent_samples$value, # # We only use the posterior for the mass-exponent - rest are kept at their medians
+                                   mu_b1 = c(con_exponent_samples$value, median_con_mub1), # We only use the posterior for the mass-exponent - rest are kept at their medians
                                    temp_c_ct = temp_c_ct))
 
 # Add which rate it is
@@ -338,6 +355,11 @@ peak <- dat %>%
   filter(rate == "Net gain") %>% 
   filter(y_g_d_temp == max(y_g_d_temp))
 
+peak %>%
+  filter(y_g_d_temp > 0 & temp_c_ct > t_min & temp_c_ct < t_max) %>% 
+  ggplot(., aes(temp_c_ct, fill = mass_facet)) + geom_histogram()
+
+
 # How many unique peak temps per mass and mu_b1?
 #peak %>% group_by(mu_b1, mass_g) %>% mutate(n = n()) %>% ungroup() %>% distinct(n)
 
@@ -361,18 +383,17 @@ p1a <- pdat %>%
   filter(mass_g == 5) %>% 
   ggplot(., aes(temp_c_ct, y_g_d_temp, color = factor(rate), linetype = factor(mu_b1))) +
   guides(linetype = FALSE, color = guide_legend(ncol = 1, override.aes = list(alpha = 0.8))) +
-  geom_line(alpha = 0.02) +
-  geom_line(data = filter(pdat, mass_g == 5 & mu_b1 == median(mu_b1)),
+  geom_line(alpha = 0.15) +
+  geom_line(data = filter(pdat, mass_g == 5 & mu_b1 %in% c(median_met_mub1, median_con_mub1)), # bad code, luckily they are different enough
             aes(temp_c_ct, y_g_d_temp, color = factor(rate)),
-            size = 1, alpha = 1, linetype = 1) + # Add the median line!
-  coord_cartesian(expand = 0, ylim = c(0, 0.48)) + 
+            size = 1, alpha = 1, linetype = 1) + 
+  coord_cartesian(expand = 0, ylim = c(0, 0.42)) + 
   geom_rug(data = filter(peak, y_g_d_temp > 0 & temp_c_ct > t_min & temp_c_ct < t_max & mass_g == 5),
            aes(x = temp_c_ct, y = y_g_d_temp), alpha = 0.3, sides = "b",
            length = unit(0.03, "npc"), color = pal2[1]) +
   scale_color_manual(values = pal) +
-  scale_linetype_manual(values = c(rep(1, 2000))) + # 1000 is the length of the mu_b1's
-  labs(#x = expression(paste("Rescaled temperature [", degree*C, "]")),
-       x = "",
+  scale_linetype_manual(values = c(rep(1, length(unique(pdat$mu_b1))))) + 
+  labs(x = "",
        y = "Rescaled rates",
        color = "") +
   ggtitle("5 g") +
@@ -384,27 +405,25 @@ p1a <- pdat %>%
         legend.key.size = unit(0.2, 'cm'), 
         legend.text = element_text(size = 7), 
         legend.margin = margin(-0.3, 0, 0, 0, unit="cm"),
-        #legend.position = "bottom",
         legend.position = c(0.45, 0.35),
         legend.background = element_rect(fill = NA))
 
 p1b <- pdat %>%
   filter(mass_g == 1000) %>% 
   ggplot(., aes(temp_c_ct, y_g_d_temp, color = factor(rate), linetype = factor(mu_b1))) +
-  geom_line(alpha = 0.02) +
-  geom_line(data = filter(pdat, mass_g == 1000 & mu_b1 == median(mu_b1)),
+  geom_line(alpha = 0.15) +
+  geom_line(data = filter(pdat, mass_g == 1000 & mu_b1 %in% c(median_met_mub1, median_con_mub1)), # bad code, luckily they are different enough
             aes(temp_c_ct, y_g_d_temp, color = factor(rate)),
-            size = 1, alpha = 1, linetype = 1) + # Add the median line!
-  coord_cartesian(expand = 0, ylim = c(0, 21)) + 
+            size = 1, alpha = 1, linetype = 1) + 
+  coord_cartesian(expand = 0, ylim = c(0, 17)) + 
   geom_rug(data = filter(peak, y_g_d_temp > 0 & temp_c_ct > t_min & temp_c_ct < t_max & mass_g == 1000),
            aes(x = temp_c_ct, y = y_g_d_temp), alpha = 0.3, sides = "b", 
            length = unit(0.03, "npc"), color = pal2[2]) +
   scale_color_manual(values = pal) +
-  scale_linetype_manual(values = c(rep(1, 2000))) +  # 1000 is the length of the mu_b1's
+  scale_linetype_manual(values = c(rep(1, length(unique(pdat$mu_b1))))) + 
   labs(x = expression(paste("Rescaled temperature [", degree*C, "]")),
        y = "Rescaled rates",
        color = "") +
-  #guides(linetype = FALSE, color = guide_legend(ncol = 1, override.aes = list(alpha = 0.8))) +
   guides(linetype = FALSE, color = FALSE) +
   ggtitle("1000 g") +
   theme_classic() + 
@@ -420,15 +439,15 @@ p1b <- pdat %>%
 
 p2 <- peak %>%
   filter(y_g_d_temp > 0 & temp_c_ct > t_min & temp_c_ct < t_max) %>% 
-  ggplot(., aes(temp_c_ct, fill = mass_facet)) +
-  #geom_histogram(color = NA, alpha = 0.8) +
-  geom_density(color = NA, alpha = 0.6) + 
+  ggplot(., aes(temp_c_ct, fill = mass_facet, color = mass_facet)) +
+  geom_histogram(aes(y=..density..), color = NA, alpha = 0.4, bins = 18) + 
+  geom_density(alpha = 0.4) +
   theme_classic() +
   coord_cartesian(expand = 0) +
   scale_fill_manual(values = pal2, name = "") +
+  scale_color_manual(values = pal2, name = "") +
   ggtitle("Optimum growth temperature") + 
-  labs(#x = expression(paste("Rescaled temperature [", degree*C, "]")),
-       x = "",
+  labs(x = "",
        y = "Density") +
   theme_classic() +
   theme(text = element_text(size = 8), 
@@ -437,13 +456,11 @@ p2 <- peak %>%
         legend.title = element_text(size = 8),
         legend.key.size = unit(0.2, 'cm'), 
         legend.text = element_text(size = 7), 
-        legend.margin = margin(-0.3, 0, 0, 0, unit="cm"),
-        #legend.position = "bottom",
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
         legend.position = c(0.2, 0.9),
         legend.background = element_rect(fill = NA))
 
 (p1a | p1b | p2) + plot_annotation(tag_levels = "A")
 
 ggsave("figures/concept_sensitivity.png", width = 15, height = 15, dpi = 600, unit = "cm")
-
 

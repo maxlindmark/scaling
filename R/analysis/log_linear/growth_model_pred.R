@@ -274,11 +274,11 @@ pWord5 + pWord6
 ggsave("figures/supp/log_linear/growth/validation_gro_temp.png", width = 6.5, height = 6.5, dpi = 600)
 
 
-#**** Global means =================================================================
-# Plot posterior densities of global means and standard deviations
+#**** Species mass*temperature-interactions ========================================
+# Plot posterior densities of mass-temperature-interactions
 p7 <- cs_df %>% 
-  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", "mu_b3",
-                          "sigma_b0", "sigma_b1", "sigma_b2", "sigma_b3")) %>% 
+  filter(Parameter %in% c("b3[1]", "b3[2]", "b3[3]", "b3[4]", "b3[5]", "b3[6]", "b3[7]", 
+                          "b3[8]", "b3[9]", "b3[10]", "b3[11]", "b3[12]", "b3[13]")) %>% 
   ggs_density(.) + 
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_density(alpha = 0.05) +
@@ -292,8 +292,8 @@ pWord7 <- p7 + theme_classic() + theme(text = element_text(size = 10),
 
 # Traceplot for evaluating chain convergence
 p8 <- cs_df %>% 
-  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", "mu_b3",
-                          "sigma_b0", "sigma_b1", "sigma_b2", "sigma_b3")) %>% 
+  filter(Parameter %in% c("b3[1]", "b3[2]", "b3[3]", "b3[4]", "b3[5]", "b3[6]", "b3[7]", 
+                          "b3[8]", "b3[9]", "b3[10]", "b3[11]", "b3[12]", "b3[13]")) %>% 
   ggs_traceplot(.) +
   facet_wrap(~ Parameter, ncol = 2, scales = "free") +
   geom_line(alpha = 0.3) +
@@ -304,18 +304,51 @@ p8 <- cs_df %>%
 pWord8 <- p8 + theme_classic() + theme(text = element_text(size = 10),
                                        axis.text = element_text(size = 5))
 pWord7 + pWord8
+ggsave("figures/supp/log_linear/growth/validation_gro_inter.png", width = 6.5, height = 6.5, dpi = 600)
+
+
+#**** Global means =================================================================
+# Plot posterior densities of global means and standard deviations
+p9 <- cs_df %>% 
+  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", "mu_b3",
+                          "sigma_b0", "sigma_b1", "sigma_b2", "sigma_b3")) %>% 
+  ggs_density(.) + 
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+  geom_density(alpha = 0.05) +
+  scale_color_brewer(palette = "Dark2") + 
+  scale_fill_brewer(palette = "Dark2") +
+  labs(x = "Value", y = "Density", fill = "Chain #") +
+  guides(color = FALSE, fill = FALSE) +
+  NULL
+pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 10),
+                                       axis.text = element_text(size = 5))
+
+# Traceplot for evaluating chain convergence
+p10 <- cs_df %>% 
+  filter(Parameter %in% c("mu_b0", "mu_b1", "mu_b2", "mu_b3",
+                          "sigma_b0", "sigma_b1", "sigma_b2", "sigma_b3")) %>% 
+  ggs_traceplot(.) +
+  facet_wrap(~ Parameter, ncol = 2, scales = "free") +
+  geom_line(alpha = 0.3) +
+  scale_color_brewer(palette = "Dark2") + 
+  labs(x = "Iteration", y = "Value", color = "Chain #") +
+  guides(color = guide_legend(override.aes = list(alpha = 1))) +
+  NULL
+pWord10 <- p10 + theme_classic() + theme(text = element_text(size = 10),
+                                         axis.text = element_text(size = 5))
+pWord9 + pWord10
 ggsave("figures/supp/log_linear/growth/validation_gro.png", width = 6.5, height = 6.5, dpi = 600)
 
 
 #**** Chain convergencve (Rhat) ====================================================
-p9 <- cs_df %>% 
+p11 <- cs_df %>% 
   ggs_Rhat(.) + 
   xlab("R_hat") +
   xlim(0.999, 1.003) +
   geom_point(size = 2) +
   NULL
-pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 10),
-                                       axis.text = element_text(size = 5))
+pWord11 <- p11 + theme_classic() + theme(text = element_text(size = 10),
+                                         axis.text = element_text(size = 5))
 ggsave("figures/supp/log_linear/growth/validation_rhat_gro.png", width = 6.5, height = 6.5, dpi = 600)
 
 

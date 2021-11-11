@@ -23,7 +23,7 @@ model{
   
   # Priors	
     mu_b0 ~ dnorm(0, 0.04) # remember the second argument is precision (1/variance)   
-    mu_b1 ~ dnorm(0.75, 1)  
+    mu_b1 ~ dnorm(-0.25, 1)  
     mu_b2 ~ dnorm(-0.6, 1)   
     mu_b3 ~ dnorm(0, 1)      
     sigma ~ dunif(0, 10) 

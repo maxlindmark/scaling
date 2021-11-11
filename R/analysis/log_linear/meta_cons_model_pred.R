@@ -13,7 +13,7 @@
 #
 # D. Plot predictions
 # 
-# F. Additional calculations on the posterior
+# E. Additional calculations on the posterior
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # A. LOAD LIBRARIES ================================================================
@@ -66,10 +66,6 @@ met$temp_arr_ct <- met$temp_arr - mean(met$temp_arr)
 
 con$log_mass_ct <- con$log_mass - mean(con$log_mass)
 con$temp_arr_ct <- con$temp_arr - mean(con$temp_arr)
-
-# Use mass-specific values
-# met$y_spec <- met$y / met$mass_g
-# con$y_spec <- con$y / con$mass_g
 
 # Masses for prediction
 mass_pred_met <-  seq(from = min(met$log_mass_ct), 
@@ -530,22 +526,23 @@ pal <- getPalette(colourCount)
 
 p14 <- ggplot(c_pred_df, aes(mass_g, median)) +
   geom_point(data = con, aes(mass_g, log(y), fill = species_ab),
-             size = 2, shape = 21, alpha = 0.8, color = "white") +
-  geom_ribbon(data = c_pred_df, aes(x = mass_g, ymin = lwr_95, ymax = upr_95), 
+             size = 1.5, shape = 21, alpha = 0.8, color = "white") +
+  geom_ribbon(data = c_pred_df, aes(x = mass_g, ymin = lwr_95, ymax = upr_95),
               size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
-  geom_ribbon(data = c_pred_df, aes(x = mass_g, ymin = lwr_80, ymax = upr_80), 
+  geom_ribbon(data = c_pred_df, aes(x = mass_g, ymin = lwr_80, ymax = upr_80),
               size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
-  geom_abline(intercept = -1.6, slope = 0.75, color = "red", linetype = 2, size = 0.8) +
+  geom_abline(intercept = -1.6, slope = 0.75, color = "tomato", linetype = 2, size = 0.8) +
   geom_line(size = 0.8, alpha = 0.8) +
   coord_cartesian(ylim = c(min(min(con_data$y), min(met_data$y)), max(max(con_data$y), max(met_data$y)))) +
   scale_fill_manual(values = pal) +
   scale_x_continuous(trans = scales::log_trans(),
                      #labels = scales::number_format(accuracy = .1), # Use this to get evenly space ticks, and the below to round them up!
-                     breaks = c(0.1, 2, 60, 1050)) +
+                     #breaks = c(0.1, 2, 60, 1050),
+                     breaks = c(0.1, 1, 10, 100, 1000)) +
   guides(fill = FALSE) +
   labs(x = "mass [g]",
        y = "ln(maximum consumption rate [g/day])") +
-  annotate("text", 0, 6, label = paste("n=", nrow(con), sep = ""), size = 3,
+  annotate("text", 0.05, 6, label = paste("n=", nrow(con), sep = ""), size = 3,
            hjust = -0.5, vjust = 1.3) +
   annotate("text", 0.5, -4, label = "ln(y)=-0.34 + ln(m)×0.64", size = 3,
            hjust = -0.5, vjust = 1.3) +
@@ -553,6 +550,7 @@ p14 <- ggplot(c_pred_df, aes(mass_g, median)) +
   NULL
 
 pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 14),
+                                         axis.text.x = element_text(size = 8),
                                          aspect.ratio = 1,
                                          plot.title = element_text(face = "bold"))
 
@@ -574,24 +572,21 @@ options(scipen = 100) # To avoid scientific notation in plot
 
 p15 <- ggplot(m_pred_df, aes(mass_g, median)) +
   geom_point(data = met, aes(mass_g, log(y), fill = species_ab),
-             size = 2, shape = 21, alpha = 0.8, color = "white") +
+             size = 1.5, shape = 21, alpha = 0.8, color = "white") +
   geom_ribbon(data = m_pred_df, aes(x = mass_g, ymin = lwr_95, ymax = upr_95), 
               size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
   geom_ribbon(data = m_pred_df, aes(x = mass_g, ymin = lwr_80, ymax = upr_80), 
               size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
-  geom_abline(intercept = -1.2, slope = 0.75, color = "red", linetype = 2, size = 0.8) +
+  geom_abline(intercept = -1.2, slope = 0.75, color = "tomato", linetype = 2, size = 0.8) +
   geom_line(size = 0.8, alpha = 0.8) +
   coord_cartesian(ylim = c(min(min(con_data$y), min(met_data$y)), max(max(con_data$y), max(met_data$y)))) +
   scale_fill_manual(values = pal) +
   scale_x_continuous(trans = scales::log_trans(),
-                     #labels = scales::number_format(accuracy = .1), # Use this to get evenly space ticks, and the below to round them up!
-                     breaks = c(0.1, 5, 500, 19000)) +
+                     breaks = c(0.1, 1, 10, 100, 1000, 10000)) +
   guides(fill = FALSE) +
   labs(x = "mass [g]",
        y = expression(paste("ln(metabolic rate [mg ", O[2], "/day])"))) +
-  # annotate("text", 0.05, 1.2, label = "B", size = 4, 
-  #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
-  annotate("text", 0, 6, label = paste("n=", nrow(met), sep = ""), size = 3,
+  annotate("text", 0.05, 6, label = paste("n=", nrow(met), sep = ""), size = 3,
            hjust = -0.5, vjust = 1.3) +
   annotate("text", 0.5, -4, label = "ln(y)=-1.86 + ln(m)×0.79", size = 3,
            hjust = -0.5, vjust = 1.3) +
@@ -599,6 +594,7 @@ p15 <- ggplot(m_pred_df, aes(mass_g, median)) +
   NULL
 
 pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 14),
+                                         axis.text.x = element_text(size = 8),
                                          aspect.ratio = 1,
                                          plot.title = element_text(face = "bold"))
 
@@ -656,7 +652,7 @@ pWord16 <- p16 + theme_classic() + theme(text = element_text(size = 14),
   plot_layout(heights = unit(c(7.15, 1), c('cm', 'null'))) #+
 
 ggsave("figures/meta_cons_combined.png", width = 22, height = 22, dpi = 600, units = "cm")
-ggsave("figures/meta_cons_combined.pdf", width = 22, height = 22, dpi = 600, units = "cm")
+# ggsave("figures/meta_cons_combined.pdf", width = 22, height = 22, dpi = 600, units = "cm")
 
 
 #**** Plot global-predictions ======================================================
@@ -700,8 +696,6 @@ pWord18 <- p18 + theme_classic() + theme(text = element_text(size = 12),
 p19 <- cs_met %>% 
   mcmc_dens(pars = "mu_b3") +
   scale_y_continuous(expand = c(0,0)) +
-  # annotate("text", -Inf, Inf, label = "C", size = 4, 
-  #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
   annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "M*T interaction" & Rate == "Metabolic rate")$pred, 2)[1], 
            size = 3, hjust = -0.5, vjust = 1.3) +
   labs(x = "M*T interaction") +
@@ -718,8 +712,6 @@ pWord19 <- p19 + theme_classic() + theme(text = element_text(size = 12),
 p20 <- cs_con %>% 
   mcmc_dens(pars = "mu_b1") +
   scale_y_continuous(expand = c(0,0)) +
-  # annotate("text", -Inf, Inf, label = "C", size = 4, 
-  #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
   annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Mass exponent" & Rate == "Maximum consumption rate")$pred, 2)[1], 
            size = 3, hjust = -0.5, vjust = 1.3) +
   labs(x = "Mass exponent") +
@@ -735,8 +727,6 @@ pWord20 <- p20 + theme_classic() + theme(text = element_text(size = 12),
 p21 <- cs_con %>% 
   mcmc_dens(pars = "mu_b2") +
   scale_y_continuous(expand = c(0,0)) +
-  # annotate("text", -Inf, Inf, label = "C", size = 4, 
-  #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
   annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Activation energy" & Rate == "Maximum consumption rate")$pred, 2)[1], 
            size = 3, hjust = -0.5, vjust = 1.3) +
   labs(x = "Temperature coefficient") +
@@ -753,7 +743,7 @@ pWord17 + pWord18 + pWord19 + pWord20 + pWord21 + plot_layout(ncol = 3)
 ggsave("figures/supp/log_linear/met_con/posterior_main_param.png", width = 6.5, height = 6.5, dpi = 600)
 
 
-# F. ADDITINAL CALCULATIONS ON THE POSTERIOR =======================================
+# E. ADDITINAL CALCULATIONS ON THE POSTERIOR =======================================
 # Calculate the proportion of the posterior of activation energy that is less than zero
 js = jags.samples(jm_met,
                   variable.names = c("mu_b1", "mu_b2", "mu_b3"),

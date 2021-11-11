@@ -80,7 +80,7 @@ data = list(
 
 
 # C. MODEL SELECTION ===============================================================
-# Here we fit models with different hierarcial structures
+# Here we fit models with different hierarchical structures
 # Specifically, we consider:
 
 # M1  - all coefficients vary by species
@@ -108,44 +108,38 @@ model1 = "JAGS_models/log_linear/growth/m1.txt"
 inits = list(
   list(
     mu_b0 = 0.1,
-    b1 = 0.1,
-    b2 = 0.1,
+    mu_b1 = 0.1,
+    mu_b2 = 0.1,
     mu_b3 = 0.1,
-    mu_b4 = 0.1,
-    mu_b5 = 0.1,
     sigma = 0.1,
     sigma_b0 = 0.1,
+    sigma_b1 = 0.1,
+    sigma_b2 = 0.1,
     sigma_b3 = 0.1,
-    sigma_b4 = 0.1,
-    sigma_b5 = 0.1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2 # This is to reproduce the same samples, see JAGS 4.3 user manual
   ),
   list(
     mu_b0 = 1,
-    b1 = 1,
-    b2 = 1,
+    mu_b1 = 1,
+    mu_b2 = 1,
     mu_b3 = 1,
-    mu_b4 = 1,
-    mu_b5 = 1,
     sigma = 1,
     sigma_b0 = 1,
+    sigma_b1 = 1,
+    sigma_b2 = 1,
     sigma_b3 = 1,
-    sigma_b4 = 1,
-    sigma_b5 = 1,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ),
   list(
     mu_b0 = 2,
-    b1 = 2,
-    b2 = 2,
+    mu_b1 = 2,
+    mu_b2 = 2,
     mu_b3 = 2,
-    mu_b4 = 2,
-    mu_b5 = 2,
     sigma = 2,
     sigma_b0 = 2,
+    sigma_b1 = 2,
+    sigma_b2 = 2,
     sigma_b3 = 2,
-    sigma_b4 = 2,
-    sigma_b5 = 2,
     .RNG.name = "base::Super-Duper", .RNG.seed = 2
   ))
 
@@ -743,7 +737,7 @@ waic_m7
 # WAIC suggests model 1 is best fitting with model
 
 # > waic_m1
-# [1] 42.08208
+# [1] 42.05084
 # > waic_m2
 # [1] 47.05241
 # > waic_m3a
@@ -775,18 +769,18 @@ waic_m7 - waic_m1
 # > waic_m1 - waic_m1
 # [1] 0
 # > waic_m2 - waic_m1
-# [1] 4.97033
+# [1] 5.001572
 # > waic_m3a - waic_m1
-# [1] 28.62194
+# [1] 28.65318
 # > waic_m3b - waic_m1
-# [1] 36.89126
+# [1] 36.9225
 # > waic_m4 - waic_m1
-# [1] 51.09832
+# [1] 51.12956
 # > waic_m5 - waic_m1
-# [1] 2.374446
+# [1] 2.405687
 # > waic_m6a - waic_m1
-# [1] 26.64426
+# [1] 26.6755
 # > waic_m6b - waic_m1
-# [1] 34.0647
+# [1] 34.09595
 # > waic_m7 - waic_m1
-# [1] 48.91238
+# [1] 48.94363
