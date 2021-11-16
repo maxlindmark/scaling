@@ -33,7 +33,11 @@ length(unique(test$common_name))
 
 # Filter data points at below optimum temperatures
 met <- met %>% filter(above_peak_temp == "N")
+
+# Count data first
+nrow(con)
 con <- con %>% filter(above_peak_temp == "N")
+nrow(con)
 
 # Count data
 length(unique(met$common_name))
@@ -72,6 +76,9 @@ met %>%
   ungroup() %>% 
   summarise(mean_n = mean(n_unique_temp))
 
+
+con <- 
+  read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/con_analysis.csv"))
 con %>%
   group_by(species) %>% 
   summarise(n_unique_temp = length(unique(round(temp_c, digits = 0)))) %>% 
@@ -121,6 +128,8 @@ gro_spec[gro_spec %in% all_con_met_species]
 # Count data
 length(unique(gro$common_name))
 nrow(gro)
+gro2 <- gro %>% filter(above_peak_temp == "N")
+nrow(gro2)
 
 # How many temperatures? 
 gro %>%
@@ -168,6 +177,8 @@ all_spec <- rbind(met_spec, con_spec, gro_spec, topt_spec)
 
 length(unique(all_spec$species_ab))
 
+
+# Total ============================================================================
 # Total # of data points
 met <- 
   read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/met_analysis.csv"))
@@ -175,11 +186,50 @@ met <-
 con <- 
   read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/con_analysis.csv"))
 
-gro <- 
+gro <-
   read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/growth_analysis.csv"))
 
+topt <- 
+  read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/topt_analysis.csv"))
+
+length(unique(c(met$species_ab, con$species_ab, topt$species_ab)))
+
+
+#nrow(met) + nrow(con) + nrow(gro)
 nrow(met) + nrow(con) + nrow(gro)
-nrow(met) + nrow(con) + nrow(dat) + nrow(topt)
 
 
+# Raw data =========================================================================
+con <- read_excel("data/consumption_data.xlsx")
+met <- read_excel("data/metabolism_data.xlsx")
+topt <- read_excel("data/growth_data_Topt.xlsx")
+gro <- read_excel("data/growth_data.xlsx")
+
+
+# Print unique studies
+all_studies <- c(unique(c(met$reference, con$reference, topt$reference, gro$reference)))
+
+sort(all_studies)
+
+# Across rate
+length(unique(c(met$reference, con$reference, topt$reference, gro$reference)))
+length(unique(c(met$species, con$species, topt$species, gro$species)))
+
+# Per rate
+length(unique(met$species))
+length(unique(con$species))
+length(unique(topt$species))
+length(unique(gro$species))
+
+length(unique(met$species)) + length(unique(con$species)) + length(unique(topt$species)) + length(unique(gro$species))
+length(unique(met$reference)) + length(unique(con$reference)) + length(unique(topt$reference)) + length(unique(gro$reference))
+
+# metabolism and consumption references:
+met_con_refs <- unique(c(met$reference, con$reference))
+
+# Which of the growth references are in there?
+topt_refs <- unique(topt$reference)
+
+topt_refs[topt_refs %in% met_con_refs]
+topt_refs
 

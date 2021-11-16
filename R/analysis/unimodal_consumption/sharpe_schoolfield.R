@@ -50,10 +50,14 @@ library(broom)
 con <- 
   read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/con_analysis.csv"))
 
+nrow(con)
+
 # Which species have data above optimum?
 spec <- unique(filter(con, above_peak_temp == "Y"))$species
 
 con <- con %>% filter(species %in% spec) %>% droplevels()
+
+nrow(con)
 
 # Center temperature relative to mean in environment by species
 con$temp_env_ct <- con$temp_c - con$median_temp
@@ -135,6 +139,8 @@ con$peak_temp_c_model_ct <- con$temp_c - con$peak_temp_c_model
 
 # Filter species without a peak temperature
 con <- con %>% filter(!species_ab == "P.yokohamae")
+
+nrow(con)
 
 # Plot data
 ggplot(con, aes(peak_temp_c_model_ct, y_ct)) +

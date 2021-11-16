@@ -86,7 +86,7 @@ mass_range <- c(5, 1000)
 
 # Create new prediction data frame
 met_pred <- data.frame(expand.grid(mass_g = mass_range,
-                                   mu_b1 = c(met_exponent_samples$value, median_met_mub1), # # We only use the posterior for the mass-exponent - rest are kept at their medians
+                                   mu_b1 = c(met_exponent_samples$value, median_met_mub1), # We only use the posterior for the mass-exponent - rest are kept at their medians
                                    temp_c_ct = temp_c_ct))
                  
 # Add which rate it is
@@ -112,14 +112,13 @@ mu_b0_r <- 1.8598459
 mu_b2 <- -0.6209867
 
 # Temperature-independent allometric function (valid at 19C = mean temperature)
-#met_pred$log_y_spec <- mu_b0 + mu_b1*met_pred$log_mass_ct
 met_pred$log_y <- mu_b0_r + met_pred$mu_b1*met_pred$log_mass_ct
 
-log_y_intercept <- mu_b0_r + 0.7909194*0# *(log(0) - mean(met$log_mass)) #### Calculate also for 1 g mass to get the value in unit g/d
+log_y_intercept <- mu_b0_r + median_met_mub1*0 # *(log(0) - mean(met$log_mass)) #### Calculate also for 1 g mass to get the value in unit g/d
 
 # Exponentiate prediction
 met_pred$y <- exp(met_pred$log_y)
-y_intercept <- exp(log_y_intercept) ####
+y_intercept <- exp(log_y_intercept) #### these hashtags are for calculating the interept, no the conversion factor for a specific size
 
 # Now convert to g/d using the same values as Jan in Ohlberger et al (2012) Oikos
 # 1 kcal = 295 mg O2 
@@ -145,13 +144,16 @@ y_intercept_g_d <- y_intercept_g_h * 24 ####
 
 # Test
 exp(1.8598459)*(0.003389831*1000*4.1855/5600)*24
-(exp(1.8598459)*0.003389831*1000*4.1855/5600)*24
 y_intercept_g_d
 met_pred %>%
-  filter(mass_g == min(mass_g) & temp_c_ct == 0) %>%
-  dplyr::select(y_g_d) %>%
-  summarise(mean = mean(y_g_d))
+  filter(mass_g == min(mass_g) & temp_c_ct == 0 & mu_b1 == median_met_mub1) %>%
+  dplyr::select(y_g_d)
 
+# Now that I have metabolism in unit g_d, check the conversion factor
+met_pred %>%
+  filter(temp_c_ct == 0 & mu_b1 == median_met_mub1) %>% 
+  mutate(conv_factor = y_g_d / y)
+  
 # Add non-normalized temperatures
 met_pred$temp_c <- met_pred$temp_c_ct + 19
 

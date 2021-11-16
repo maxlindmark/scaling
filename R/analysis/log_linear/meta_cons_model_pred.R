@@ -300,6 +300,8 @@ cs_met <- coda.samples(jm_met,
                        n.iter = n.iter, 
                        thin = thin)
 
+summary(cs_met)
+
 # Maximum consumption rate
 cs_con <- coda.samples(jm_con,
                        variable.names = c("b0", "b1", "b2", 
@@ -309,7 +311,7 @@ cs_con <- coda.samples(jm_con,
                        n.iter = n.iter, 
                        thin = thin)
 
-summary(cs_met)
+summary(cs_con)
 
 ## Get samples from the mass-exponent for the conceptual model with added uncertainty
 cs_met_exponent <- coda.samples(jm_met, variable.names = "mu_b1", n.iter = 1700, thin = thin)
@@ -544,7 +546,7 @@ p14 <- ggplot(c_pred_df, aes(mass_g, median)) +
        y = "ln(maximum consumption rate [g/day])") +
   annotate("text", 0.05, 6, label = paste("n=", nrow(con), sep = ""), size = 3,
            hjust = -0.5, vjust = 1.3) +
-  annotate("text", 0.5, -4, label = "ln(y)=-0.34 + ln(m)×0.64", size = 3,
+  annotate("text", 0.5, -4, label = "ln(y)=-0.34 + ln(m)×0.63", size = 3,
            hjust = -0.5, vjust = 1.3) +
   ggtitle("A") +
   NULL
@@ -777,5 +779,5 @@ js = jags.samples(jm_con,
 
 ecdf(js$mu_b1)(0.75) 
 # [1] 0.9985556
-
+hist(js$mu_b1) + abline(v = 0.75, col = "red")
 
