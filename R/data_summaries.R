@@ -228,8 +228,23 @@ length(unique(met$reference)) + length(unique(con$reference)) + length(unique(to
 met_con_refs <- unique(c(met$reference, con$reference))
 
 # Which of the growth references are in there?
-topt_refs <- unique(topt$reference)
+# Use the datafile for analysis, since some are filtered from the raw data
+met <- 
+  read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/met_analysis.csv"))
 
-topt_refs[topt_refs %in% met_con_refs]
+con <- 
+  read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/con_analysis.csv"))
+
+gro <-
+  read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/growth_analysis.csv"))
+
+topt <- 
+  read.csv(text = getURL("https://raw.githubusercontent.com/maxlindmark/scaling/master/data/topt_analysis.csv"))
+
+topt_spec <- unique(topt$species_ab)
+
+topt_refs[topt_refs %in% unique(met$species_ab)]
+topt_refs[topt_refs %in% unique(con$species_ab)]
 topt_refs
+
 
