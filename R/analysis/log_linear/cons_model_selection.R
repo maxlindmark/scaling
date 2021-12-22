@@ -145,7 +145,7 @@ jm1 = jags.model(model1,
 # coda.samples(jm1, c('mu_b0'), n.iter = 1)
 # jm1$state()[[1]]$mu_b0
 
-update(jm1, n.iter = n.iter) 
+update(jm1, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj1 = jags.samples(jm1, 
@@ -176,7 +176,7 @@ inits = list(
     mu_b0 = 0.1,
     mu_b1 = 0.1,
     mu_b2 = 0.1,
-    b3 = 1,
+    b3 = 0.1,
     sigma = 0.1,
     sigma_b0 = 0.1,
     sigma_b1 = 0.1,
@@ -212,7 +212,7 @@ jm2 = jags.model(model2,
                  n.chains = 3,
                  inits = inits)
 
-update(jm2, n.iter = n.iter) 
+update(jm2, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj2 = jags.samples(jm2, 
@@ -253,7 +253,7 @@ inits = list(
     mu_b0 = 0.1,
     mu_b1 = 0.1,
     b2 = 0.1,
-    b3 = 1,
+    b3 = 0.1,
     sigma = 0.1,
     sigma_b0 = 0.1,
     sigma_b1 = 0.1,
@@ -288,7 +288,7 @@ jm3a = jags.model(model3a,
 
 burn.in = 10000 # Length of burn-in
 
-update(jm3a, n.iter = n.iter) 
+update(jm3a, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj3a = jags.samples(jm3a, 
@@ -354,7 +354,7 @@ jm3b = jags.model(model3b,
 
 burn.in = 10000 # Length of burn-in
 
-update(jm3b, n.iter = n.iter) 
+update(jm3b, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj3b = jags.samples(jm3b, 
@@ -417,7 +417,7 @@ jm4 = jags.model(model4,
 
 burn.in = 10000 # Length of burn-in
 
-update(jm4, n.iter = n.iter) 
+update(jm4, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj4 = jags.samples(jm4, 
@@ -483,7 +483,7 @@ jm5 = jags.model(model5,
 
 burn.in = 10000 # Length of burn-in
 
-update(jm5, n.iter = n.iter) 
+update(jm5, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj5 = jags.samples(jm5, 
@@ -546,7 +546,7 @@ jm6a = jags.model(model6a,
 
 burn.in = 10000 # Length of burn-in
 
-update(jm6a, n.iter = n.iter) 
+update(jm6a, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj6a = jags.samples(jm6a, 
@@ -608,7 +608,7 @@ jm6b = jags.model(model6b,
 
 burn.in = 10000 # Length of burn-in
 
-update(jm6b, n.iter = n.iter) 
+update(jm6b, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj6b = jags.samples(jm6b, 
@@ -667,7 +667,7 @@ jm7 = jags.model(model7,
 
 burn.in = 10000 # Length of burn-in
 
-update(jm7, n.iter = n.iter) 
+update(jm7, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj7 = jags.samples(jm7, 
@@ -701,23 +701,23 @@ waic_m7
 
 # WAIC suggests model 5 is best fitting with model 2 as a close runner up
 # > waic_m1
-# [1] 563.6941
+# [1] 564.6082
 # > waic_m2
-# [1] 562.615
+# [1] 563.0775
 # > waic_m3a
-# [1] 707.7094
+# [1] 708.2642
 # > waic_m3b
-# [1] 631.1173
+# [1] 629.6887
 # > waic_m4
-# [1] 750.6421
+# [1] 750.616
 # > waic_m5
-# [1] 560.637
+# [1] 561.2101
 # > waic_m6a
-# [1] 726.4369
+# [1] 726.0294
 # > waic_m6b
-# [1] 634.0409
+# [1] 633.7147
 # > waic_m7
-# [1] 773.6413
+# [1] 773.1367
 
 # Calculate delta WAIC
 waic_m1 - waic_m5
@@ -732,20 +732,20 @@ waic_m7 - waic_m5
 
 # Calculate delta WAIC
 # > waic_m1 - waic_m5
-# [1] 3.057081
+# [1] 3.398062
 # > waic_m2 - waic_m5
-# [1] 1.97795
+# [1] 1.867323
 # > waic_m3a - waic_m5
-# [1] 147.0723
+# [1] 147.054
 # > waic_m3b - waic_m5
-# [1] 70.48026
+# [1] 68.47855
 # > waic_m4 - waic_m5
-# [1] 190.0051
+# [1] 189.4059
 # > waic_m5 - waic_m5
 # [1] 0
 # > waic_m6a - waic_m5
-# [1] 165.7999
+# [1] 164.8192
 # > waic_m6b - waic_m5
-# [1] 73.40384
+# [1] 72.50456
 # > waic_m7 - waic_m5
-# [1] 213.0043
+# [1] 211.9266
