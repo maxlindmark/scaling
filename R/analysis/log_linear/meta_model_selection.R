@@ -199,7 +199,7 @@ inits = list(
     mu_b0_r = 0.1,
     mu_b1 = 0.1,
     mu_b2 = 0.1,
-    b3 = 1,
+    b3 = 0.1,
     sigma = 0.1,
     sigma_b0_r = 0.1,
     sigma_b0_s = 0.1,
@@ -272,7 +272,7 @@ inits = list(
     mu_b0_r = 0.1,
     mu_b1 = 0.1,
     b2 = 0.1,
-    b3 = 1,
+    b3 = 0.11,
     sigma = 0.1,
     sigma_b0_r = 1,
     sigma_b0_s = 1,
@@ -749,9 +749,9 @@ waic_m7
 # > waic_m1
 # [1] 274.5855
 # > waic_m2
-# [1] 274.895
+# [1] 275.7643
 # > waic_m3a
-# [1] 580.2645
+# [1] 580.3847
 # > waic_m3b
 # [1] 659.8612
 # > waic_m4
@@ -779,9 +779,9 @@ waic_m7 - waic_m1
 # > waic_m1 - waic_m1
 # [1] 0
 # > waic_m2 - waic_m1
-# [1] 0.3094687
+# [1] 1.178716
 # > waic_m3a - waic_m1
-# [1] 305.6789
+# [1] 305.7992
 # > waic_m3b - waic_m1
 # [1] 385.2756
 # > waic_m4 - waic_m1
