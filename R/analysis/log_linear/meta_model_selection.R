@@ -167,7 +167,7 @@ jm1 = jags.model(model1,
 # coda.samples(jm1, c('mu_b0'), n.iter = 1)
 # jm1$state()[[1]]$mu_b0
 
-update(jm1, n.iter = n.iter) 
+update(jm1, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj1 = jags.samples(jm1, 
@@ -240,7 +240,7 @@ jm2 = jags.model(model2,
                  n.chains = 3,
                  inits = inits)
 
-update(jm2, n.iter = n.iter) 
+update(jm2, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj2 = jags.samples(jm2, 
@@ -310,7 +310,7 @@ jm3a = jags.model(model3a,
                   n.chains = 3,
                   inits = inits)
 
-update(jm3a, n.iter = n.iter) 
+update(jm3a, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj3a = jags.samples(jm3a, 
@@ -380,7 +380,7 @@ jm3b = jags.model(model3b,
                   n.chains = 3,
                   inits = inits)
 
-update(jm3b, n.iter = n.iter) 
+update(jm3b, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj3b = jags.samples(jm3b, 
@@ -447,7 +447,7 @@ jm4 = jags.model(model4,
                  n.chains = 3,
                  inits = inits)
 
-update(jm4, n.iter = n.iter) 
+update(jm4, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj4 = jags.samples(jm4, 
@@ -517,7 +517,7 @@ jm5 = jags.model(model5,
                  n.chains = 3,
                  inits = inits)
 
-update(jm5, n.iter = n.iter) 
+update(jm5, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj5 = jags.samples(jm5, 
@@ -584,7 +584,7 @@ jm6a = jags.model(model6a,
                   n.chains = 3,
                   inits = inits)
 
-update(jm6a, n.iter = n.iter) 
+update(jm6a, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj6a = jags.samples(jm6a, 
@@ -650,7 +650,7 @@ jm6b = jags.model(model6b,
                   n.chains = 3,
                   inits = inits)
 
-update(jm6b, n.iter = n.iter) 
+update(jm6b, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj6b = jags.samples(jm6b, 
@@ -713,7 +713,7 @@ jm7 = jags.model(model7,
                  n.chains = 3,
                  inits = inits)
 
-update(jm7, n.iter = n.iter) 
+update(jm7, n.iter = burn.in) 
 
 # Monitor the likelihood to calculate WAIC
 zj7 = jags.samples(jm7, 
