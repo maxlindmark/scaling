@@ -42,6 +42,9 @@ met <- read_excel("data/metabolism_data.xlsx")
 glimpse(con)
 glimpse(met)
 
+colnames(con)
+colnames(met)
+
 con$type <- NA
 
 cols = c(15,16,17,18,19,20)
@@ -70,6 +73,8 @@ sp2 <- gsub( ".*\\s", "", dat$species )
 
 dat$species_ab <- paste(sp1, sp2, sep = ".")
 
+unique(dat$species_ab)
+
 # Change settings for using scientific notation
 options(scipen=999) 
 
@@ -87,7 +92,9 @@ dat$median_temp <- ifelse(dat$median_temp == -9,
                           dat$pref_temp_mid,
                           dat$median_temp)
 
-# Bring back NA
+filter(dat, median_temp == -9)
+
+# Bring back NA to env or pref now that we made the new median temp
 dat$env_temp_mid <- ifelse(dat$env_temp_mid == -9,
                            NA,
                            dat$env_temp_mid)
@@ -96,18 +103,7 @@ dat$pref_temp_mid <- ifelse(dat$pref_temp_mid == -9,
                             NA,
                             dat$pref_temp_mid)
 
-# Any NA's still?
-dplyr::filter(dat, median_temp == -9)
-
-# Inspect temperatures
-ggplot(dat, aes(env_temp_mid, fill = common_name)) +
-  geom_histogram() + 
-  facet_wrap(~rate) + 
-  coord_cartesian(expand = 0) +
-  theme_classic() +
-  NULL
-
-# Convert experimental to Arrhenius scale:
+# Convert experimental temperature to Arrhenius scale:
 dat$temp_arr <- 1/((dat$temp_c + 273.15) * 8.617332e-05)
 
 # Standardize temperatures to median-reference temperature on C scale
@@ -143,8 +139,6 @@ ggplot(dat, aes(w_max_published_g, mass_g, color = species)) +
   geom_point() + 
   facet_wrap(~ rate, nrow = 2, scales = "free_y") +
   scale_color_viridis(discrete = TRUE, option = "magma") +
-  #coord_cartesian(expand = 0) + 
-  #labs(x = "Mass/Max mass") +
   guides(fill = FALSE) +
   NULL
 
@@ -252,7 +246,6 @@ dat %>% filter(rate == "consumption") %>%
   geom_point(size = 2, alpha = 0.3) +
   facet_wrap(~species, scales = "free") +
   theme_classic(base_size = 11) +
-  #stat_smooth(se = F) +
   guides(color = F) +
   NULL
 
@@ -262,7 +255,6 @@ dat %>% filter(rate == "metabolism") %>%
   geom_point(size = 2, alpha = 0.3) +
   facet_wrap(~species, scales = "free") +
   theme_classic(base_size = 11) +
-#  stat_smooth(se = F) +
   guides(color = F) +
   NULL
 
@@ -314,7 +306,6 @@ ggsave("figures/supp/data/meta_cons_rate_mass.png", width = 6.5, height = 6.5, d
 
 # As functions of mass - color by species
 dat %>% filter(rate == "consumption" 
-               #& mass_g < 3
                & above_peak_temp == "N"
                ) %>% 
   ggplot(., aes(x = mass_g, y = y_spec, fill = species)) + 
@@ -323,8 +314,7 @@ dat %>% filter(rate == "consumption"
   theme_classic(base_size = 11) +
   labs(y = "mass-specific rate",
        x = "mass [g]") +
-  scale_fill_viridis(#option = "magma", 
-                     name = "Arrhenius\ntemperature\n[1/kT]", discrete = TRUE) +
+  scale_fill_viridis(name = "Arrhenius\ntemperature\n[1/kT]", discrete = TRUE) +
   scale_y_log10() +
   scale_x_log10() +
   geom_text(aes(x = Inf, y = Inf, label = sample_size, hjust = 1.05, vjust = 1.5), 
@@ -347,7 +337,6 @@ for(i in unique(s_datc$common_name)) {
   
   p <- t %>% 
     ggplot(., aes(temp_c, y, color = factor(size_cl)))+ 
-    #geom_jitter(size = 4, height = 0) +
     geom_point(size = 4) +
     geom_line() +
     theme_classic(base_size = 11) + 
@@ -372,7 +361,6 @@ for(i in unique(s_datm$common_name)) {
   
   p <- t %>% 
     ggplot(., aes(temp_c, y, color = factor(size_cl)))+ 
-    #geom_jitter(size = 4, height = 0) +
     geom_point(size = 4) +
     geom_line() +
     theme_classic(base_size = 11) + 

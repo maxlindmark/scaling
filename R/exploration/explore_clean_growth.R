@@ -61,12 +61,15 @@ sp2 <- gsub( ".*\\s", "", dat$species )
 
 dat$species_ab <- paste(sp1, sp2, sep = ".")
 
+unique(dat$species_ab)
+
+
 # Create a single reference temperature for analysis. This is midpoint of environment (mainly),
 # but sometimes midpoint of preferred (both from fishbase), and in two cases other literature
 dat$pref_temp_mid[is.na(dat$pref_temp_mid)] <- -9
 dat$env_temp_mid[is.na(dat$env_temp_mid)] <- -9
 
-# New reference temperature (either mid of preference of environment temperature)
+# New reference temperature (mid of preference of environment temperature)
 dat$median_temp <- dat$env_temp_mid
 
 # Take median of "preferred" temperature if environment temp is NA
@@ -75,7 +78,9 @@ dat$median_temp <- ifelse(dat$median_temp == -9,
                           dat$pref_temp_mid,
                           dat$median_temp)
 
-# Bring back NA
+filter(dat, median_temp == -9)
+
+# Bring back NA to env or pref now that we made the new median temp
 dat$env_temp_mid <- ifelse(dat$env_temp_mid == -9,
                            NA,
                            dat$env_temp_mid)
@@ -84,17 +89,7 @@ dat$pref_temp_mid <- ifelse(dat$pref_temp_mid == -9,
                             NA,
                             dat$pref_temp_mid)
 
-# Any NA's still?
-dplyr::filter(dat, median_temp == -9)
-
-# Inspect temperatures
-ggplot(dat, aes(median_temp, fill = common_name)) +
-  geom_histogram() + 
-  coord_cartesian(expand = 0) +
-  theme_classic() +
-  NULL
-
-# Convert experimental to Arrhenius scale:
+# Convert experimental temperature to Arrhenius scale:
 dat$temp_arr <- 1/((dat$temp_c + 273.15) * 8.617332e-05)
 
 # Standardize temperatures to median-reference temperature on C scale
@@ -132,6 +127,7 @@ p1 <- ggplot(dat, aes(x = reorder(species, trophic_level), y = trophic_level)) +
   NULL 
 pWord1 <- p1 + theme_classic() + theme(text = element_text(size = 12),
                                        axis.text.y = element_text(size = 8, face = "italic"))
+
 
 # Max. published weight
 p2 <- ggplot(dat, aes(x = reorder(species, w_maturation_g), y = w_maturation_g)) +
