@@ -212,6 +212,7 @@ waic_m2-waic_m1
 # > waic_m2-waic_m1
 # [1] 0.9649845
 
+
 # D. MODEL VALIDATION ==============================================================
 # CODA - Nice for getting the raw posteriors
 cs <- coda.samples(jm1,
@@ -516,40 +517,6 @@ pWord9 <- p9 + theme_classic() + theme(text = element_text(size = 8),
 pWord9
 
 ggsave("figures/T_opt_scatter.png", width = 6, height = 6, dpi = 600, unit = "cm")
-
-# Large version of the figure
-p10 <- ggplot(pred_df, aes(mass, median)) +
-  geom_ribbon(data = pred_df, aes(x = mass, ymin = lwr_95, ymax = upr_95), 
-              size = 2, alpha = 0.25, inherit.aes = FALSE, fill = "grey45") +
-  geom_ribbon(data = pred_df, aes(x = mass, ymin = lwr_80, ymax = upr_80), 
-              size = 2, alpha = 0.35, inherit.aes = FALSE, fill = "grey35") +
-  geom_line(size = 0.5, alpha = 1, col = "black") +
-  geom_point(data = dat, aes(log_mass_norm_mat, opt_temp_c_ct, fill = species_ab, size = mass_g),
-             shape = 21, alpha = 0.8, color = "grey10", stroke = 0.2) +
-  scale_fill_manual(values = pal, name = "Species") +
-  scale_size(range = c(1.5, 6), breaks = c(0, 1, 10, 100, 1000)) +
-  guides(fill = guide_legend(ncol = 1, override.aes = list(size = 1)),
-         size = guide_legend(override.aes = list(fill = "black",
-                                                 color = "black"))) +
-  annotate("text", -8, -4, label = paste("n=", nrow(dat), sep = ""), size = 3,
-           hjust = -0.5, vjust = 1.3) +
-  labs(x = "ln(rescaled mass)",
-       y = expression(paste("Rescaled ", italic(T[opt]))),
-       size = "Mass [g]") +
-  NULL
-
-pWord10 <- p10 + theme_classic() + theme(text = element_text(size = 12),
-                                         aspect.ratio = 1,
-                                         legend.spacing.x = unit(0, 'cm'),
-                                         legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
-                                         legend.box.spacing = unit(0, 'cm'),
-                                         legend.key.size = unit(0.1, 'cm'), 
-                                         legend.title = element_text(size = 7),
-                                         legend.text = element_text(size = 7, face = "italic"))
-
-pWord10
-
-ggsave("figures/T_opt_scatter_v2.png", width = 10, height = 10, dpi = 600, unit = "cm")
 
 
 
