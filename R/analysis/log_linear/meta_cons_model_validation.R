@@ -245,7 +245,7 @@ cs_met <- coda.samples(jm_met,
                        n.iter = n.iter, 
                        thin = thin)
 
-# summary(cs_met)
+summary(cs_met)
 # 2. Quantiles for each variable:
 #              2.5%       25%        50%      75%     97.5%
 #

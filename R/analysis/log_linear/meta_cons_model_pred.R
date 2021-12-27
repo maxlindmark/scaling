@@ -272,13 +272,7 @@ c_pred_df <- data.frame(lwr_95 = c_pred[1, ],
                         upr_95 = c_pred[5, ],
                         mass = mass_pred_con)
 
-# This is the mean temperature for the predictions:
-# round(mean(con$temp_arr))  
-# round(mean(con$temp_c)) 
-# round(mean(met$temp_arr))  
-# round(mean(met$temp_c)) 
-
-# Plot with mass on x and logarithmic axis instead...
+# Plot with mass on x and logarithmic axis
 # First add back the mean
 m_pred_df$mass_met_non_ct <- m_pred_df$mass + mean(met$log_mass)
 c_pred_df$mass_con_non_ct <- c_pred_df$mass + mean(con$log_mass)
@@ -287,7 +281,7 @@ c_pred_df$mass_con_non_ct <- c_pred_df$mass + mean(con$log_mass)
 m_pred_df$mass_g <- exp(m_pred_df$mass_met_non_ct)
 c_pred_df$mass_g <- exp(c_pred_df$mass_con_non_ct)
 
-# Next sample parameter estimates, as the total plot is combination 
+# Next sample parameter estimates, as the total plot is combination of summary statistics and samples
 
 #** Parameter estimates ============================================================
 # CODA - Nice for getting the raw posteriors
@@ -401,6 +395,7 @@ species_intercepts %>%
 ggsave("figures/supp/log_linear/met_con/metabolism_intercepts_type.png", width = 7, height = 7, dpi = 600)
 
 # Test it's correct using a few species...
+summary(lm(log(y) ~ log_mass_ct + temp_arr_ct + species_ab - 1, data = met))
 # head(filter(met, species_n == 4), 1) %>% dplyr::select(species_n, type, met_type, species_ab)
 # head(filter(met, species_n == 17), 1) %>% dplyr::select(species_n, type, met_type, species_ab)
 # head(filter(met, species_n == 23), 1) %>% dplyr::select(species_n, type, met_type, species_ab)
@@ -509,8 +504,8 @@ df$pred_sd <- ifelse(df$Parameter_mte == "Activation energy",
 
 # Create data frame for rectangles (prediction +/- 2*standard deviation)
 df_std <- df[!duplicated(df$pred_sd), ]
-df_std$ymax <- df_std$pred + 2*df_std$pred_sd
-df_std$ymin <- df_std$pred - 2*df_std$pred_sd
+df_std$ymax <- df_std$pred + 1.96*df_std$pred_sd
+df_std$ymin <- df_std$pred - 1.96*df_std$pred_sd
 
 
 #** Make a combined plot ===========================================================
@@ -519,12 +514,14 @@ colourCount = length(unique(con$species))
 getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
 pal <- getPalette(colourCount)
 
+# This is from the model validation script, for adding the equation
 # 2. Quantiles for each variable:
 #           2.5%     25%       50%       75%       97.5%
 # ...
 # mu_b0    -0.85268 -0.511181 -0.34097 -0.17422  0.16574
 # mu_b1     0.54904  0.600763  0.62663  0.65332  0.70743
 # mu_b2    -0.84671 -0.743781 -0.69353 -0.64283 -0.53869
+# ...
 
 p14 <- ggplot(c_pred_df, aes(mass_g, median)) +
   geom_point(data = con, aes(mass_g, log(y), fill = species_ab),
@@ -538,8 +535,6 @@ p14 <- ggplot(c_pred_df, aes(mass_g, median)) +
   coord_cartesian(ylim = c(min(min(con_data$y), min(met_data$y)), max(max(con_data$y), max(met_data$y)))) +
   scale_fill_manual(values = pal) +
   scale_x_continuous(trans = scales::log_trans(),
-                     #labels = scales::number_format(accuracy = .1), # Use this to get evenly space ticks, and the below to round them up!
-                     #breaks = c(0.1, 2, 60, 1050),
                      breaks = c(0.1, 1, 10, 100, 1000)) +
   guides(fill = FALSE) +
   labs(x = "mass [g]",
@@ -548,7 +543,7 @@ p14 <- ggplot(c_pred_df, aes(mass_g, median)) +
            hjust = -0.5, vjust = 1.3) +
   annotate("text", 0.5, -4, label = "ln(y)=-0.34 + ln(m)×0.63", size = 3,
            hjust = -0.5, vjust = 1.3) +
-  ggtitle("A") +
+  ggtitle("(a)") +
   NULL
 
 pWord14 <- p14 + theme_classic() + theme(text = element_text(size = 14),
@@ -560,6 +555,7 @@ colourCount = length(unique(met$species))
 getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
 pal <- getPalette(colourCount)
 
+# This is from the model validation script, for adding the equation
 # 2. Quantiles for each variable:
 #              2.5%       25%        50%      75%     97.5%
 #
@@ -569,6 +565,7 @@ pal <- getPalette(colourCount)
 # mu_b1       0.741257  0.7749627  0.7909194  0.807061  0.83924
 # mu_b2      -0.671663 -0.6374733 -0.6209867 -0.604387 -0.57241
 # mu_b3       0.001489  0.0118398  0.0175755  0.023624  0.03670
+# ...
 
 options(scipen = 100) # To avoid scientific notation in plot
 
@@ -590,9 +587,9 @@ p15 <- ggplot(m_pred_df, aes(mass_g, median)) +
        y = expression(paste("ln(metabolic rate [mg ", O[2], "/day])"))) +
   annotate("text", 0.05, 6, label = paste("n=", nrow(met), sep = ""), size = 3,
            hjust = -0.5, vjust = 1.3) +
-  annotate("text", 0.5, -4, label = "ln(y)=-1.86 + ln(m)×0.79", size = 3,
+  annotate("text", 0.5, -4, label = "ln(y)=1.86 + ln(m)×0.79", size = 3,
            hjust = -0.5, vjust = 1.3) +
-  ggtitle("B") +
+  ggtitle("(b)") +
   NULL
 
 pWord15 <- p15 + theme_classic() + theme(text = element_text(size = 14),
@@ -640,7 +637,7 @@ p16 <- df %>%
   geom_point(size = 1.5, fill = "white") +
   labs(x = "", y = "") + 
   guides(color = FALSE, shape = FALSE, fill = FALSE) +
-  ggtitle("C") +
+  ggtitle("(c)") +
   NULL 
 
 pWord16 <- p16 + theme_classic() + theme(text = element_text(size = 14),
@@ -651,10 +648,9 @@ pWord16 <- p16 + theme_classic() + theme(text = element_text(size = 14),
                                          legend.title = element_blank())
 
 (pWord14 + pWord15) / pWord16 + 
-  plot_layout(heights = unit(c(7.15, 1), c('cm', 'null'))) #+
+  plot_layout(heights = unit(c(7.15, 1), c('cm', 'null')))
 
 ggsave("figures/meta_cons_combined.png", width = 22, height = 22, dpi = 600, units = "cm")
-# ggsave("figures/meta_cons_combined.pdf", width = 22, height = 22, dpi = 600, units = "cm")
 
 
 #**** Plot global-predictions ======================================================
@@ -664,8 +660,6 @@ color_scheme_set("gray")
 p17 <- cs_met %>% 
   mcmc_dens(pars = "mu_b1") +
   scale_y_continuous(expand = c(0,0)) +
-  # annotate("text", -Inf, Inf, label = "C", size = 4, 
-  #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
   annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Mass exponent" & Rate == "Metabolic rate")$pred, 2)[1], 
            size = 3, hjust = -0.5, vjust = 1.3) +
   labs(x = "Mass exponent") +
@@ -681,8 +675,6 @@ pWord17 <- p17 + theme_classic() + theme(text = element_text(size = 12),
 p18 <- cs_met %>% 
   mcmc_dens(pars = "mu_b2") +
   scale_y_continuous(expand = c(0,0)) +
-  # annotate("text", -Inf, Inf, label = "C", size = 4, 
-  #          fontface = "bold", hjust = -0.5, vjust = 1.3) +
   annotate("text", -Inf, Inf, label = round(filter(df, Parameter_mte == "Activation energy" & Rate == "Metabolic rate")$pred, 2)[1], 
            size = 3, hjust = -0.5, vjust = 1.3) +
   labs(x = "Temperature coefficient") +
@@ -779,5 +771,6 @@ js = jags.samples(jm_con,
 
 ecdf(js$mu_b1)(0.75) 
 # [1] 0.9985556
-hist(js$mu_b1) + abline(v = 0.75, col = "red")
+hist(js$mu_b1)
+abline(v = 0.75, col = "red")
 

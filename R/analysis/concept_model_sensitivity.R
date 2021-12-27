@@ -408,7 +408,8 @@ p1a <- pdat %>%
         legend.text = element_text(size = 7), 
         legend.margin = margin(-0.3, 0, 0, 0, unit="cm"),
         legend.position = c(0.45, 0.35),
-        legend.background = element_rect(fill = NA))
+        legend.background = element_rect(fill = NA),
+        plot.tag = element_text(face = 'bold'))
 
 p1b <- pdat %>%
   filter(mass_g == 1000) %>% 
@@ -437,7 +438,8 @@ p1b <- pdat %>%
         legend.text = element_text(size = 7), 
         legend.margin = margin(-0.3, 0, 0, 0, unit="cm"),
         legend.position = "bottom",
-        legend.background = element_rect(fill = NA))
+        legend.background = element_rect(fill = NA),
+        plot.tag = element_text(face = 'bold'))
 
 p2 <- peak %>%
   filter(y_g_d_temp > 0 & temp_c_ct > t_min & temp_c_ct < t_max) %>% 
@@ -460,9 +462,10 @@ p2 <- peak %>%
         legend.text = element_text(size = 7), 
         legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
         legend.position = c(0.2, 0.9),
-        legend.background = element_rect(fill = NA))
+        legend.background = element_rect(fill = NA),
+        plot.tag = element_text(face = 'bold'))
 
-(p1a | p1b | p2) + plot_annotation(tag_levels = "A")
+(p1a | p1b | p2) + plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")")
 
 ggsave("figures/concept_sensitivity.png", width = 15, height = 15, dpi = 600, unit = "cm")
 
