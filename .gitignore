@@ -4,3 +4,5 @@
 .Ruserdata
 figures/supp/opt
 figures/supp/data/species_plots/
+R/analysis/net_gain_exponent.R
+R/analysis/concept_model.R
