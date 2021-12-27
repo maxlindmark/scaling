@@ -38,7 +38,14 @@ library(ggplot2)
 library(tidyr)
 library(dplyr)
 
+# sessionInfo()
+# other attached packages:
+# [1] dplyr_1.0.7        tidyr_1.1.4        ggplot2_3.3.5      tidylog_1.0.2      scales_1.1.1      
+# [6] patchwork_1.1.1    viridis_0.5.1      viridisLite_0.4.0  magrittr_2.0.1     readxl_1.3.1      
+# [11] RCurl_1.98-1.5     RColorBrewer_1.1-2
+
 set.seed(42)
+
 
 # B. GENERATE DATA =================================================================
 # First read in data so that we can take the means etc
@@ -95,7 +102,7 @@ met_pred$rate <- "Metabolism"
 # Calculate log mass
 met_pred$log_mass <- log(met_pred$mass_g)
 
-# Calculate mean-centered log mass (as it's used for model fitting)
+# Calculate mean-centered log mass (as that's what's used for model fitting)
 met_pred$log_mass_ct <- met_pred$log_mass - mean(met$log_mass)
 
 # Calculate log metabolic rate
@@ -118,7 +125,7 @@ log_y_intercept <- mu_b0_r + median_met_mub1*0 # *(log(0) - mean(met$log_mass)) 
 
 # Exponentiate prediction
 met_pred$y <- exp(met_pred$log_y)
-y_intercept <- exp(log_y_intercept) #### these hashtags are for calculating the interept, no the conversion factor for a specific size
+y_intercept <- exp(log_y_intercept) #### these hashtags are for calculating the "corrected" interept, no the conversion factor for a specific size
 
 # Now convert to g/d using the same values as Jan in Ohlberger et al (2012) Oikos
 # 1 kcal = 295 mg O2 

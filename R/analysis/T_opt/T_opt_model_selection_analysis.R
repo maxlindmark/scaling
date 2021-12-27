@@ -35,10 +35,12 @@ library(bayesplot)
 library(MCMCvis)
 library(scales)
 
+# sessionInfo()
 # other attached packages:
-# [1] bayesplot_1.7.1    patchwork_0.0.1    viridis_0.5.1      viridisLite_0.3.0  magrittr_1.5       readxl_1.3.1      
-# [7] RCurl_1.95-4.12    bitops_1.0-6       ggmcmc_1.3         ggplot2_3.2.1      tidyr_1.0.0        dplyr_0.8.3       
-# [13] RColorBrewer_1.1-2 rjags_4-10         coda_0.19-3    
+# [1] scales_1.1.1       MCMCvis_0.14.0     bayesplot_1.7.2    patchwork_1.1.1    viridis_0.5.1     
+# [6] viridisLite_0.4.0  magrittr_2.0.1     readxl_1.3.1       RCurl_1.98-1.5     ggmcmc_1.4.1      
+# [11] ggplot2_3.3.5      tidyr_1.1.4        dplyr_1.0.7        RColorBrewer_1.1-2 rjags_4-10        
+# [16] coda_0.19-4 
 
 
 # B. READ IN DATA ==================================================================

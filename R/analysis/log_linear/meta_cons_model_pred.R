@@ -37,9 +37,11 @@ library(tibble)
 
 # > sessionInfo()
 # other attached packages:
-# [1] tibble_3.0.4       tidylog_1.0.2      scales_1.1.1       MCMCvis_0.14.0     bayesplot_1.7.2    patchwork_1.0.1    viridis_0.5.1     
-# [8] viridisLite_0.3.0  magrittr_2.0.1     readxl_1.3.1       RCurl_1.98-1.2     ggmcmc_1.4.1       ggplot2_3.3.2      tidyr_1.1.2       
-# [15] dplyr_1.0.2        RColorBrewer_1.1-2 rjags_4-10         coda_0.19-4
+# other attached packages:
+# [1] tibble_3.1.5       tidylog_1.0.2      scales_1.1.1       MCMCvis_0.14.0     bayesplot_1.7.2   
+# [6] patchwork_1.1.1    viridis_0.5.1      viridisLite_0.4.0  magrittr_2.0.1     readxl_1.3.1      
+# [11] RCurl_1.98-1.5     ggmcmc_1.4.1       ggplot2_3.3.5      tidyr_1.1.4        dplyr_1.0.7       
+# [16] RColorBrewer_1.1-2 rjags_4-10         coda_0.19-4  
 
 
 # B. READ IN DATA ==================================================================
@@ -652,6 +654,15 @@ pWord16 <- p16 + theme_classic() + theme(text = element_text(size = 14),
 
 ggsave("figures/meta_cons_combined.png", width = 22, height = 22, dpi = 600, units = "cm")
 
+# quick test to see labels are correct
+summary(lm(log(y) ~ log_mass_ct + temp_arr_ct, data = filter(con, species_ab == "P.fluviatilis")))
+filter(df, Species == "P.fluviatilis")
+
+summary(lm(log(y) ~ log_mass_ct + temp_arr_ct, data = filter(con, species_ab == "S.trutta")))
+filter(df, Species == "S.trutta")
+
+summary(lm(log(y) ~ log_mass_ct + temp_arr_ct, data = filter(met, species_ab == "C.macropomum")))
+filter(df, Species == "C.macropomum")
 
 #**** Plot global-predictions ======================================================
 color_scheme_set("gray")

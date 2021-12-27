@@ -28,8 +28,9 @@ library(bayesplot)
 
 # sessionInfo()
 # other attached packages:
-# [1] bayesplot_1.7.2    patchwork_1.0.1    viridis_0.5.1      viridisLite_0.3.0  magrittr_2.0.1     readxl_1.3.1       RCurl_1.98-1.2    
-# [8] ggmcmc_1.4.1       ggplot2_3.3.2      tidyr_1.1.2        dplyr_1.0.2        RColorBrewer_1.1-2 rjags_4-10         coda_0.19-4   
+# [1] bayesplot_1.7.2    patchwork_1.1.1    viridis_0.5.1      viridisLite_0.4.0  magrittr_2.0.1    
+# [6] readxl_1.3.1       RCurl_1.98-1.5     ggmcmc_1.4.1       ggplot2_3.3.5      tidyr_1.1.4       
+# [11] dplyr_1.0.7        RColorBrewer_1.1-2 rjags_4-10         coda_0.19-4  
 
 
 # B. READ IN DATA ==================================================================
