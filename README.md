@@ -1,5 +1,7 @@
 # Optimum growth temperature declines with body size within fish species
 
+[![DOI](https://zenodo.org/badge/184549156.svg)](https://zenodo.org/badge/latestdoi/184549156)
+
 **Authors:** [Max Lindmark](https://maxlindmark.netlify.app/), [Jan Ohlberger](http://janohlberger.com/Homepage/), [Anna Gårdmark](https://internt.slu.se/en/cv-originals/anna-gardmark/)
 
 This repository contains all data and code used for analyses and figures from [Lindmark et al (2021)](https://www.biorxiv.org/content/10.1101/2021.01.21.427580v2).
