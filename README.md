@@ -4,9 +4,9 @@
 
 **Authors:** [Max Lindmark](https://maxlindmark.netlify.app/), [Jan Ohlberger](http://janohlberger.com/Homepage/), [Anna Gårdmark](https://internt.slu.se/en/cv-originals/anna-gardmark/)
 
-This repository contains all data and code used for analyses and figures from [Lindmark et al (2021)](https://www.biorxiv.org/content/10.1101/2021.01.21.427580v2).
+This repository contains all data and code used for analyses and figures from [Lindmark et al (2022)](https://onlinelibrary.wiley.com/doi/full/10.1111/gcb.16067).
 
-Citation: Lindmark, M., Ohlberger, J. & Gårdmark, A. (2021). [Optimum growth temperature declines with body size within fish species](https://www.biorxiv.org/content/10.1101/2021.01.21.427580v2). bioRxiv, 2021.01.21.427580.
+[Preprint](https://www.biorxiv.org/content/10.1101/2021.01.21.427580v2). bioRxiv, 2021.01.21.427580.
 
 ## How to replicate our analyses
 
