@@ -2,7 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/184549156.svg)](https://zenodo.org/badge/latestdoi/184549156)
 
-**Authors:** [Max Lindmark](https://maxlindmark.netlify.app/), [Jan Ohlberger](http://janohlberger.com/Homepage/), [Anna Gårdmark](https://internt.slu.se/en/cv-originals/anna-gardmark/)
+**Authors:** [Max Lindmark](https://maxlindmark.github.io/), [Jan Ohlberger](http://janohlberger.com/Homepage/), [Anna Gårdmark](https://internt.slu.se/en/cv-originals/anna-gardmark/)
 
 This repository contains all data and code used for analyses and figures from [Lindmark et al (2022)](https://onlinelibrary.wiley.com/doi/full/10.1111/gcb.16067).
 
